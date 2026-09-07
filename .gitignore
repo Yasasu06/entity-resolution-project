@@ -1,0 +1,43 @@
+# --- Python virtual environments -------------------------------------------
+# The environment is rebuilt from requirements.txt, so it never gets committed.
+.venv/
+venv/
+env/
+ENV/
+
+# --- Python bytecode / build caches ----------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Jupyter ----------------------------------------------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# --- Tooling caches ---------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipython/
+
+# --- Editors ----------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+
+# --- Operating system junk --------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Secrets ----------------------------------------------------------------
+.env
+
+# NOTE: dataset CSVs under data/ are deliberately NOT ignored. The benchmark
+# data is part of this project and is committed so the repo is reproducible
+# from a single clone.
