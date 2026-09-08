@@ -63,10 +63,31 @@ reproducible from a single clone.
 ## Setup
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv          # create an isolated Python environment
+source .venv/bin/activate      # start using it
 pip install -r requirements.txt
+
+nbstripout --install           # strip notebook outputs on commit (one-off, per clone)
 ```
+
+The `nbstripout` step configures a local git setting, which a clone does not
+inherit — so it needs running once after cloning. See
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (D12) for why.
+
+## Running things
+
+```bash
+python src/inspect_datasets.py          # structural summary of the raw data
+python -m src.baseline_token_overlap    # the simple baseline the system must beat
+pytest                                  # the test suite
+```
+
+## Decisions
+
+Every significant decision on this project — and the reasoning behind it — is
+recorded in [`docs/DECISIONS.md`](docs/DECISIONS.md), written to be readable
+with no prior context. On a project like this the reasoning matters as much as
+the code.
 
 ## License
 
