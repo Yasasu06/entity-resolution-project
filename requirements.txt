@@ -1,3 +1,28 @@
 # Project dependencies.
-# Install with:  pip install -r requirements.txt
-pandas
+#
+# Install with:
+#     python3 -m venv .venv
+#     source .venv/bin/activate
+#     pip install -r requirements.txt
+#
+# Versions are pinned with "==" so that everyone who clones this repository
+# gets byte-for-byte the same libraries. Without pins, a future install could
+# silently pick up a newer version and change results — which is exactly the
+# kind of thing that makes a project impossible to reproduce months later.
+
+# --- Core -------------------------------------------------------------------
+pandas==3.0.5       # tabular data handling
+splink==4.0.17      # the entity-resolution engine (probabilistic record linkage)
+duckdb==1.5.5       # in-process SQL database; Splink runs its SQL through this
+
+# --- Notebooks --------------------------------------------------------------
+jupyterlab==4.6.3   # environment for exploratory notebooks in notebooks/
+nbstripout==0.9.1   # strips notebook outputs before commit (see docs/DECISIONS.md)
+
+# --- Testing ----------------------------------------------------------------
+pytest==9.1.1       # test runner for the code in src/
+
+# Compatibility note: Splink 4.0.17 does not declare an upper bound on pandas,
+# and pandas 3.x is a major release with breaking changes. This combination was
+# verified by actually running a Splink linker end-to-end (not just importing
+# it) before being pinned here.
