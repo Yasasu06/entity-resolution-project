@@ -9,11 +9,22 @@ Official index: <https://github.com/anhaidgroup/deepmatcher/blob/master/Datasets
 
 ## Summary
 
-| Dataset | Folder | Status | Pairs | Matches |
+| Dataset | Role in this project | Folder | Pairs | Matches |
 | --- | --- | --- | ---: | ---: |
-| DBLP-ACM₂ (dirty) | `data/raw/dirty_dblp_acm/` | ✅ downloaded | 12,363 | 2,220 |
-| Walmart-Amazon₂ (dirty) | `data/raw/dirty_walmart_amazon/` | ✅ downloaded | 10,242 | 962 |
-| Company (textual) | `data/raw/company/` | ❌ **not obtained** | — | — |
+| **Walmart-Amazon₂ (dirty)** | **Primary dataset** — the system is built and evaluated on this | `data/raw/dirty_walmart_amazon/` | 10,242 | 962 |
+| DBLP-ACM₂ (dirty) | Secondary reference point, used for comparison only | `data/raw/dirty_dblp_acm/` | 12,363 | 2,220 |
+| Company (textual) | **Deliberately deferred** — see [decision](#company-textual--deliberately-deferred) | `data/raw/company/` | — | — |
+
+### Why Walmart-Amazon is the primary dataset
+
+It is the harder and more interesting of the two, which makes it the better
+showcase for a system whose whole point is handling genuinely uncertain cases.
+Measured on the actual data (see [`ASSESSMENT.md`](ASSESSMENT.md)): matching
+pairs and non-matching pairs overlap heavily in raw text similarity, only 9.4%
+of labeled pairs are matches, its right-hand table is 8× larger than its left,
+and its most decisive attribute (`modelno`) is missing from 64% of rows.
+DBLP-ACM₂ is comparatively easy — academic titles are near-verbatim across
+sources — so it is kept as a contrast case rather than the main target.
 
 ## Where each file actually came from
 
@@ -44,11 +55,43 @@ files reproduce those figures exactly:
 Attribute counts also agree (4 matchable attributes for DBLP-ACM₂, 5 for
 Walmart-Amazon₂, excluding `id`).
 
-### Company (textual) — NOT OBTAINED
+### Company (textual) — deliberately deferred
 
-The Company dataset could **not** be downloaded from any verifiable source
-reachable from this environment. Nothing was substituted for it, and no
-synthetic stand-in was generated.
+**Status: evaluated, and consciously set aside. This is a decision, not an
+open problem or an oversight.**
+
+The Company dataset was pursued thoroughly, could not be obtained from any
+verifiable source, and was then dropped on purpose after weighing the cost of
+pursuing it further against the value it would add. Nothing was substituted for
+it, and no synthetic stand-in was generated.
+
+**Two independent reasons, either of which is sufficient:**
+
+1. **The canonical host is unreachable.** `pages.cs.wisc.edu` is refused at the
+   HTTPS `CONNECT` stage by this environment's network egress policy. Because
+   the refusal happens before any URL path is transmitted, *no* path on that
+   host is reachable — not the zip, not the per-file CSVs, not the directory
+   listing. Every published mirror was also checked and is dead or blocked
+   (table below).
+2. **It would not survive in this repository anyway.** Company's `tableA.csv`
+   is reported to be roughly 185 MB (figure supplied by the project owner from
+   the live directory listing; not independently verified here, since the file
+   was never retrievable), well past GitHub's hard 100 MB per-file limit. Committing
+   it would require Git LFS or an out-of-band download step, which adds real
+   setup friction to a project whose stated aim is to be reproducible from a
+   single `git clone`.
+
+**Why deferring costs us little.** Company is a *textual* benchmark — long
+free-text company descriptions — which is a meaningfully different matching
+problem from the structured-but-corrupted attribute matching this project is
+built around. Adding it would widen the project's scope rather than deepen it.
+The two datasets in hand already provide both a hard case and an easy contrast
+case.
+
+**What would reopen this decision:** unrestricted network access to
+`pages.cs.wisc.edu` (or an equivalent verified mirror) *and* a decision to take
+on Git LFS. If both change, the fetch command is at the end of this section.
+Until then, this is settled and needs no further investigation.
 
 Routes attempted and their outcomes:
 

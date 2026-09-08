@@ -40,8 +40,22 @@ Each dataset follows the same layout:
 - `train.csv`, `valid.csv`, `test.csv` — labeled pairs referencing those tables
   by ID, with a `label` column (`1` = same entity, `0` = different)
 
-See [`docs/DATASETS.md`](docs/DATASETS.md) for exactly which datasets are
-included, where each one was downloaded from, and their verified row counts.
+Two datasets are included:
+
+- **Walmart-Amazon₂ (dirty)** — the **primary** dataset. Product listings from
+  two retailers, deliberately corrupted by the benchmark authors so attribute
+  values sit in the wrong fields. Chosen because it is genuinely hard: matching
+  and non-matching pairs overlap heavily in text similarity, only 9.4% of
+  labeled pairs are matches, and its most decisive field is missing from most
+  rows.
+- **DBLP-ACM₂ (dirty)** — a **secondary** contrast case. Same corruption, but
+  much easier to match, which makes it useful for comparison.
+
+A third dataset (Company) was evaluated and deliberately deferred.
+
+See [`docs/DATASETS.md`](docs/DATASETS.md) for provenance, verified row counts,
+and the reasoning behind those choices, and [`docs/ASSESSMENT.md`](docs/ASSESSMENT.md)
+for the data-driven comparison that selected the primary dataset.
 
 Raw data CSVs are intentionally committed to this repository so the project is
 reproducible from a single clone.
