@@ -55,11 +55,18 @@ Routes attempted and their outcomes:
 | Source | Result |
 | --- | --- |
 | `pages.cs.wisc.edu/.../Textual/Company/company_exp_data.zip` (official) | Blocked — proxy returned 403 (egress policy denial) |
+| `pages.cs.wisc.edu/.../Textual/Company/exp_data/{tableA,tableB,train,valid,test}.csv` (official, per-file) | Blocked — all five files returned `CONNECT tunnel failed, response 403` |
 | `ditto-em.s3.us-east-2.amazonaws.com/Company.zip` (mirror named in Ditto's own README) | HTTP 403 AccessDenied from S3 — bucket no longer public |
 | `megagonlabs/ditto` repo, `data/er_magellan/Textual/Company/` | Contains only a README pointing at the dead S3 link above |
 | `brunnurs/entity-matching-transformer` repo | No `company` folder (has abt_buy, amazon_google, dirty_* only) |
 | `icip-cas/EntityMatcher` repo | No `company` folder |
 | Google Drive, Zenodo, Figshare, HuggingFace, Uni-Mannheim, Uni-Leipzig | All blocked by the same egress policy |
+
+The block occurs at the HTTPS `CONNECT` stage, before any URL path is
+transmitted, so the proxy only ever sees the hostname `pages.cs.wisc.edu:443`.
+No path on that host is reachable from this environment — the files themselves
+are live and publicly served, and download normally from an unrestricted
+network.
 
 **To obtain it**, from a machine with unrestricted internet access:
 
