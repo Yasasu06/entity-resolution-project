@@ -29,7 +29,25 @@ understanding, not just working code.
   a virtual environment is for, why history rewrites need a force-push).
 - Favour explicitness over magic and terseness.
 
-## 3. Never silently substitute data
+## 3. Work in small, reviewable chunks — pause for confirmation
+
+**Do not complete several steps and report them together.** Yasaswi reviews
+each explanation carefully before responding, and large multi-part updates are
+hard to review and approve properly.
+
+- Do **one** meaningful chunk of work, then stop and report it.
+- Pause for explicit confirmation after each design decision, before acting
+  on it. A design that has been described is not a design that has been
+  approved — wait for the word.
+- Keep reports proportionate to the chunk. Depth of thinking should stay
+  high; the *size of each delivery* is what shrinks.
+- This is about pacing, not scope. Keep surfacing everything worth flagging —
+  just introduce it a piece at a time rather than all at once.
+
+If a task seems to need many steps, propose the sequence and let Yasaswi
+approve it before starting, rather than working through it unprompted.
+
+## 4. Never silently substitute data
 
 **If something cannot be obtained or verified, say so clearly. Never fill the
 gap.**
@@ -42,7 +60,7 @@ gap.**
   against published figures where possible rather than trusting it.
 - A clearly reported failure is a better outcome than a quietly filled gap.
 
-## 4. Dataset scope
+## 5. Dataset scope
 
 - **Primary: Walmart-Amazon₂ (dirty)** — `data/raw/dirty_walmart_amazon/`.
   The system is built and evaluated on this.
@@ -53,7 +71,7 @@ gap.**
   settled decision, not an open task; see [`docs/DATASETS.md`](docs/DATASETS.md)
   for the full reasoning. Do not re-investigate it or treat it as an oversight.
 
-## 5. Project context
+## 6. Project context
 
 A portfolio project demonstrating **entity resolution** — matching records
 across sources that refer to the same real-world company, with no shared ID.
@@ -66,7 +84,7 @@ binary match/no-match verdict.
 
 **Splink** is the intended core matching engine.
 
-## 6. Repository conventions
+## 7. Repository conventions
 
 - Raw data in `data/raw/` is **never** edited in place. It is committed
   deliberately so the project is reproducible from a single clone.
