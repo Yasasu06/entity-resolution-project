@@ -23,13 +23,20 @@ that ship with the dataset. It measures the *decision step only*, on a set where
 space. Those two numbers are not comparable, and this project reports them
 separately. See docs/DECISIONS.md.
 
-**Which splits?**
-The threshold is chosen on ``train`` and the reported result is on ``valid``.
-``test`` is sealed until one final evaluation at the end of the project.
+**SEALED — this does not run during development.**
+Under the project's strict no-peek policy (docs/DECISIONS.md D14) no labelled
+data is consulted until the entire pipeline is built. This script scores
+against labels, so it belongs to the single final evaluation pass at the end
+of the project, alongside the real system.
 
-Run it with::
+An earlier result from this script (F1 = 0.381 on valid) was computed under a
+looser rule that has since been superseded. It is retained in the decision log
+as history, not as a live number, and will be recomputed at the final
+evaluation.
 
-    python src/baseline_token_overlap.py
+Run it, as that final evaluation only::
+
+    python -m src.baseline_token_overlap --unlock-final-evaluation
 """
 
 import re
@@ -148,13 +155,33 @@ def _print_result(name: str, result: dict[str, float], n_pairs: int, n_matches: 
     print(f"    false negatives  {result['false_negatives']:,}")
 
 
-def main() -> None:
+def main(unlock_final_evaluation: bool = False) -> None:
+    # SEALED under the strict no-peek policy (docs/DECISIONS.md D14). This
+    # script consults labelled answers, so it may only run as part of the single
+    # final evaluation at the end of the project — not during development.
+    if not unlock_final_evaluation:
+        print(__doc__.strip().splitlines()[0])
+        print(
+            "\nThis baseline is SEALED and did not run.\n\n"
+            "It scores against labelled answers, and this project uses a strict\n"
+            "no-peek policy: no labelled data (train, valid or test) is consulted\n"
+            "until the whole pipeline is built and the single final evaluation\n"
+            "is run.\n\n"
+            "The previously recorded result (F1 = 0.381 on valid) was computed\n"
+            "under an earlier, looser rule and is SUPERSEDED — see D9 and D14 in\n"
+            "docs/DECISIONS.md. It will be recomputed at the final evaluation,\n"
+            "as part of one honest pass alongside the real system.\n\n"
+            "To run it as that final evaluation:\n"
+            "    python -m src.baseline_token_overlap --unlock-final-evaluation"
+        )
+        return
+
     table_a, table_b = load_source_tables()
     tokens_a = record_tokens(table_a)
     tokens_b = record_tokens(table_b)
 
-    train = load_labelled_pairs("train")
-    valid = load_labelled_pairs("valid")
+    train = load_labelled_pairs("train", unlock_final_evaluation=True)
+    valid = load_labelled_pairs("valid", unlock_final_evaluation=True)
 
     train_scores = score_pairs(train, tokens_a, tokens_b)
     valid_scores = score_pairs(valid, tokens_a, tokens_b)
@@ -181,4 +208,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(unlock_final_evaluation="--unlock-final-evaluation" in sys.argv)

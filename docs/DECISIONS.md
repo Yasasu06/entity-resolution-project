@@ -230,6 +230,18 @@ the tool's assumptions.
 
 ## D9 — Establish a deliberately dumb baseline before building anything clever
 
+> ⚠️ **SUPERSEDED by [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).**
+> The *idea* stands — a crude baseline is still built and still has to be
+> beaten. What changed is *when* it may be scored. The result below was
+> computed correctly under the rule in force at the time, which permitted
+> checking against `train` and `valid`. Under the stricter rule that replaced
+> it, **no labelled data may be consulted until the whole system is finished**,
+> so the number below is **no longer a live result**. It is retained here as
+> history. The baseline will be rebuilt and re-scored at the end, as part of
+> one single honest evaluation alongside the real system.
+>
+> This is a rule change, not an error.
+
 **Decision.** Before touching Splink, build the crudest matcher that could work
 and score it honestly.
 
@@ -238,8 +250,9 @@ what proportion of words two records share, and call it a match above some
 threshold. No learning, no probabilities, no awareness of which field a word
 came from.
 
-**Result:** **F1 = 0.381** on the validation split
-*(precision 0.408, recall 0.358; threshold 0.450 chosen on train)*.
+**Result (SUPERSEDED — historical record only, see D14):** F1 = 0.381 on the
+validation split *(precision 0.408, recall 0.358; threshold 0.450 chosen on
+train)*.
 
 > **Scope of that number:** the benchmark's curated pairs — the decision step
 > only. **Not** the full 56.4M-pair pipeline evaluation (see D3). The two are
@@ -328,6 +341,86 @@ After cloning, run `nbstripout --install` once.
 **Why.** Docker's value is reproducing an environment reliably. Doing that while
 the design is still moving means maintaining a container spec that changes
 daily, for no current benefit. Revisit once the pipeline is stable.
+
+---
+
+## D14 — Strict no-peek: no labelled data until the system is finished
+
+**Decision.** No labelled answers — `train`, `valid` **or** `test` — are
+consulted for any purpose until the entire system, including the full
+56.4M-pair blocking and matching pipeline, is completely built. Then one single
+evaluation is run, once.
+
+**This supersedes D6**, which allowed using `train` and `valid` along the way
+and sealed only `test`. It also supersedes the live status of the D9 baseline
+result.
+
+**It explicitly includes checks that feel like basic due diligence.** The
+clearest example: *"how many of the 962 known true matches survive my blocking
+step?"* That feels like sanity-checking rather than cheating. It is not. If a
+blocking rule is kept or discarded based on how many known answers it
+preserves, the answer key has shaped the design — and the final number stops
+measuring how well the system works and starts measuring how well it was fitted
+to that specific data.
+
+**Why go this far.** The aim is to build the way a researcher or a Forward
+Deployed Engineer genuinely has to work on a real deployment: arriving at a
+client with no ground truth at all, having to justify every design choice from
+the structure of the data itself. Not merely *"don't touch the test file"* but
+*"don't know how well any part of this is working"* until it is finished. A
+system designed under that constraint is one whose reasoning has to stand on
+its own.
+
+**The accepted trade-off.** This is real and was accepted deliberately, with
+open eyes:
+
+- No early sanity checks. If blocking silently discards a large share of true
+  matches, that will not surface until the very end.
+- No incremental feedback. Design choices in blocking, comparison logic and
+  thresholds are all made without knowing whether they help.
+- Rework risk. A flaw discovered at final evaluation may invalidate work built
+  on top of it, and correcting it then re-running honestly is expensive.
+
+This is the price of the guarantee, and it is being paid on purpose. It is
+recorded here as a conscious trade-off, not an oversight.
+
+**How it is enforced — in code, not by memory:**
+
+- `src/data_loading.py` refuses to load *any* labelled split without an
+  explicit `unlock_final_evaluation=True`.
+- `src/baseline_token_overlap.py` refuses to run without
+  `--unlock-final-evaluation`, and explains why.
+- `src/inspect_datasets.py` no longer summarises label counts by default —
+  reporting how many matches a split contains is answer-key information too,
+  even though it looks like plain description.
+- A test asserts that all three splits are sealed by default.
+
+### Known prior contamination, recorded honestly
+
+This rule cannot retroactively unsee what was already seen. Before it existed,
+some analysis **did** use `train.csv` labels, and that knowledge informed the
+project. Stated precisely, so the final write-up does not overclaim:
+
+**Label-derived (must not inform design):**
+- The word-overlap separation figures in [`ASSESSMENT.md`](ASSESSMENT.md) —
+  mean similarity of true matches (0.422) vs non-matches (0.298), the
+  separation gap, and the percentile-crossover statistics.
+- The observation that ~39% of field comparisons *in true matches* have the
+  attribute present on one side and missing on the other.
+- The specific example record pairs shown in that document, which were selected
+  because they are labelled matches.
+- The superseded D9 baseline result.
+
+**Not label-derived (safe to use freely):** row counts, column names,
+missing-value rates per column, table sizes, token frequency distributions, the
+documented corruption mechanism, and the published benchmark totals.
+
+**Consequence.** The blocking design that follows is built only from the second
+list. The first list is quarantined — flagged in `ASSESSMENT.md` and not used
+as design input. The honest claim this project can make is therefore *"blocking
+and matching were designed without label feedback, on a codebase where some
+earlier exploratory analysis had used training labels"* — which is narrower
+than *"designed in total ignorance"*, and is the claim that will be made.
 
 ---
 

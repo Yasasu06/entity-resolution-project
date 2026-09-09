@@ -78,9 +78,18 @@ inherit — so it needs running once after cloning. See
 
 ```bash
 python src/inspect_datasets.py          # structural summary of the raw data
-python -m src.baseline_token_overlap    # the simple baseline the system must beat
+python -m src.baseline_token_overlap    # sealed baseline (final evaluation only)
 pytest                                  # the test suite
 ```
+
+## No-peek policy
+
+Labelled data (`train`, `valid` and `test`) is **sealed**. Nothing in this
+project consults the answers until the whole pipeline is built, at which point
+there is one single evaluation. This is enforced in code, not by convention —
+the loader refuses to open a labelled split without an explicit override. See
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (D14) for the reasoning and the
+trade-off being accepted.
 
 ## Decisions
 

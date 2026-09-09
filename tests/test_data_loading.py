@@ -65,54 +65,40 @@ def test_values_are_preserved_as_text():
     assert non_null_prices.map(type).eq(str).all()
 
 
-def test_labelled_pairs_reference_real_records():
-    """Every labelled pair must point at records that actually exist.
+def test_all_labelled_splits_are_sealed_by_default():
+    """The strict no-peek policy must be enforced in code, not by memory.
 
-    A mismatch here would mean the id translation is wrong — pairs would
-    silently score against nothing.
+    Every labelled split — train and valid as well as test — is off limits
+    while the system is being designed. This is the guard that makes an
+    accidental peek impossible rather than merely discouraged.
+    """
+    for split in ("train", "valid", "test"):
+        with pytest.raises(ValueError, match="SEALED"):
+            load_labelled_pairs(split)
+
+
+def test_sealed_splits_open_only_with_explicit_unlock():
+    """The final evaluation must still be possible — just never by accident."""
+    pairs = load_labelled_pairs("train", unlock_final_evaluation=True)
+    assert {"unique_id_l", "unique_id_r", "label"} == set(pairs.columns)
+    assert len(pairs) > 0
+
+
+def test_unlocked_pairs_reference_real_records():
+    """When finally unlocked, pair ids must resolve against the source tables.
+
+    Uses the explicit unlock, since verifying the id translation is a property
+    of the loader rather than a peek at the answers.
     """
     table_a, table_b = load_source_tables()
     ids_a = set(table_a[ID_COLUMN])
     ids_b = set(table_b[ID_COLUMN])
 
     for split in ("train", "valid"):
-        pairs = load_labelled_pairs(split)
+        pairs = load_labelled_pairs(split, unlock_final_evaluation=True)
         assert set(pairs["unique_id_l"]).issubset(ids_a), f"{split}: unknown left ids"
         assert set(pairs["unique_id_r"]).issubset(ids_b), f"{split}: unknown right ids"
-
-
-def test_labels_are_binary():
-    for split in ("train", "valid"):
-        labels = load_labelled_pairs(split)["label"]
-        assert set(labels.unique()).issubset({0, 1})
-
-
-def test_split_sizes_match_the_published_benchmark():
-    """Verify against the benchmark's published figures rather than trusting.
-
-    Walmart-Amazon_2 ships 10,242 pairs with 962 matches in total, split
-    6,144 / 2,049 / 2,049. Since 'test' is sealed we check the two splits we
-    are allowed to touch, and confirm the remainder adds up.
-    """
-    train = load_labelled_pairs("train")
-    valid = load_labelled_pairs("valid")
-
-    assert (len(train), int(train["label"].sum())) == (6144, 576)
-    assert (len(valid), int(valid["label"].sum())) == (2049, 193)
-
-    # Whatever is left must account for the published totals exactly.
-    assert 10242 - len(train) - len(valid) == 2049
-    assert 962 - int(train["label"].sum()) - int(valid["label"].sum()) == 193
-
-
-def test_test_split_is_sealed_by_default():
-    """The sealed split must be blocked unless explicitly unlocked.
-
-    This is the guard that stops the final honest evaluation from being
-    accidentally spent during development.
-    """
-    with pytest.raises(ValueError, match="sealed"):
-        load_labelled_pairs("test")
+        assert set(pairs["label"].unique()).issubset({0, 1})
 
 
 def test_unknown_split_is_rejected():

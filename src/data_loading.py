@@ -21,10 +21,13 @@ forgotten.
 
 Typical use::
 
-    from src.data_loading import load_source_tables, load_labelled_pairs
+    from src.data_loading import load_source_tables
 
     table_a, table_b = load_source_tables()
-    train = load_labelled_pairs("train")
+
+The labelled pair files are **sealed** under this project's strict no-peek
+policy and cannot be loaded without an explicit override. Design work uses the
+source tables only. See docs/DECISIONS.md (D14).
 """
 
 from pathlib import Path
@@ -49,13 +52,19 @@ ID_COLUMN = "unique_id"
 
 # The labelled pair files that ship with the benchmark.
 #
-# IMPORTANT: "test" is deliberately excluded from routine use. It is sealed
-# until one final evaluation at the end of the project, so that the headline
-# number is honest and not the product of repeated peeking. Loading it requires
-# passing allow_test=True, which exists purely to make that an explicit,
-# deliberate act rather than an accident.
-ROUTINE_SPLITS = ("train", "valid")
-SEALED_SPLITS = ("test",)
+# STRICT NO-PEEK POLICY: every labelled split is sealed.
+#
+# Not just "test" — train and valid too. No labelled answers are consulted at
+# any point while the system is being designed and built. That includes checks
+# that feel like harmless due diligence, such as "how many known matches
+# survive my blocking rules?" — that is still using the answer key to validate
+# a design choice, and it is not permitted until the end.
+#
+# Loading any of these requires passing unlock_final_evaluation=True, which
+# exists to make the single, final, one-time evaluation a deliberate act that
+# cannot happen by accident. See docs/DECISIONS.md (D14).
+ROUTINE_SPLITS = ()
+SEALED_SPLITS = ("train", "valid", "test")
 
 
 def _dataset_dir(dataset: str) -> Path:
@@ -128,7 +137,7 @@ def load_source_tables(dataset: str = DEFAULT_DATASET) -> tuple[pd.DataFrame, pd
 def load_labelled_pairs(
     split: str,
     dataset: str = DEFAULT_DATASET,
-    allow_test: bool = False,
+    unlock_final_evaluation: bool = False,
 ) -> pd.DataFrame:
     """Load one split of labelled pairs, with identifiers matching the tables.
 
@@ -138,20 +147,29 @@ def load_labelled_pairs(
     Returns a frame with columns ``unique_id_l``, ``unique_id_r``, ``label``,
     where ``label`` is 1 for "same real-world entity" and 0 for "different".
 
-    Passing ``split="test"`` raises unless ``allow_test=True``. That guard is
-    deliberate — see the note on sealed splits at the top of this module.
+    **Every split is sealed.** Loading any of them raises unless
+    ``unlock_final_evaluation=True`` is passed explicitly. This is not a
+    formality — it is the mechanism that enforces the project's strict no-peek
+    policy. See docs/DECISIONS.md (D14).
     """
-    if split in SEALED_SPLITS and not allow_test:
-        raise ValueError(
-            f"The '{split}' split is sealed for a single final evaluation and must "
-            f"not be used for development, tuning, or threshold-setting. "
-            f"Use one of {ROUTINE_SPLITS} instead. If this really is that final "
-            f"evaluation, pass allow_test=True explicitly."
-        )
+    all_splits = ROUTINE_SPLITS + SEALED_SPLITS
+    if split not in all_splits:
+        raise ValueError(f"Unknown split {split!r}; expected one of {all_splits}")
 
-    valid_splits = ROUTINE_SPLITS + SEALED_SPLITS
-    if split not in valid_splits:
-        raise ValueError(f"Unknown split {split!r}; expected one of {valid_splits}")
+    if split in SEALED_SPLITS and not unlock_final_evaluation:
+        raise ValueError(
+            f"The '{split}' split is SEALED. This project uses a strict no-peek "
+            f"policy: no labelled answers (train, valid or test) may be consulted "
+            f"until the entire pipeline is built, at which point there is one "
+            f"single final evaluation.\n\n"
+            f"This includes checks that feel like ordinary due diligence, such as "
+            f"measuring how many known matches survive a blocking rule. That is "
+            f"still tuning a design choice against the answer key.\n\n"
+            f"Design decisions must come from the structure of the source tables "
+            f"(see load_source_tables), not from labels.\n\n"
+            f"If this genuinely is the final evaluation, pass "
+            f"unlock_final_evaluation=True explicitly."
+        )
 
     path = _dataset_dir(dataset) / f"{split}.csv"
     pairs = pd.read_csv(path)
@@ -180,6 +198,5 @@ if __name__ == "__main__":
     print(f"tableA: {len(a):,} rows   tableB: {len(b):,} rows")
     print(f"attributes: {attribute_columns(a)}")
     print(f"first ids  A: {list(a[ID_COLUMN].head(3))}   B: {list(b[ID_COLUMN].head(3))}")
-    for split_name in ROUTINE_SPLITS:
-        pairs = load_labelled_pairs(split_name)
-        print(f"{split_name:>6}: {len(pairs):,} pairs, {int(pairs.label.sum()):,} matches")
+    print(f"\nlabelled splits {SEALED_SPLITS} are SEALED — no-peek policy (D14).")
+    print("Design work uses the source tables above only.")

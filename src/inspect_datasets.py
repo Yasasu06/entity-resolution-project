@@ -68,8 +68,19 @@ def describe_source_table(path: Path) -> pd.DataFrame:
     return frame
 
 
-def describe_pair_files(dataset_dir: Path) -> None:
-    """Report row counts and label balance across the train/valid/test splits."""
+def describe_pair_files(dataset_dir: Path, unlock_final_evaluation: bool = False) -> None:
+    """Report row counts and label balance across the train/valid/test splits.
+
+    SEALED by default. Label counts are answer-key information, so summarising
+    them counts as peeking under the project's strict no-peek policy
+    (docs/DECISIONS.md D14) even though it looks like harmless description.
+    """
+    if not unlock_final_evaluation:
+        print("\n  --- labeled pairs: SEALED (no-peek policy, D14) ---")
+        print("  Label files exist but are not summarised during development.")
+        print("  Run with --unlock-final-evaluation as part of the final evaluation.")
+        return
+
     print("\n  --- labeled pairs ---")
 
     total_rows = 0
@@ -108,7 +119,7 @@ def describe_pair_files(dataset_dir: Path) -> None:
         print(pd.read_csv(first_split).head(5).to_string(index=False))
 
 
-def describe_dataset(dataset_dir: Path) -> None:
+def describe_dataset(dataset_dir: Path, unlock_final_evaluation: bool = False) -> None:
     """Print a full report for one dataset directory."""
     print("\n" + "=" * 78)
     print(f"DATASET: {dataset_dir.name}")
@@ -126,10 +137,10 @@ def describe_dataset(dataset_dir: Path) -> None:
         else:
             print(f"\n  --- {filename} MISSING ---")
 
-    describe_pair_files(dataset_dir)
+    describe_pair_files(dataset_dir, unlock_final_evaluation)
 
 
-def main() -> None:
+def main(unlock_final_evaluation: bool = False) -> None:
     if not RAW_DATA_DIR.exists():
         raise SystemExit(f"No raw data directory found at {RAW_DATA_DIR}")
 
@@ -138,8 +149,9 @@ def main() -> None:
         raise SystemExit(f"No dataset directories found under {RAW_DATA_DIR}")
 
     for dataset_dir in dataset_dirs:
-        describe_dataset(dataset_dir)
+        describe_dataset(dataset_dir, unlock_final_evaluation)
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(unlock_final_evaluation="--unlock-final-evaluation" in sys.argv)
