@@ -4,7 +4,31 @@ Written before any cleaning or matching was done, from a direct reading of the
 raw files. The purpose was to choose a primary dataset on evidence rather than
 on published accuracy scores.
 
-Reproduce the underlying figures with `python src/inspect_datasets.py`.
+> ## ⚠️ Parts of this document are label-derived and are QUARANTINED
+>
+> This assessment was written **before** the strict no-peek policy
+> ([D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished))
+> was adopted. Some of it was computed using `train.csv` **labels**.
+>
+> **Quarantined — must not be used as design input** for blocking, comparison
+> logic, or thresholds:
+> - the whole of *"What actually separates them"* (the similarity table)
+> - the "~39% of field comparisons in true matches" figure
+> - the specific example pairs in *"Why, from the actual records"*, which were
+>   chosen because they are labelled matches
+> - the match counts and match percentages in *"Structural difficulty"*
+>
+> **Safe to use freely** (structural, no labels involved): row counts, column
+> names, missing-value rates, table sizes, and the description of the
+> corruption mechanism.
+>
+> The document is kept intact rather than edited, because the decision it
+> supports (D1, choosing the primary dataset) was legitimately made on this
+> evidence at the time. Rewriting history would be worse than labelling it.
+
+Reproduce the structural figures with `python src/inspect_datasets.py`.
+Label-derived figures cannot be reproduced without unlocking the final
+evaluation.
 
 ## Conclusion
 
