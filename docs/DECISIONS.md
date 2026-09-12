@@ -424,6 +424,110 @@ than *"designed in total ignorance"*, and is the claim that will be made.
 
 ---
 
+## D15 — Fixing how text is split for n-gram blocking
+
+**Decision.** When preparing a record's text for character-sequence blocking,
+close up the gap between two adjacent words **only when a digit sits
+immediately on one side of it**. Take character sequences *within* the
+resulting chunks and never across a gap that was left in place.
+
+### The problem this fixes
+
+Blocking rule R5 compares records by overlapping 5-character sequences rather
+than whole words. The reason is concrete: the two retailers punctuate
+manufacturer part numbers differently.
+
+| Walmart writes | Amazon writes |
+| --- | --- |
+| `rrvtps28pkr1` | `rr-vtps-28pk-r1` |
+| `kvr400x64c3a1g` | `kvr400x64c3a 1g` |
+| `n570gtxm2d12d5o` | `n570gtx-m2d12d5 oc` |
+
+Word-level splitting sees these as unrelated, discarding the most decisive
+evidence a product match has. Measured on the real data, **107** part numbers
+in the Walmart table sit inside the Amazon text but are invisible to word-level
+comparison.
+
+The first implementation solved that by deleting *every* space and punctuation
+mark before cutting the text into sequences. That worked for part numbers — and
+created a much bigger problem, because it also welded ordinary words together:
+
+```
+"desktop computers"  ->  "desktopcomputers"
+```
+
+inventing sequences like `ktopc`, `topco` and `opcom`. These appear rare only
+because that particular collision of two common words is uncommon; they say
+nothing about what the product is. Measured on a 400-record sample, **79.3% of
+all candidate pairs R5 produced were reachable only through such welds** — the
+rule was mostly generating noise.
+
+### Why this particular rule
+
+Part numbers are alphanumeric, so the breaks inside them almost always have a
+digit on one side. Boundaries between two ordinary English words almost never
+do. That single signal separates the two cases without needing a dictionary,
+a model, or any labelled data.
+
+```
+"kvr400x64c3a 1g"    ->  kvr400x64c3a1g        (joined - '1' is a digit)
+"desktop computers"  ->  desktop | computers   (kept apart - 'p' and 'c')
+```
+
+### Measured effect
+
+| | Before | After |
+| --- | ---: | ---: |
+| Part-number recoveries preserved | 107 | **101 (94.4%)** |
+| Candidates reachable only via welds (400-record sample) | 71,682 (79.3%) | **13,807 (47.7%)** |
+| R5 candidates at DF≤20 (whole dataset) | 255,051 | **87,152** |
+
+The rule keeps almost all of the evidence it was built to keep, while removing
+roughly two-thirds of the candidate pairs and more than four-fifths of the junk
+ones.
+
+### What it costs — stated honestly
+
+**Six of the 107 recoveries are lost.** They share a shape: a short,
+letter-only prefix split from the rest by a hyphen, where no digit touches the
+gap and the remaining chunks are too short to yield a 5-character sequence.
+
+```
+vgpbkb1  vs  sony vaio bluetooth keyboard ... vgp-bkb1
+acl100   vs  sony ac-l100 portable handycam ac adaptor ...
+pwe550   vs  sharp electronics pw-e550 electronic dictionary
+```
+
+**A weaker version of the original problem remains.** A plain word followed by
+a number still welds — `black 25 pack` becomes `black25pack` — because a
+leading digit triggers the join. Requiring a digit on *both* sides would remove
+this but would also discard genuine recoveries like `kvr400x64c3a` + `1g`. The
+residual is accepted knowingly, is pinned by a test so it cannot drift
+unnoticed, and accounts for the 47.7% figure above.
+
+### Consequences
+
+**All earlier threshold numbers are withdrawn.** Every sweep run before this
+fix measured the flawed rule, including the `R1≤50 / R5≤20` recommendation.
+Those figures are void and must not be reused or cited. A fresh sweep was run
+against the corrected rule.
+
+**This reopens the R4 question.** R4 was previously recommended for deferral on
+the grounds that R5 alone reached 100% of Walmart records with zero orphans.
+That result was an artefact of the noise: once the junk welds are removed, R5
+at DF≤5 reaches 98.2% and leaves 46 records with no candidates at all. R5 alone
+no longer provides a coverage guarantee, so the case for a fallback rule is
+stronger than when deferral was proposed. Decision still open.
+
+**Validation stays label-free.** Every figure here comes from the two source
+tables. No labelled data was read, consistent with [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+
+Implementation: `src/text_normalisation.py`, with 11 tests in
+`tests/test_text_normalisation.py` covering both the recoveries and the
+accepted residual.
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository
