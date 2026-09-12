@@ -528,6 +528,135 @@ accepted residual.
 
 ---
 
+## D16 — Final blocking design: five rules, and the thresholds behind them
+
+**Decision.** Blocking runs five rules. A pair becomes a candidate if *any* of
+them accepts it.
+
+| Rule | What it looks for | Setting |
+| --- | --- | --- |
+| **R1** | A shared word that is uncommon across both tables | document frequency ≤ 100 |
+| **R2** | A shared word shaped like a part number (letters + digits, ≥5 chars) | any frequency |
+| **R3** | The same brand **plus** at least one other shared word | — |
+| **R5** | A shared character sequence that is rare on the Amazon side | Amazon-side frequency ≤ 50 |
+| **R4** | Nearest neighbours by text similarity, for records nothing else reached | 100 neighbours |
+
+Implementation: `src/blocking.py`. Run `python -m src.blocking` for the report.
+
+### Why these thresholds
+
+Chosen from a measured sweep, not judgement. The governing metric is
+**Amazon-reach**: how many of the 22,074 Amazon records are reachable from any
+Walmart record at all. An unreachable record cannot be matched no matter how
+good the scoring is. Walmart-side coverage saturates early and stops
+discriminating between options, so it could not be used to choose.
+
+Sweeping R1 and R5 together (R2 fixed, R3 and R4 excluded):
+
+| R1 | R5 | Candidates | Orphans | Amazon-reach |
+| ---: | ---: | ---: | ---: | ---: |
+| ≤50 | ≤20 | 158,439 | 6 | 93.6% |
+| ≤50 | ≤50 | 230,013 | 5 | 96.0% |
+| ≤100 | ≤20 | 301,493 | 2 | 97.5% |
+| **≤100** | **≤50** | **359,165** | **1** | **98.3%** |
+| ≤100 | ≤100 | 488,560 | 1 | 98.6% |
+
+The returns bend sharply at the chosen point: the step before it buys +2.3
+percentage points of reach, the step after it buys +0.3. Loosening further
+spends compute for almost nothing.
+
+### Why we did not loosen R1 or R5 further to reach full coverage
+
+At the chosen setting one Walmart record still had no candidates. Two ways to
+fix that: loosen the thresholds until it is swept up, or give it a dedicated
+fallback.
+
+Loosening is the wrong instrument. It is indiscriminate — pushing R5 to ≤200
+to reach zero orphans costs 922,896 candidates, quadrupling the workload across
+*every* record to rescue one. It also degrades the rules it touches, since each
+loosening admits weaker evidence everywhere. A targeted fallback fixes the
+actual problem at its actual size.
+
+### R4 reinstated — a reversal, and why
+
+R4 was previously recommended for deferral, on the grounds that R5 alone
+reached 100% of Walmart records with zero orphans, leaving nothing for a
+fallback to do.
+
+**That finding was an artefact.** It was measured before the [D15](#d15--fixing-how-text-is-split-for-n-gram-blocking)
+normalisation fix, when roughly 79% of R5's candidates came from meaningless
+character sequences welded across word boundaries. Those spurious candidates
+were manufacturing the appearance of full coverage. With the noise removed, R5
+at DF≤5 reaches 98.2% and leaves 46 records with nothing.
+
+So the justification for deferring R4 did not survive the fix, and R4 is kept
+as a guarantee that no record is ever left with zero candidates. The reversal
+is recorded rather than quietly corrected, because the reasoning matters: the
+original recommendation was sound given what was measured at the time, and the
+measurement was wrong.
+
+### R3 measured for the first time — and it is expensive
+
+Every sweep before this point covered only R1, R2 and R5. R3 had been designed
+but never implemented or measured, so the 359,165 figure above does not include
+it. Measured now:
+
+| Rule set | Candidates | Orphans | Amazon-reach | max/record |
+| --- | ---: | ---: | ---: | ---: |
+| R1 + R2 + R5 | 359,165 | 1 | 98.3% | 561 |
+| **+ R3 (as specified)** | **730,885** | **0** | **99.7%** | **2,773** |
+| + R3 requiring ≥2 other words | 496,729 | 0 | 99.4% | 1,556 |
+| + R3 requiring ≥3 other words | 410,649 | 1 | 99.0% | 953 |
+
+R3 as specified **doubles the candidate count** — 371,720 pairs are unique to
+it — to buy 1.4 percentage points of reach, and pushes the worst-case record
+from 561 candidates to 2,773. By the same value test used to choose the R1/R5
+thresholds, that is poor. Requiring two other shared words instead of one keeps
+zero orphans and 99.4% reach for a third fewer pairs.
+
+R3 is implemented as specified and approved. The tightening is **not** applied
+unilaterally; it is recorded here as an open option.
+
+### R4 is currently inert — and that is fine
+
+With R3 included there are **zero** orphans, so R4 rescues nothing and
+contributes no pairs. It is retained deliberately: it costs nothing when it
+fires on nothing, and it is the guarantee that keeps a threshold change from
+silently reintroducing unreachable records. A safety net that never catches
+anyone is working.
+
+### Brand harvesting — the cross-field idea, applied early
+
+R3 cannot rely on the `brand` column, which the corruption blanked on about
+half the records. Instead every record's text is searched for any brand name
+either retailer uses. This recovers a brand for **88.2%** of Walmart and
+**90.6%** of Amazon records whose column is empty — the [D8](#d8--the-field-scrambling-problem-and-the-plan-for-it)
+cross-field principle showing up in blocking as well as in scoring.
+
+### Final result at the approved settings
+
+```
+730,885 candidate pairs, from 56,376,996 possible  (98.70% reduction)
+Walmart records with at least one candidate : 2,554/2,554 (100%)   orphans: 0
+Amazon records reachable                    : 22,001/22,074 (99.7%)
+Candidates per Walmart record               : median 183, p99 1,578, max 2,773
+```
+
+### Two notes on consistency
+
+R1 counts a word's frequency across **both** tables pooled, while R5 counts a
+sequence's frequency on the **Amazon side only**. The asymmetry is not
+principled — it is how each rule was first written. Whether R1 should switch to
+an Amazon-side count is an open question raised separately, and it would only
+ever admit more candidates, never fewer.
+
+Every figure here is a count derived from the two source tables. None of it
+consults the labelled data, per [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+These numbers describe how *reachable* records are, never how *correct* the
+pairs are — that cannot be known until the final evaluation.
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository
