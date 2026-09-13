@@ -87,8 +87,18 @@ for the full reasoning and the trade-off being accepted deliberately.
   be used as design input. D14 lists exactly what is contaminated and what is
   safe.
 
-If a proposed step would touch labelled data, stop and say so rather than
-running it.
+- **No self-labelling either.** Do not hand-judge pairs to create a feedback
+  signal — not 40, not 4 — even though doing so would never open a sealed file.
+  Writing our own answer key defeats the purpose as thoroughly as reading the
+  supplied one. This rules out learned blocking schemes of the `dedupe`/Zingg
+  kind, tuning thresholds by eye, and any model trained on judgements we
+  produced (including a language model standing in for a human judge). See
+  [D19](docs/DECISIONS.md#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+  The line: reasoning about the data's *structure* is fine; judging whether a
+  specific pair is a match, and feeding that back into a design choice, is not.
+
+If a proposed step would touch labelled data — or would manufacture a
+substitute for it — stop and say so rather than running it.
 
 ## 6. Dataset scope
 
