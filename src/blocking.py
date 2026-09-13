@@ -84,6 +84,13 @@ R5_MAX_DOC_FREQUENCY = 50
 # given a smaller allowance.
 R4_NEIGHBOURS = 100
 
+# R4 last resort: sequence lengths to fall back to when the usual five-character
+# window finds a record nothing at all to compare against. Tried in order, most
+# selective first, stopping as soon as one finds something — so a record is
+# never matched on weaker evidence than it actually has. Five is not repeated
+# here because reaching this point means five already failed.
+R4_FALLBACK_NGRAM_SIZES = (4, 3)
+
 
 def is_identifier_like(token: str) -> bool:
     """Does this word look like a manufacturer part number?
@@ -124,6 +131,12 @@ class BlockingIndex:
     b_brand_index: dict[str, set[str]] = field(default_factory=dict)
     # Needed only by the Amazon-side safety net, which searches in reverse.
     a_ngram_index: dict[str, set[str]] = field(default_factory=dict)
+    # Pooled record text, kept so alternate sequence lengths can be derived
+    # on demand by the last-resort rule.
+    a_text: dict[str, str] = field(default_factory=dict)
+    b_text: dict[str, str] = field(default_factory=dict)
+    # {sequence length: (lookup, per-record sequences)}, built only if needed.
+    _short_cache: dict = field(default_factory=dict)
 
 
 def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
@@ -150,6 +163,7 @@ def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
         a_tokens=a_tokens, b_tokens=b_tokens,
         a_ngrams=a_ngrams, b_ngrams=b_ngrams,
         a_brands=a_brands, b_brands=b_brands,
+        a_text=a_text, b_text=b_text,
     )
     index.b_token_index = _invert(b_tokens)
     index.b_ngram_index = _invert(b_ngrams)
@@ -322,6 +336,43 @@ def _rule_r4_symmetric(index: BlockingIndex, b_id: str) -> set[str]:
     return _nearest_neighbours(index.b_ngrams[b_id], index.a_ngram_index, index.a_ngrams)
 
 
+def _walmart_sequences_of_length(index: BlockingIndex, n: int):
+    """Walmart records indexed by ``n``-character sequences, built on demand.
+
+    Only the last-resort rule needs these, and only for a handful of records,
+    so paying to build them upfront for every run would be waste. The result is
+    cached in case several records need the same length.
+    """
+    if n not in index._short_cache:
+        grams = {k: char_ngrams(text, n) for k, text in index.a_text.items()}
+        index._short_cache[n] = (_invert(grams), grams)
+    return index._short_cache[n]
+
+
+def _rule_r4_short(index: BlockingIndex, b_id: str) -> set[str]:
+    """Last resort: retry an unreached Amazon record with shorter sequences.
+
+    Some records share no five-character sequence with anything in Walmart, so
+    the nearest-neighbour search has nothing to rank and returns empty. Two
+    causes, both real in this data:
+
+    - the record is built almost entirely of words shorter than five letters,
+      so it barely produces any five-character sequences at all
+      (``"mydesk pink lap desk"`` yields just two); or
+    - it produces plenty, but none of them occur anywhere in Walmart.
+
+    Shortening the window makes sequences easier to share. That is the whole
+    trick, and also the whole risk: shorter sequences are less selective, so
+    this deliberately tries the longest one that works and stops there.
+    """
+    for n in R4_FALLBACK_NGRAM_SIZES:
+        lookup, grams = _walmart_sequences_of_length(index, n)
+        hits = _nearest_neighbours(char_ngrams(index.b_text[b_id], n), lookup, grams)
+        if hits:
+            return hits
+    return set()
+
+
 # Applied in this order. R4 runs last and only where the others found nothing.
 PRIMARY_RULES = {"R1": _rule_r1, "R2": _rule_r2, "R3": _rule_r3, "R5": _rule_r5}
 
@@ -373,6 +424,17 @@ def candidates_by_rule(index: BlockingIndex) -> dict[str, dict[str, set[str]]]:
         for a_id in _rule_r4_symmetric(index, b_id):
             symmetric[a_id].add(b_id)
     result["R4-sym"] = dict(symmetric)
+
+    # Anything the symmetric pass still could not reach gets one final attempt
+    # with shorter sequences.
+    reached |= {b for hits in symmetric.values() for b in hits}
+    short: dict[str, set[str]] = collections.defaultdict(set)
+    for b_id in index.b_tokens:
+        if b_id in reached:
+            continue
+        for a_id in _rule_r4_short(index, b_id):
+            short[a_id].add(b_id)
+    result["R4-short"] = dict(short)
     return result
 
 
@@ -403,7 +465,7 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
           f"R5 Amazon-DF<={R5_MAX_DOC_FREQUENCY}  R4 neighbours={R4_NEIGHBOURS}")
 
     print(f"\n  {'rule':<8} {'pairs':>10} {'unique to rule':>15} {'A records reached':>19}")
-    for name in ("R1", "R2", "R3", "R5", "R4", "R4-sym"):
+    for name in ("R1", "R2", "R3", "R5", "R4", "R4-sym", "R4-short"):
         rule = by_rule[name]
         pairs = sum(len(v) for v in rule.values())
         others = {
