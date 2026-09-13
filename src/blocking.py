@@ -19,6 +19,7 @@ evidence:
 
 - **R1 — a shared rare word.** Two records using the same uncommon word is
   unlikely to be coincidence. Common words like "black" or "with" are ignored.
+  Rarity is judged by how many *Amazon* records hold the word.
 - **R2 — a shared part-number-shaped word.** A token mixing letters and digits
   (``ph3100u``, ``elplp12``) is almost always a manufacturer part number, which
   is close to decisive evidence.
@@ -55,8 +56,10 @@ from src.text_normalisation import char_ngrams, word_tokens
 
 # --- Settings, with the reasoning in docs/DECISIONS.md (D16) -----------------
 
-# R1: ignore a word once it appears in more than this many records. Measured
-# across both tables pooled.
+# R1: ignore a word once it appears in more than this many *Amazon* records.
+# Counted on the Amazon side only, because that is what determines how many
+# candidates the word actually pulls in — the number of Walmart records holding
+# it costs nothing. See docs/DECISIONS.md (D18).
 R1_MAX_DOC_FREQUENCY = 100
 
 # R2: what counts as "part-number shaped" — at least this long, and containing
@@ -116,7 +119,6 @@ class BlockingIndex:
     b_ngrams: dict[str, set[str]]
     a_brands: dict[str, set[str]]
     b_brands: dict[str, set[str]]
-    token_doc_frequency: collections.Counter          # pooled across both tables
     b_token_index: dict[str, set[str]] = field(default_factory=dict)
     b_ngram_index: dict[str, set[str]] = field(default_factory=dict)
     b_brand_index: dict[str, set[str]] = field(default_factory=dict)
@@ -141,12 +143,6 @@ def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
     a_ngrams = {k: char_ngrams(v) for k, v in a_text.items()}
     b_ngrams = {k: char_ngrams(v) for k, v in b_text.items()}
 
-    # How many records contain each word, counting each record once however
-    # many times the word occurs in it, pooled over both tables.
-    doc_frequency = collections.Counter()
-    for tokens in list(a_tokens.values()) + list(b_tokens.values()):
-        doc_frequency.update(tokens)
-
     a_brands = _harvest_brands(table_a, a_tokens, table_a, table_b)
     b_brands = _harvest_brands(table_b, b_tokens, table_a, table_b)
 
@@ -154,7 +150,6 @@ def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
         a_tokens=a_tokens, b_tokens=b_tokens,
         a_ngrams=a_ngrams, b_ngrams=b_ngrams,
         a_brands=a_brands, b_brands=b_brands,
-        token_doc_frequency=doc_frequency,
     )
     index.b_token_index = _invert(b_tokens)
     index.b_ngram_index = _invert(b_ngrams)
@@ -215,11 +210,18 @@ def _harvest_brands(
 # --- The rules ---------------------------------------------------------------
 
 def _rule_r1(index: BlockingIndex, a_id: str) -> set[str]:
-    """Shared word that is rare across the two tables pooled."""
+    """Shared word that appears in few Amazon records.
+
+    "Few" is counted on the Amazon side alone. The size of a word's Amazon
+    posting list *is* its cost — it is exactly how many candidates the word
+    contributes — so that list is both the filter and the answer, and there is
+    no separate frequency table to fall out of step with it.
+    """
     hits: set[str] = set()
     for token in index.a_tokens[a_id]:
-        if index.token_doc_frequency[token] <= R1_MAX_DOC_FREQUENCY:
-            hits |= index.b_token_index.get(token, set())
+        postings = index.b_token_index.get(token)
+        if postings is not None and len(postings) <= R1_MAX_DOC_FREQUENCY:
+            hits |= postings
     return hits
 
 
@@ -396,8 +398,9 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
     print("BLOCKING RESULT")
     print("=" * 78)
     print(f"  Walmart records {n_a:,}  x  Amazon records {n_b:,}  =  {full:,} possible pairs")
-    print(f"  settings: R1 DF<={R1_MAX_DOC_FREQUENCY}  R5 DF<={R5_MAX_DOC_FREQUENCY}  "
-          f"R4 neighbours={R4_NEIGHBOURS}")
+    print(f"  settings: R1 Amazon-DF<={R1_MAX_DOC_FREQUENCY}  "
+          f"R3 >={R3_MIN_SHARED_WORDS} shared words  "
+          f"R5 Amazon-DF<={R5_MAX_DOC_FREQUENCY}  R4 neighbours={R4_NEIGHBOURS}")
 
     print(f"\n  {'rule':<8} {'pairs':>10} {'unique to rule':>15} {'A records reached':>19}")
     for name in ("R1", "R2", "R3", "R5", "R4", "R4-sym"):

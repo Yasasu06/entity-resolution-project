@@ -530,10 +530,14 @@ accepted residual.
 
 ## D16 — Final blocking design: five rules, and the thresholds behind them
 
-> ⚠️ **Two settings here were changed by [D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap).**
-> R3 now requires **two** other shared words rather than one, and R4 now runs
-> in **both directions** rather than only from the Walmart side. The R1 and R5
-> thresholds and all the reasoning behind them stand unchanged.
+> ⚠️ **Three settings here were later changed.**
+> [D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap) made
+> R3 require **two** other shared words rather than one, and made R4 run in
+> **both directions** rather than only from the Walmart side.
+> [D18](#d18--r1-counts-word-frequency-on-the-amazon-side-only) changed R1 to
+> count word frequency on the **Amazon side only** rather than pooled across
+> both tables. The threshold *values* and the reasoning for choosing them
+> stand unchanged.
 
 **Decision.** Blocking runs five rules. A pair becomes a candidate if *any* of
 them accepts it.
@@ -811,6 +815,95 @@ Every figure above is a count taken from the two source tables. No labelled
 data was read, per [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
 These numbers say how *reachable* records are, never how *correct* the pairs
 are.
+
+---
+
+## D18 — R1 counts word frequency on the Amazon side only
+
+**Decision.** R1 ignores a word once it appears in more than 100 **Amazon**
+records. Previously it counted the word across both tables pooled.
+
+### The problem with counting both tables
+
+R1's job is to skip words too common to mean anything. The natural question is
+"common where?" — and the original implementation answered "across both tables
+added together", which is the wrong measure of cost.
+
+Blocking runs as *"for each Walmart record, find Amazon records."* The work a
+word creates is therefore **exactly the number of Amazon records holding it**.
+How many Walmart records also contain it is irrelevant to cost — it inflates
+the pooled count without creating a single extra comparison.
+
+Because Amazon is 8.6× the size of Walmart, the pooled figure is usually
+dominated by the Amazon side anyway, so the distortion is mild. But it is
+systematic and one-directional, and it discards exactly the words that are
+*distinctive to Walmart's catalogue*:
+
+| Word | Walmart records | Amazon records | Pooled | Verdict under pooled counting |
+| --- | ---: | ---: | ---: | --- |
+| `stationery` | 327 | **7** | 334 | rejected — though it costs 7 |
+| `draper` | 153 | **16** | 169 | rejected — though it costs 16 |
+| `diagonal` | 137 | 93 | 230 | rejected |
+| `manual` | 68 | 90 | 158 | rejected |
+
+`draper` is a projector-screen brand. Walmart stocks a lot of them and Amazon
+only 16. Under pooled counting that word was thrown away as "too common",
+when using it would have cost sixteen comparisons.
+
+### The switch cannot remove anything
+
+This is arithmetic, not an empirical finding. Pooled frequency is the Walmart
+count *plus* the Amazon count, so it is always greater than or equal to the
+Amazon count alone. Every word admitted under the old rule is therefore still
+admitted under the new one. The change can only ever add candidates.
+
+Measured at the live threshold of 100: **42 words newly admitted, 0 lost.**
+
+*(An earlier measurement of this question reported 72 words. That was taken
+when the threshold was 50. The figure moves with the cutoff, and 42 is the
+number that applies to the rule as it actually runs.)*
+
+### Effect on the candidate set
+
+| | Before | After |
+| --- | ---: | ---: |
+| R1 pairs | 236,025 | **305,101** |
+| Total candidate pairs | 508,612 | **564,273** |
+| Reduction | 99.0978% | 98.9991% |
+| Walmart records reached by R1 | 2,485 | 2,505 |
+| Median candidates per record | 161 | 187 |
+| Worst-case record | 1,560 | 1,615 |
+
+A 10.9% increase overall — smaller than R1's own growth, because some of the
+new pairs were already being found by other rules, and because the Amazon-side
+safety net had less left to rescue (11,883 pairs → 10,599).
+
+### What it does not buy — stated plainly
+
+**Reachability is unchanged.** Still zero Walmart records without candidates,
+and still exactly 2 Amazon records unreachable — the same two the
+nearest-neighbour rescue cannot help ([D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap)).
+
+So this change does not close any gap. What it adds is **evidence depth**:
+55,661 pairs that no rule previously produced, and additional routes to pairs
+that were previously found by only one rule. Whether any of those pairs is a
+real match cannot be known until the final evaluation.
+
+That makes this the same kind of purchase as every other loosening in the
+blocking design — insurance bought against an unrecoverable failure we cannot
+currently measure, at a cost in compute we can. It is justified on the
+asymmetry, not on a demonstrated gain.
+
+### A side benefit: one source of truth
+
+The pooled frequency table has been removed rather than replaced. R1 now reads
+the length of a word's Amazon posting list — the same list it then returns —
+so the filter and the result come from one structure that cannot fall out of
+step with itself. R5 was already written this way; R1 now matches it.
+
+### Label-free
+
+Every figure here is a count from the two source tables, per [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
 
 ---
 
