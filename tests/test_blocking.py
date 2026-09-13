@@ -66,15 +66,22 @@ def test_brand_is_recovered_from_the_title_when_the_column_is_blank():
     assert index.a_brands["A_0"] == {"acme"}, "brand should be found inside the title"
 
 
-def test_r3_needs_a_second_shared_word_beyond_the_brand():
-    """Brand alone must not be enough — that block is far too broad."""
-    a = make_table([{"title": "acme alpha", "brand": "acme"}], "A")
+def test_r3_needs_two_shared_words_beyond_the_brand():
+    """Brand alone is far too broad, and brand plus one word is still too free."""
+    a = make_table([{"title": "acme alpha beta", "brand": "acme"}], "A")
     b = make_table([
-        {"title": "acme zeta", "brand": "acme"},    # brand only -> rejected
-        {"title": "acme alpha", "brand": "acme"},   # brand + 'alpha' -> accepted
+        {"title": "acme zeta", "brand": "acme"},          # brand only -> rejected
+        {"title": "acme alpha", "brand": "acme"},         # brand + 1 word -> rejected
+        {"title": "acme alpha beta", "brand": "acme"},    # brand + 2 words -> accepted
     ], "B")
     r3 = candidates_by_rule(build_index(a, b))["R3"]
-    assert r3["A_0"] == {"B_1"}
+    assert r3["A_0"] == {"B_2"}
+
+
+def test_r3_threshold_is_the_configured_one():
+    """Guard against the setting drifting without the tests noticing."""
+    from src.blocking import R3_MIN_SHARED_WORDS
+    assert R3_MIN_SHARED_WORDS == 2
 
 
 # --- R4: the safety net -------------------------------------------------------
@@ -102,6 +109,53 @@ def test_r4_returns_at_most_the_configured_number_of_neighbours():
     b = make_table([{"title": "commonword"} for _ in range(R4_NEIGHBOURS + 25)], "B")
     r4 = candidates_by_rule(build_index(a, b))["R4"]
     assert len(r4.get("A_0", set())) <= R4_NEIGHBOURS
+
+
+# --- R4 symmetric: the Amazon-side safety net ---------------------------------
+
+def test_symmetric_r4_rescues_an_unreached_amazon_record():
+    """An Amazon record nothing reached must still end up in some candidate list.
+
+    Every other rule is phrased "for each Walmart record, find Amazon records",
+    so an Amazon record nobody happens to reach is invisible to all of them.
+    """
+    a = make_table([{"title": "kvr400x64c3a memory module"}], "A")
+    b = make_table([
+        {"title": "kvr400x64c3a memory module"},        # reached by R2
+        {"title": "kvr400x64c3a memory widget thing"},  # also reachable
+    ], "B")
+    by_rule = candidates_by_rule(build_index(a, b))
+    reached = set()
+    for rule in by_rule.values():
+        for hits in rule.values():
+            reached |= hits
+    assert set(b["unique_id"]) <= reached
+
+
+def test_symmetric_r4_stays_silent_when_everything_is_already_reached():
+    a = make_table([{"title": "acme alpha beta gamma"}], "A")
+    b = make_table([{"title": "acme alpha beta gamma"}], "B")
+    by_rule = candidates_by_rule(build_index(a, b))
+    assert not by_rule["R4-sym"], "nothing was unreached, so it must not fire"
+
+
+def test_symmetric_r4_keys_pairs_by_walmart_id():
+    """Its output must share the shape of every other rule."""
+    a = make_table([{"title": "alpha beta gamma delta"}], "A")
+    b = make_table([{"title": "alpha zzz"}, {"title": "beta qqq"}], "B")
+    by_rule = candidates_by_rule(build_index(a, b))
+    valid_a = set(a["unique_id"]); valid_b = set(b["unique_id"])
+    for a_id, hits in by_rule["R4-sym"].items():
+        assert a_id in valid_a
+        assert hits <= valid_b
+
+
+def test_both_safety_nets_use_the_same_neighbour_count():
+    """The two directions are deliberately symmetric - see D17."""
+    import inspect
+    from src.blocking import _rule_r4, _rule_r4_symmetric
+    assert "R4_NEIGHBOURS" not in inspect.getsource(_rule_r4)
+    assert "R4_NEIGHBOURS" not in inspect.getsource(_rule_r4_symmetric)
 
 
 # --- whole-pipeline properties ------------------------------------------------

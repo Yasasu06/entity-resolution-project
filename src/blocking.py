@@ -28,9 +28,12 @@ evidence:
 - **R5 — a shared rare character sequence.** Catches part numbers the two
   retailers punctuate differently, which word-level rules miss entirely. See
   ``text_normalisation`` and docs/DECISIONS.md (D15).
-- **R4 — a last-resort safety net.** Any Walmart record that *still* has no
-  candidate is matched to its nearest Amazon records by text similarity, so no
-  record is left with nothing.
+- **R4 — a last-resort safety net, in both directions.** Any Walmart record
+  that *still* has no candidate is matched to its nearest Amazon records by
+  text similarity. The same is then done in reverse for any Amazon record no
+  Walmart record reached — because every other rule is phrased as "for each
+  Walmart record, find Amazon records", and that phrasing cannot see an Amazon
+  record nothing happened to reach.
 
 Rules are numbered for their order of design, not their order of application —
 R4 was designed before R5 and deliberately runs last, since it only exists to
@@ -60,6 +63,12 @@ R1_MAX_DOC_FREQUENCY = 100
 # both a letter and a digit.
 R2_MIN_IDENTIFIER_LENGTH = 5
 
+# R3: how many shared words beyond the brand name are required. One is too
+# weak — brand plus a single common word ("black", "usb") matches far too
+# freely. Measured: requiring two cuts the candidate set by a third while
+# keeping every Walmart record reachable.
+R3_MIN_SHARED_WORDS = 2
+
 # R5: ignore a character sequence once it appears in more than this many
 # *Amazon* records. Counted on the Amazon side only, because that is what
 # determines how many candidates the sequence actually pulls in.
@@ -67,7 +76,9 @@ R5_MAX_DOC_FREQUENCY = 50
 
 # R4: how many nearest neighbours to offer a record that nothing else reached.
 # Chosen to be close to the median number of candidates a normal record gets,
-# so a rescued record is neither starved nor flooded.
+# so a rescued record is neither starved nor flooded. The same count is used in
+# both directions — see docs/DECISIONS.md (D17) for why the Amazon side is not
+# given a smaller allowance.
 R4_NEIGHBOURS = 100
 
 
@@ -109,6 +120,8 @@ class BlockingIndex:
     b_token_index: dict[str, set[str]] = field(default_factory=dict)
     b_ngram_index: dict[str, set[str]] = field(default_factory=dict)
     b_brand_index: dict[str, set[str]] = field(default_factory=dict)
+    # Needed only by the Amazon-side safety net, which searches in reverse.
+    a_ngram_index: dict[str, set[str]] = field(default_factory=dict)
 
 
 def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
@@ -146,6 +159,7 @@ def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
     index.b_token_index = _invert(b_tokens)
     index.b_ngram_index = _invert(b_ngrams)
     index.b_brand_index = _invert(b_brands)
+    index.a_ngram_index = _invert(a_ngrams)
     return index
 
 
@@ -219,10 +233,12 @@ def _rule_r2(index: BlockingIndex, a_id: str) -> set[str]:
 
 
 def _rule_r3(index: BlockingIndex, a_id: str) -> set[str]:
-    """Same brand AND at least one other shared word.
+    """Same brand AND at least ``R3_MIN_SHARED_WORDS`` other shared words.
 
-    Brand alone is too coarse to be useful on its own, so it acts as a cheap
-    partition that a second piece of agreement then narrows.
+    Brand alone is far too coarse to use by itself — the "hp" block holds 318
+    Amazon records — so it acts as a cheap partition that further agreement
+    then narrows. Requiring two other shared words rather than one is what
+    keeps this rule from dominating the whole candidate set.
     """
     same_brand: set[str] = set()
     for brand in index.a_brands[a_id]:
@@ -233,7 +249,7 @@ def _rule_r3(index: BlockingIndex, a_id: str) -> set[str]:
     for b_id in same_brand:
         # "Another" shared word means one that is not itself the brand name.
         shared = (a_tokens & index.b_tokens[b_id]) - index.a_brands[a_id]
-        if shared:
+        if len(shared) >= R3_MIN_SHARED_WORDS:
             hits.add(b_id)
     return hits
 
@@ -248,33 +264,60 @@ def _rule_r5(index: BlockingIndex, a_id: str) -> set[str]:
     return hits
 
 
-def _rule_r4(index: BlockingIndex, a_id: str) -> set[str]:
-    """Safety net: the most textually similar Amazon records, however weak.
+def _nearest_neighbours(
+    query_grams: set[str],
+    target_ngram_index: dict[str, set[str]],
+    target_grams: dict[str, set[str]],
+) -> set[str]:
+    """The most textually similar records from the other table.
 
-    Only used for a record that every other rule missed. Without it such a
-    record has no candidates at all and therefore cannot possibly be matched —
-    a silent, unrecoverable loss. Similarity is the proportion of character
-    sequences the two records share.
+    Similarity is the proportion of character sequences the two records share
+    (shared / total distinct across both). Only records sharing at least one
+    sequence are scored, which keeps this fast without changing the answer — a
+    record sharing nothing would score zero regardless.
 
-    Only records sharing at least one sequence are considered, which keeps this
-    fast without changing the result: a record sharing nothing would score zero
-    anyway.
+    Written once and used in both directions, so the Walmart-side and
+    Amazon-side safety nets cannot drift apart.
     """
-    a_grams = index.a_ngrams[a_id]
-    if not a_grams:
+    if not query_grams:
         return set()
 
     overlap: collections.Counter = collections.Counter()
-    for gram in a_grams:
-        for b_id in index.b_ngram_index.get(gram, ()):
-            overlap[b_id] += 1
+    for gram in query_grams:
+        for record_id in target_ngram_index.get(gram, ()):
+            overlap[record_id] += 1
 
     scored = [
-        (shared / len(a_grams | index.b_ngrams[b_id]), b_id)
-        for b_id, shared in overlap.items()
+        (shared / len(query_grams | target_grams[record_id]), record_id)
+        for record_id, shared in overlap.items()
     ]
     scored.sort(reverse=True)
-    return {b_id for _, b_id in scored[:R4_NEIGHBOURS]}
+    return {record_id for _, record_id in scored[:R4_NEIGHBOURS]}
+
+
+def _rule_r4(index: BlockingIndex, a_id: str) -> set[str]:
+    """Safety net, Walmart side: nearest Amazon records for a stranded record.
+
+    Only used for a Walmart record that every other rule missed. Without it
+    such a record has no candidates at all and therefore cannot possibly be
+    matched — a silent, unrecoverable loss.
+    """
+    return _nearest_neighbours(index.a_ngrams[a_id], index.b_ngram_index, index.b_ngrams)
+
+
+def _rule_r4_symmetric(index: BlockingIndex, b_id: str) -> set[str]:
+    """Safety net, Amazon side: nearest Walmart records for an unreached record.
+
+    The mirror image of :func:`_rule_r4`, and it exists because every other
+    rule is written as "for each Walmart record, find Amazon records". That
+    phrasing has a blind spot: an Amazon record that no Walmart record happens
+    to reach is just as unmatchable as a stranded Walmart record, and nothing
+    else in the design notices.
+
+    See docs/DECISIONS.md (D17), including why the affected records turned out
+    not to be the harmless leftovers they were first assumed to be.
+    """
+    return _nearest_neighbours(index.b_ngrams[b_id], index.a_ngram_index, index.a_ngrams)
 
 
 # Applied in this order. R4 runs last and only where the others found nothing.
@@ -304,12 +347,30 @@ def candidates_by_rule(index: BlockingIndex) -> dict[str, dict[str, set[str]]]:
         for name, fn in PRIMARY_RULES.items()
     }
 
-    # R4 only fires where nothing else did.
+    # R4 only fires where nothing else did, on the Walmart side.
     rescued: dict[str, set[str]] = {}
     for a_id in index.a_tokens:
         if not any(result[name][a_id] for name in PRIMARY_RULES):
             rescued[a_id] = _rule_r4(index, a_id)
     result["R4"] = rescued
+
+    # Then the same check in the other direction. This must run last, because
+    # the Walmart-side rescue above can itself make Amazon records reachable,
+    # and there is no point rescuing a record that is already covered.
+    reached: set[str] = set()
+    for rule in result.values():
+        for hits in rule.values():
+            reached |= hits
+
+    symmetric: dict[str, set[str]] = collections.defaultdict(set)
+    for b_id in index.b_tokens:
+        if b_id in reached:
+            continue
+        # Pairs are keyed by Walmart id to match every other rule's shape, so
+        # the found neighbours become the keys and this record the value.
+        for a_id in _rule_r4_symmetric(index, b_id):
+            symmetric[a_id].add(b_id)
+    result["R4-sym"] = dict(symmetric)
     return result
 
 
@@ -339,7 +400,7 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
           f"R4 neighbours={R4_NEIGHBOURS}")
 
     print(f"\n  {'rule':<8} {'pairs':>10} {'unique to rule':>15} {'A records reached':>19}")
-    for name in ("R1", "R2", "R3", "R5", "R4"):
+    for name in ("R1", "R2", "R3", "R5", "R4", "R4-sym"):
         rule = by_rule[name]
         pairs = sum(len(v) for v in rule.values())
         others = {
@@ -361,7 +422,7 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
     print(f"  Walmart records with >=1 candidate : {covered:,}/{n_a:,} "
           f"({covered / n_a * 100:.2f}%)   orphans: {n_a - covered}")
     print(f"  Amazon records reachable           : {reached_b:,}/{n_b:,} "
-          f"({reached_b / n_b * 100:.1f}%)")
+          f"({reached_b / n_b * 100:.2f}%)   unreachable: {n_b - reached_b}")
     print(f"  candidates per Walmart record      : median {sizes[len(sizes) // 2]:,}  "
           f"p99 {sizes[int(0.99 * len(sizes))]:,}  max {sizes[-1]:,}")
     print("\n  NOTE: these are reachability counts, not accuracy. Whether the correct")

@@ -530,6 +530,11 @@ accepted residual.
 
 ## D16 — Final blocking design: five rules, and the thresholds behind them
 
+> ⚠️ **Two settings here were changed by [D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap).**
+> R3 now requires **two** other shared words rather than one, and R4 now runs
+> in **both directions** rather than only from the Walmart side. The R1 and R5
+> thresholds and all the reasoning behind them stand unchanged.
+
 **Decision.** Blocking runs five rules. A pair becomes a candidate if *any* of
 them accepts it.
 
@@ -654,6 +659,158 @@ Every figure here is a count derived from the two source tables. None of it
 consults the labelled data, per [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
 These numbers describe how *reachable* records are, never how *correct* the
 pairs are — that cannot be known until the final evaluation.
+
+---
+
+## D17 — Tightening R3, and closing the Amazon-side reachability gap
+
+**Two decisions, taken together.**
+
+1. **R3 now requires two other shared words**, not one, beyond the brand match.
+2. **R4 now runs in both directions.** A new symmetric pass rescues any Amazon
+   record that no Walmart record reached, using the same 100-neighbour
+   allowance as the original Walmart-side rule.
+
+### 1. Why R3 was tightened
+
+R3 as first specified — same brand plus *one* other shared word — was measured
+for the first time in D16 and turned out to dominate the candidate set:
+
+| R3 setting | Candidates | Walmart orphans | Amazon-reach | worst record |
+| --- | ---: | ---: | ---: | ---: |
+| ≥1 other word | 730,885 | 0 | 99.7% | 2,773 |
+| **≥2 other words** | **496,729** | **0** | **99.4%** | **1,556** |
+| ≥3 other words | 410,649 | 1 | 99.0% | 953 |
+
+One extra shared word is a weak filter, because the word can be anything —
+"black", "usb", "cable". Requiring two removes a third of all candidate pairs,
+keeps every Walmart record reachable, and halves the worst-case record's
+workload, for 0.3 percentage points of Amazon-reach.
+
+Going to three starts costing real coverage and reintroduces an orphan, so two
+is the point where the rule stops dominating without starting to hurt.
+
+### 2. Why the Amazon side needed its own safety net
+
+Every rule — R1, R2, R3, R5, and the original R4 — is phrased *"for each
+Walmart record, find matching Amazon records."* That phrasing has a blind spot
+it cannot see out of: an Amazon record that no Walmart record happens to reach
+is never considered by anything.
+
+This matters exactly as much as a stranded Walmart record. A true match is a
+pair, and it is lost if *either* side is unreachable. R4 was designed only for
+the Walmart side and had never been intended to address this.
+
+### The correction that changed the decision
+
+The gap was first argued to be mostly harmless, on this reasoning: Amazon holds
+22,074 records against Walmart's 2,554, so most Amazon records cannot have a
+partner — there are not enough Walmart records to go round. A specific example
+supported it: `B_1037`, an HP LaserJet toner whose part number `c4096a` appears
+nowhere in the Walmart table, not even as a substring. Walmart evidently does
+not stock it, so excluding it costs nothing.
+
+**That reasoning was tested and did not hold.** Of the 133 unreachable Amazon
+records at the tightened setting, **none shared zero words with Walmart** —
+every one had vocabulary overlap. They were not `B_1037`-style isolates. They
+were unreachable because their overlap was not *discriminative*: common words
+that fail R1's frequency cutoff, no rare character sequences, and not enough
+agreement to clear R3.
+
+And they are ordinary products, not oddities:
+
+```
+B_314   audio-technica ath-ckl200bk in-ear headphones
+B_894   kingston datatraveler 8 gb high-speed usb flash drive dtig3
+B_700   m-rock mesa verde compact camera bag
+B_1241  d-link printer accessories
+```
+
+Mainstream goods from major brands, of the kind Walmart plausibly stocks.
+`B_894` even carries `kingston` in its brand column — it failed R3 only because
+no Kingston record in Walmart shared two further words with it.
+
+So the assumption that these were mostly unmatchable leftovers was not
+supported by the data, and the case for closing the gap was stronger than first
+presented. The original reasoning is recorded here rather than quietly replaced,
+because the correction is the point: a plausible structural argument was
+checked against the records themselves and did not survive.
+
+### Why the full neighbour count, not a reduced one
+
+A smaller allowance for the Amazon side was considered, on the argument that
+100 neighbours for a record with no partner is mostly waste.
+
+That argument rested on the same "mostly unmatched" premise the measurement
+undercut. If these records plausibly have real partners, then trimming the
+allowance trims the chance of catching them — saving a rounding error in
+compute at the cost of the very thing the rule exists to protect. The two
+directions therefore use the same count, and the nearest-neighbour search is
+written **once** and called twice, so they cannot drift apart.
+
+### Cost
+
+| | Pairs |
+| --- | ---: |
+| Before the symmetric pass | 496,729 |
+| Added by it | **11,883** |
+| **Total** | **508,612** |
+
+A 2.4% increase. Against an asymmetry that has governed every blocking decision
+in this project — a dropped pair is unrecoverable, an extra pair merely costs
+the scoring step a little work — that is a small premium for removing a whole
+category of guaranteed loss.
+
+### Final result
+
+```
+508,612 candidate pairs from 56,376,996 possible   (99.0978% reduction)
+Walmart records with at least one candidate : 2,554/2,554 (100%)    orphans: 0
+Amazon records reachable                    : 22,072/22,074 (99.99%)
+Candidates per Walmart record               : median 161, p99 978, max 1,560
+```
+
+Per rule, after the changes:
+
+| Rule | Pairs | Unique to it |
+| --- | ---: | ---: |
+| R1 | 236,025 | 149,944 |
+| R2 | 6,695 | 2,479 |
+| R3 | 179,940 | 137,564 |
+| R5 | 186,541 | 113,669 |
+| R4 (Walmart side) | 0 | 0 |
+| R4 (Amazon side) | 11,883 | 11,883 |
+
+### Two records remain unreachable — and cannot be rescued this way
+
+The symmetric pass closed 131 of the 133. Two resist it:
+
+```
+B_2852    "mydesk pink lap desk"
+          -> only two 5-character sequences exist ('mydes', 'ydesk'),
+             because almost every word is shorter than five characters.
+             Neither appears anywhere in the Walmart table.
+
+B_14604   mivizu ipad endulge skin
+          -> 21 sequences, none of which appear in any Walmart record.
+```
+
+Nearest-neighbour rescue ranks by shared character sequences. These two share
+none with anything in Walmart, so there is nothing to rank and the rule returns
+empty. This is a limit of the method, not a bug.
+
+They could be reached by a further fallback — word overlap including common
+words, or shorter sequences for records made entirely of short words — at a
+cost of at most 200 pairs. That is **not** implemented; it is recorded here as
+an open option and as the current measured ceiling: **2 Amazon records out of
+22,074 (0.009%) cannot be matched by this design.**
+
+### Label-free, as always
+
+Every figure above is a count taken from the two source tables. No labelled
+data was read, per [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+These numbers say how *reachable* records are, never how *correct* the pairs
+are.
 
 ---
 
