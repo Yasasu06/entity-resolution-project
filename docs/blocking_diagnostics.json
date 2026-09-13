@@ -1,0 +1,61 @@
+{
+  "settings": {
+    "r1_max_amazon_doc_frequency": 100,
+    "r3_min_shared_words": 2,
+    "r5_max_amazon_doc_frequency": 50
+  },
+  "headline": {
+    "walmart_records": 2554,
+    "amazon_records": 22074,
+    "possible_pairs": 56376996,
+    "candidate_pairs": 564450,
+    "discarded_pairs": 55812546,
+    "reduction_ratio": 0.989988,
+    "share_discarded": 0.989988
+  },
+  "exclusion_spread": {
+    "per_walmart_record": {
+      "min_discarded": 20459,
+      "median_discarded": 21887,
+      "p99_discarded": 22037,
+      "max_discarded": 22066
+    },
+    "records_keeping_under_50_candidates": 68
+  },
+  "near_misses": {
+    "r1_amazon_df_100_to_150": 333833,
+    "r3_shared_words_2_to_1": 232899,
+    "r5_amazon_df_50_to_75": 62350,
+    "any_of_the_three": 613067
+  },
+  "discarded_sample": {
+    "sample_size": 100000,
+    "categories": {
+      "shared_nothing_at_all": {
+        "count": 67308,
+        "share": 0.6731
+      },
+      "shared_only_words_too_common": {
+        "count": 27645,
+        "share": 0.2764
+      },
+      "shared_only_sequences_too_common": {
+        "count": 4645,
+        "share": 0.0464
+      },
+      "brand_agreed_but_too_few_other_words": {
+        "count": 402,
+        "share": 0.004
+      }
+    },
+    "shared_word_count_distribution": {
+      "0": 0.7195,
+      "1": 0.2247,
+      "2": 0.0445,
+      "3": 0.0086,
+      "4": 0.0017,
+      "5+": 0.001
+    }
+  },
+  "note": "Summary only. The discarded pairs themselves are not stored: they are fully regenerable by rerunning src.blocking against the untouched raw data. No labelled data was consulted (see docs/DECISIONS.md D14, D21)."
+}

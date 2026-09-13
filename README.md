@@ -79,6 +79,8 @@ inherit — so it needs running once after cloning. See
 ```bash
 python src/inspect_datasets.py          # structural summary of the raw data
 python -m src.baseline_token_overlap    # sealed baseline (final evaluation only)
+python -m src.blocking                  # generate candidate pairs
+python -m src.blocking_diagnostics      # summarise what blocking discarded
 pytest                                  # the test suite
 ```
 

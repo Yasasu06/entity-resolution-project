@@ -1112,6 +1112,127 @@ particular pair is a genuine match informed the design, per
 
 ---
 
+## D21 — Summarise what blocking discards, rather than logging it
+
+**Decision.** Blocking now emits a summary of what it excluded, written to
+[`blocking_diagnostics.json`](blocking_diagnostics.json) by
+`src/blocking_diagnostics.py`. The discarded pairs themselves are **not**
+stored.
+
+### Why record anything
+
+Blocking throws away **55,812,546 of 56,376,996 pairs — 99.00% of the space**.
+A step that discards that much should not do so silently. If a real match is
+lost here nothing downstream can recover it, so the exclusion deserves at least
+enough of a trace to reason about.
+
+### Why a summary rather than a log
+
+Storing 55.8 million pairs would cost gigabytes to preserve something entirely
+regenerable: rerun `src.blocking` against the untouched raw data and the
+identical set comes back. What a rerun does *not* give you at a glance is a
+characterisation of those pairs — which is the part actually worth keeping.
+
+### Is this standard practice?
+
+**Partly, and the distinction is worth being exact about.** The blocking
+literature has three established evaluation metrics: **reduction ratio**,
+**pair completeness**, and **pairs quality**
+([survey](https://arxiv.org/pdf/1905.06167)).
+
+- **Reduction ratio is standard and label-free.** It is reported here.
+- **Pair completeness and pairs quality are equally standard but both require
+  the answer key.** Under [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+  neither can be computed until the final evaluation.
+
+So the usual way of characterising a blocking step is unavailable to us for the
+entire build. There is no named standard technique for describing the discarded
+set without labels. **Everything beyond the reduction ratio here is a design
+choice for this project, not an established method** — reasoned from the fact
+that the recall-side metrics are off the table and something has to stand in
+their place.
+
+### What it reports, and what each thing is for
+
+**1. Headline counts and reduction ratio.** The standard metric.
+
+**2. How the discarding falls across records.** Pairs discarded per Walmart
+record: minimum 20,459, median 21,887, maximum 22,066 — meaning the thinnest
+record retained just 8 candidates out of 22,074. **68 records keep fewer than
+50 candidates.** Those are the records most exposed if blocking has erred, and
+they are worth naming rather than leaving inside an average.
+
+**3. Near-miss counts — the most useful number here.** How many extra pairs
+each rule would admit if its threshold moved one notch:
+
+| Loosening | Extra pairs |
+| --- | ---: |
+| R1, Amazon-DF 100 → 150 | 333,833 |
+| R3, shared words 2 → 1 | 232,899 |
+| R5, Amazon-DF 50 → 75 | 62,350 |
+| **Any of the three** | **613,067** |
+
+This says the design sits on a steep slope, not a plateau: a modest loosening
+on all three fronts would **more than double** the candidate set, which
+currently stands at 564,450. That is a useful thing to know and impossible to
+infer from the reduction ratio alone. It quantifies how consequential the
+threshold choices are, without saying anything about whether they are correct.
+
+**4. A sampled taxonomy of why pairs were discarded.** From 100,000 uniformly
+sampled discarded pairs, each placed in the strongest category it qualifies
+for:
+
+| The best evidence this pair had | Share |
+| --- | ---: |
+| Nothing at all — no shared word, no shared sequence | **67.31%** |
+| Shared words, but all too common for R1 | 27.64% |
+| Shared sequences, but all too common for R5 | 4.64% |
+| Brand agreed, but too few other shared words | **0.40%** |
+
+And how much overlap discarded pairs had at all:
+
+| Shared words | Share of discarded pairs |
+| --- | ---: |
+| 0 | 71.95% |
+| 1 | 22.47% |
+| 2 | 4.45% |
+| 3 | 0.86% |
+| 4 | 0.17% |
+| 5 or more | 0.10% |
+
+**Two-thirds of everything discarded had literally nothing in common** with its
+counterpart, and 72% shared not one word. That is the reassuring shape: the
+bulk of the discarding is obviously safe, and the genuinely marginal calls are
+a thin band. The 0.40% brand-agreed bucket is the closest thing to a borderline
+population — around 223,000 pairs scaled to the full space — and it is exactly
+the group R3's two-word requirement was tightened to exclude
+([D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap)).
+
+### A self-check built into the taxonomy
+
+One bucket exists purely to catch a bug: `UNEXPECTED_shared_part_number`. R2
+accepts a shared part-number-shaped word at *any* frequency, so a discarded
+pair sharing one would mean a rule is not doing what it claims. The bucket is
+empty, and a test asserts it stays that way.
+
+### What this does not establish
+
+Nothing here says whether any discarded pair was a genuine match. It describes
+the **shape** of what was excluded, not its correctness. Pair completeness —
+the metric that would answer that — needs the answer key and waits for the
+final evaluation.
+
+The figures are reproducible: the sample uses a fixed seed, so the numbers do
+not drift between runs.
+
+### Label-free
+
+Every figure is a count or a set operation over the two source tables, per
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
+[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository
