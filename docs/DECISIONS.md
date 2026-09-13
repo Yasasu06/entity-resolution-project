@@ -805,9 +805,11 @@ empty. This is a limit of the method, not a bug.
 
 They could be reached by a further fallback — word overlap including common
 words, or shorter sequences for records made entirely of short words — at a
-cost of at most 200 pairs. That is **not** implemented; it is recorded here as
-an open option and as the current measured ceiling: **2 Amazon records out of
-22,074 (0.009%) cannot be matched by this design.**
+cost of at most 200 pairs.
+
+> ✅ **This was subsequently built. See [D20](#d20--a-last-resort-tier-for-records-with-no-five-character-overlap).**
+> Both records are now reachable, and the design has no unreachable records in
+> either direction.
 
 ### Label-free, as always
 
@@ -1002,6 +1004,111 @@ feedback, no way to catch a bad design choice before the final evaluation, and
 a system that may well perform worse than one tuned against 40 labelled pairs.
 That is the price of the claim, and it is being paid deliberately — consistent
 with the trade-off already accepted in [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+
+---
+
+## D20 — A last-resort tier for records with no five-character overlap
+
+**Decision.** When an Amazon record shares no five-character sequence with
+anything in Walmart, retry it with **shorter** sequences — four characters
+first, then three — and stop at the first length that finds something.
+
+This closes the gap [D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap)
+left open. **No record in either table is now unreachable.**
+
+### The problem
+
+Two Amazon records survived even the symmetric safety net, for two different
+reasons:
+
+```
+B_2852    "mydesk pink lap desk"
+          Almost every word is shorter than the five-character window, so the
+          record produces only two sequences in total ('mydes', 'ydesk').
+          Neither occurs anywhere in Walmart.
+
+B_14604   "mivizu ipad red endulge skin skins decals ... cipdwrprd"
+          Produces 21 sequences, but not one of them occurs in Walmart.
+```
+
+Nearest-neighbour rescue ranks candidates by *shared* sequences. With none
+shared there is nothing to rank, so the rule returned empty. The failure was
+structural, not a bug.
+
+### Why shorter sequences, and why not simply use three
+
+Shortening the window makes sequences easier to share — that is the entire
+trick, and equally the entire risk, because shorter sequences are far less
+selective. Measured on the two records:
+
+| Length | `B_2852` | `B_14604` |
+| --- | --- | --- |
+| 5 | 0 shared — unreachable | 0 shared — unreachable |
+| **4** | **2 shared: `pink`(31), `desk`(71)** | **4 shared: `cipd`(1), `endu`(5), `skin`(9), `ipad`(64)** |
+| 3 | 5 shared, reaching 397 Walmart records | 26 shared, reaching 615 records |
+
+Three characters works but is markedly worse: it reaches hundreds of records on
+fragments like `esk`, `des` and `ink`, which carry no meaning. Four characters
+surfaces whole words — `pink`, `desk`, `skin`, `ipad` — and one genuinely rare
+sequence, `cipd`, which occurs in exactly one Walmart record.
+
+So the rule tries the **most selective length that works** and stops there,
+rather than dropping straight to the weakest option. Both records were rescued
+at four characters; the three-character tier has never fired on this data. It
+remains as a further step should a record ever need it.
+
+### Cost
+
+| | Pairs |
+| --- | ---: |
+| Before | 564,273 |
+| Added by this tier | **177** |
+| **Total** | **564,450** |
+
+177 pairs — 0.03% — against the ≤200 estimated beforehand.
+
+### Result
+
+```
+564,450 candidate pairs from 56,376,996 possible   (98.9988% reduction)
+Walmart records with at least one candidate : 2,554/2,554 (100%)
+Amazon records reachable                    : 22,074/22,074 (100%)
+Candidates per Walmart record               : median 187, p99 991, max 1,615
+```
+
+### What this does and does not establish
+
+It establishes **reachability**: every record in both tables now appears in at
+least one candidate pair, so no record is excluded by construction.
+
+It does **not** establish that the rescues are useful. The evidence behind them
+is weak, and measurably so — similarity scores for the rescued pairs run
+between 0.019 and 0.049, against a median record whose candidates come from
+rare words, part numbers or brand agreement. `B_2852` in particular contains
+four words in total, two of which (`pink`, `desk`) are all the rule has to work
+with. A record that thin may simply not be matchable by any method.
+
+Whether the correct partner is among these candidates — or whether either
+record has a partner at all — cannot be known until the final evaluation, per
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+What the tier guarantees is that the possibility is no longer foreclosed.
+
+### Why it is worth 177 pairs regardless
+
+The same asymmetry that governs every blocking decision here. A pair never
+generated is unrecoverable no matter how good the scoring is; a weak pair that
+gets generated merely costs the scoring step a little work to reject. At 0.03%
+of the candidate set, removing the last category of certain loss is cheap
+insurance — and it means the blocking stage can be described without an
+asterisk.
+
+### Label-free
+
+Every figure above is a count or a text-similarity score computed from the two
+source tables. No labelled data was read, and no judgement about whether any
+particular pair is a genuine match informed the design, per
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
+[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
 
 ---
 

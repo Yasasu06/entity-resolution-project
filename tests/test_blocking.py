@@ -158,6 +158,51 @@ def test_both_safety_nets_use_the_same_neighbour_count():
     assert "R4_NEIGHBOURS" not in inspect.getsource(_rule_r4_symmetric)
 
 
+# --- R4 short sequences: the last-resort tier ---------------------------------
+
+def test_short_sequence_tier_rescues_a_record_made_of_short_words():
+    """A record of sub-five-letter words yields almost no 5-grams.
+
+    This is the B_2852 shape: "mydesk pink lap desk" produces only two
+    five-character sequences, neither of which occurs in the other table.
+    """
+    a = make_table([{"title": "pink desk lamp for home"}], "A")
+    b = make_table([{"title": "mydesk pink lap desk"}], "B")
+    by_rule = candidates_by_rule(build_index(a, b))
+    reached = set()
+    for rule in by_rule.values():
+        for hits in rule.values():
+            reached |= hits
+    assert "B_0" in reached, "the short-word record must not be left unreachable"
+
+
+def test_short_sequence_tier_stays_silent_when_nothing_is_stranded():
+    a = make_table([{"title": "kvr400x64c3a memory module"}], "A")
+    b = make_table([{"title": "kvr400x64c3a memory module"}], "B")
+    assert not candidates_by_rule(build_index(a, b))["R4-short"]
+
+
+def test_longer_sequences_are_tried_before_shorter_ones():
+    """Least-weak-evidence-first: 4 is attempted before falling back to 3.
+
+    Both real cases were rescued at four characters, so the three-character
+    tier never fired — which is the intended behaviour, not an accident.
+    """
+    from src.blocking import R4_FALLBACK_NGRAM_SIZES
+    assert R4_FALLBACK_NGRAM_SIZES == (4, 3)
+    assert list(R4_FALLBACK_NGRAM_SIZES) == sorted(R4_FALLBACK_NGRAM_SIZES, reverse=True)
+
+
+def test_short_sequence_tier_respects_the_neighbour_cap():
+    a = make_table([{"title": "pink thing"} for _ in range(R4_NEIGHBOURS + 30)], "A")
+    b = make_table([{"title": "pink lap desk"}], "B")
+    short = candidates_by_rule(build_index(a, b))["R4-short"]
+    rescued = {b_id for hits in short.values() for b_id in hits}
+    if rescued:
+        count = sum(1 for hits in short.values() if "B_0" in hits)
+        assert count <= R4_NEIGHBOURS
+
+
 # --- whole-pipeline properties ------------------------------------------------
 
 def test_every_walmart_record_gets_an_entry_and_only_valid_amazon_ids():
