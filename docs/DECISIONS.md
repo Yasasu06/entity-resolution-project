@@ -907,6 +907,104 @@ Every figure here is a count from the two source tables, per [D14](#d14--strict-
 
 ---
 
+## D19 — No self-labelling: we will not create our own answer key either
+
+**Decision.** Nobody on this project hand-judges pairs to create a feedback
+signal. Not a batch of 30, not a batch of 3. This holds even though such
+judgements would never touch the sealed `train`/`valid`/`test` files.
+
+### The gap this closes
+
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+forbids *reading* the answer key. It says nothing about *writing* one.
+
+That leaves an obvious loophole. Nothing stopped us pulling 40 raw candidate
+pairs, deciding by eye which were genuine matches, and tuning thresholds
+against our own judgements. No sealed file would be opened. The letter of D14
+would be satisfied — and its entire purpose defeated, because we would have
+manufactured exactly the ground truth it exists to deny us.
+
+D19 closes that loophole explicitly.
+
+### Why, when real practitioners do exactly this
+
+This is worth being clear about: **the rejected approach is standard industry
+practice, and it works.** The two most widely used open-source entity
+resolution tools both depend on it. `dedupe` learns its blocking predicates
+from pairs a human labels interactively. Zingg reaches production quality from
+roughly 30-40 human-labelled pairs via active learning. A Forward Deployed
+Engineer arriving at a client site on Monday would very likely spend Tuesday
+labelling a few dozen pairs by hand, and would be right to.
+
+We are deliberately choosing a harder constraint than the industry standard.
+
+The reason is that the project's claim depends on it. This build exists to
+demonstrate designing an entity resolution system *with genuinely zero access
+to ground truth* — the position of an engineer facing a new client's data
+before any labelling effort exists. A private, informal answer key would make
+that claim false, and the claim is the point.
+
+### What this rules out, concretely
+
+- **Learned blocking schemes.** The `dedupe`/Zingg style of tuning blocking
+  predicates against labelled examples is off the table for this build. Our
+  blocking rules are justified by the structure of the data and by pure counts
+  (reduction ratio, reachability, block sizes) — never by how well they
+  separate known matches.
+- **Threshold tuning by eye.** Match/no-match thresholds cannot be chosen by
+  sampling pairs and judging which look right.
+- **Any model trained on judgements we produced**, by hand or by asking a
+  language model to stand in for a human judge.
+- **Iterating on a design because a sample "looked wrong."**
+
+### Where the line actually falls
+
+The distinction that matters is **what is being judged**, not who is judging.
+
+**Allowed — reasoning about the data's structure.** Noticing that
+`rr-vtps-28pk-r1` is a part number split by hyphens; that collapsing all
+whitespace welds `desktop computers` into meaningless character sequences;
+that the `brand` column is empty on half the records. These are observations
+about how the data is shaped. Every design decision in this project so far
+rests on this kind of reasoning, plus counts — and none of it required knowing
+whether any particular pair is a match. The [D15](#d15--fixing-how-text-is-split-for-n-gram-blocking)
+normalisation fix is the clearest example: driven entirely by the structure of
+the text, with no view on whether any pair matched.
+
+**Forbidden — reasoning about whether a specific pair is the same product**,
+where that judgement then feeds back into a design choice.
+
+Illustrative candidate pairs have been shown in reports throughout this
+project (the Edge memory modules, the Toshiba drives). Those were used to
+explain what the rules do. They were **not** used to select thresholds — every
+threshold here was chosen from counts alone. Under D19 that separation becomes
+a rule rather than a habit.
+
+> **Flagged for confirmation:** the boundary above is an interpretation, not
+> something that was specified. If the intended line is stricter — no looking
+> at candidate pairs at all, even to illustrate behaviour — say so and it will
+> be applied.
+
+### Deferred, not rejected
+
+The self-labelling approach is explicitly worth testing, as a **separate
+follow-up exercise once this strict build is complete**. Running both and
+comparing them would be a genuinely interesting result: how much does a few
+dozen hand-labelled pairs actually buy, against a system designed without any?
+
+That comparison only works if this build stays clean. Doing it later is what
+makes it possible; doing it now is what would make it meaningless.
+
+### The cost, stated plainly
+
+This is stricter than real practice and we lose something real by it: no early
+feedback, no way to catch a bad design choice before the final evaluation, and
+a system that may well perform worse than one tuned against 40 labelled pairs.
+That is the price of the claim, and it is being paid deliberately — consistent
+with the trade-off already accepted in [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository
