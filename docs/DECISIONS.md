@@ -189,6 +189,32 @@ demonstrated rather than asserted.
 > **~$5 per run**. "Sparing" should mean a number, so here is one to design
 > against until a real one exists.
 
+### Where a language model may and may not be used
+
+A language model is used **only** for escalation on the uncertain band. It is
+**never** the matcher.
+
+This needs stating explicitly because the project will later build a second,
+embedding-based system, and it would be easy to assume "the AI system" means
+"a language model scores the pairs". It does not, for a reason that is simply
+arithmetic: blocking produces **564,450 candidate pairs**. Scoring those with a
+language model would be roughly **1,100× the 500-call budget above** — the two
+numbers are not in the same universe, and the budget was written for a band of
+a few hundred pairs, not the whole candidate set.
+
+So the division of labour is:
+
+| Job | Volume | Tool |
+| --- | ---: | --- |
+| Matching every candidate pair | ~564,000 | **Embeddings** — computed locally, free after the model downloads, self-supervised |
+| Escalating the uncertain band | ≤500 | **A language model**, within the budget above |
+
+Embeddings also keep the second system compatible with the no-peek policy:
+they are self-supervised and need no labelled data, whereas a supervised
+transformer matcher could not legally be trained here at all
+([D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either),
+[D22](#d22--how-the-two-systems-will-be-compared)).
+
 ---
 
 ## D8 — The field-scrambling problem, and the plan for it
@@ -1230,6 +1256,118 @@ not drift between runs.
 Every figure is a count or a set operation over the two source tables, per
 [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
 [D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+
+---
+
+## D22 — How the two systems will be compared
+
+**Decision.** This project builds **two** complete entity resolution systems on
+the same raw data under the same no-peek policy — one classical and rule-based,
+one built on embeddings — and compares them in a single evaluation at the end.
+Four decisions govern how.
+
+### 1. The contribution is framed in established terms
+
+What this project has been calling the "uncertainty band" already has a name
+and a literature. It is **selective prediction**, also called classification
+with a reject option: the model answers only when confident enough and abstains
+otherwise, producing an explicit **risk–coverage trade-off**. The idea was
+formalised by Chow in 1970, and it has standard metrics — risk-coverage curves,
+accuracy-rejection curves, and the area under them (AURC).
+
+There is also a decade of work on the human-review half: CrowdER (VLDB 2012),
+Corleone (SIGMOD 2014), Falcon and Waldo (both SIGMOD 2017) all address which
+pairs to route to people and at what cost.
+
+**So the framing is not novel, and this project will not claim it is.** An
+earlier assessment in this conversation overstated the novelty; that was
+wrong, and correcting it is an improvement rather than a loss. Adopting the
+established vocabulary and metrics makes the work legible to anyone who knows
+the field, which an invented term would not.
+
+**What appears to remain open** is narrower and worth stating precisely: a
+comparison of *risk-coverage behaviour between a classical matcher and an
+embedding-based one, with review cost attached*. The crowdsourced ER work
+predates transformers; the selective-prediction literature is mostly about
+image classifiers; and a 2025 paper on confidence calibration for LLM-based
+entity matching stops short of abstention, deferral, or routing cost. The
+claim is therefore *applying an established method to an uncompared pair of
+systems* — defensible, and checkable.
+
+### 2. Embeddings do the matching; a language model only escalates
+
+Recorded in full under [D7](#d7--ai-escalation-allowed-real-world-knowledge-judged-on-cost).
+In short: matching all 564,450 candidate pairs with a language model would cost
+roughly 1,100× the escalation budget, so the second system's matcher is
+**embedding-based** — local, free after download, and self-supervised. A
+language model stays reserved for the uncertain band, exactly as originally
+planned.
+
+There is a second reason beyond cost. The published results that make deep
+learning look dominant on this dataset — EMTransformer at 83.95 F1 against
+Magellan's 38.06 — come from **supervised** models trained on labelled pairs.
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
+[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either)
+forbid that outright. So the comparison here is **unsupervised classical versus
+self-supervised embedding**, and those published figures do not apply to it.
+The gap should be expected to be smaller and far less predictable — and the
+comparison is correspondingly less well studied, which makes it more
+interesting rather than less.
+
+### 3. A fixed contract between blocking and matching
+
+Comparing two whole systems has a known weakness: they differ in *every*
+component, so a difference in results cannot be attributed to any one of them.
+The standard remedy is to hold everything constant but one part — which
+requires the parts to be separable.
+
+So the seam is fixed **now**, before either system is finished, in
+`src/interfaces.py`:
+
+```
+table A ──┐
+          ├──►  Blocker  ──►  candidate pairs  ──►  Matcher  ──►  scored pairs
+table B ──┘                  (the contract)
+```
+
+- A blocker returns `unique_id_l`, `unique_id_r`, `rules`.
+- A matcher consumes that and returns `unique_id_l`, `unique_id_r`,
+  `match_probability`.
+- Both shapes are checked at the boundary by `validate_candidates` and
+  `validate_scores`, which reject unknown identifiers, swapped sides,
+  duplicated pairs, invented pairs, unscored pairs, and probabilities outside
+  [0, 1].
+
+**The specific failure this prevents:** if a blocker computed embeddings and
+its own matcher quietly reused them, the two would be welded together and could
+never be swapped — and that would only become apparent at the very end, with
+both systems already built. Passing nothing between stages but this table keeps
+them genuinely independent.
+
+Fixing the seam early also closes a gap found in the blocking design review:
+candidates previously existed only in memory and were discarded when the
+process exited. They are now written to `data/processed/`, which is **not**
+committed, since it is regenerable from `data/raw/` — the same reasoning as
+[D21](#d21--summarise-what-blocking-discards-rather-than-logging-it).
+
+### 4. The final comparison will be pre-registered — later
+
+Unsealing the labels once will produce **four** results: classical end-to-end,
+embedding end-to-end, and two hybrids (classical blocking with the embedding
+matcher, and the reverse) to show which component drives any difference.
+
+Four evaluations against one test set is a multiple-comparisons problem. Choose
+the framing after seeing the numbers and the test set has been fitted to — the
+same contamination D14 exists to prevent, arriving by a different route.
+
+**Commitment:** before the labels are unsealed, the exact comparisons, metrics,
+and what counts as a meaningful difference will be written down and recorded
+here.
+
+**Deliberately not specified yet.** Pre-registering now, with neither system
+built, would mean guessing at metrics for components that do not exist. This is
+a firm commitment for the final-evaluation stage, not an open question — and it
+is recorded here so it cannot be quietly skipped.
 
 ---
 
