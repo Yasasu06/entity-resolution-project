@@ -52,6 +52,13 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from src.data_loading import ID_COLUMN, attribute_columns, load_source_tables
+from src.interfaces import (
+    CANDIDATE_COLUMNS,
+    LEFT_ID,
+    RIGHT_ID,
+    save_candidates,
+    validate_candidates,
+)
 from src.text_normalisation import char_ngrams, word_tokens
 
 # --- Settings, with the reasoning in docs/DECISIONS.md (D16) -----------------
@@ -496,6 +503,57 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
     return combined
 
 
+# --- Conforming to the blocking/matching contract ----------------------------
+
+def to_candidate_frame(by_rule: dict[str, dict[str, set[str]]]) -> pd.DataFrame:
+    """Flatten per-rule results into the shared candidate-pair table.
+
+    The ``rules`` column lists every rule that proposed each pair, joined by
+    "+". That provenance is not needed to score a pair, but it is what lets a
+    later disagreement between two systems be explained rather than merely
+    observed. See src/interfaces.py for the contract this satisfies.
+    """
+    proposed_by: dict[tuple[str, str], list[str]] = collections.defaultdict(list)
+    for rule_name, per_record in by_rule.items():
+        for a_id, b_ids in per_record.items():
+            for b_id in b_ids:
+                proposed_by[(a_id, b_id)].append(rule_name)
+
+    rows = [
+        (a_id, b_id, "+".join(sorted(rules)))
+        for (a_id, b_id), rules in proposed_by.items()
+    ]
+    frame = pd.DataFrame(rows, columns=CANDIDATE_COLUMNS)
+    # Sorted so the file is byte-identical between runs, which makes the
+    # pipeline reproducible and diffs meaningful.
+    return frame.sort_values([LEFT_ID, RIGHT_ID], ignore_index=True)
+
+
+class ClassicalBlocker:
+    """The rule-based blocker, wrapped to satisfy the ``Blocker`` contract.
+
+    Exists so this blocker can be swapped for an embedding-based one in the
+    later component comparison without anything downstream changing.
+    """
+
+    name = "classical"
+
+    def generate_candidates(
+        self, table_a: pd.DataFrame, table_b: pd.DataFrame
+    ) -> pd.DataFrame:
+        index = build_index(table_a, table_b)
+        return to_candidate_frame(candidates_by_rule(index))
+
+
 if __name__ == "__main__":
     table_a, table_b = load_source_tables()
-    report(build_index(table_a, table_b))
+    index = build_index(table_a, table_b)
+    report(index)
+
+    # Hand the result to the next stage through the shared contract rather
+    # than leaving it to exist only inside this process.
+    frame = to_candidate_frame(candidates_by_rule(index))
+    validate_candidates(frame, table_a, table_b)
+    written = save_candidates(frame, ClassicalBlocker.name)
+    print(f"\n  {len(frame):,} candidate pairs written to "
+          f"{written.relative_to(written.parent.parent.parent)}")

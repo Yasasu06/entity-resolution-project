@@ -38,6 +38,12 @@ desktop.ini
 # --- Secrets ----------------------------------------------------------------
 .env
 
-# NOTE: dataset CSVs under data/ are deliberately NOT ignored. The benchmark
-# data is part of this project and is committed so the repo is reproducible
-# from a single clone.
+# --- Generated intermediates ------------------------------------------------
+# Everything under data/processed/ is produced by running the pipeline and can
+# be regenerated from data/raw/, so it is not committed. Same reasoning as not
+# storing discarded pairs (docs/DECISIONS.md D21).
+data/processed/
+
+# NOTE: dataset CSVs under data/raw/ are deliberately NOT ignored. The
+# benchmark data is part of this project and is committed so the repo is
+# reproducible from a single clone.
