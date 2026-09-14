@@ -23,9 +23,11 @@ evidence:
 - **R2 — a shared part-number-shaped word.** A token mixing letters and digits
   (``ph3100u``, ``elplp12``) is almost always a manufacturer part number, which
   is close to decisive evidence.
-- **R3 — the same brand, plus one other shared word.** Brand alone is far too
-  broad (the "hp" block holds 318 Amazon records), but combined with any second
-  shared word it narrows sharply.
+- **R3 — a shared brand-vocabulary term, plus two other shared words.** Brand
+  alone is far too broad (the "hp" block holds 318 Amazon records), and brand
+  plus a single common word is still far too free. Note that the term is not
+  always genuinely the brand — see :func:`_rule_r3` for what this rule really
+  matches on.
 - **R5 — a shared rare character sequence.** Catches part numbers the two
   retailers punctuate differently, which word-level rules miss entirely. See
   ``text_normalisation`` and docs/DECISIONS.md (D15).
@@ -210,8 +212,24 @@ def _harvest_brands(
     This is the cross-field idea from D8 applied to blocking. The corruption
     blanked the ``brand`` column on roughly half the records — but it usually
     moved that value into the title rather than deleting it. Looking for known
-    brand names anywhere in the record recovers the brand for about 88% of
-    Walmart and 91% of Amazon records whose column is empty.
+    brand names anywhere in the record finds a brand-vocabulary term for about
+    88% of Walmart and 91% of Amazon records whose column is empty.
+
+    Two caveats, both measured and both deliberately accepted:
+
+    - The vocabulary is drawn from brand *column values*, so it inherits
+      whatever sits there — including ordinary words such as ``case`` and
+      ``digital``. A term being found does not prove it is really the brand.
+    - A record may yield several terms, since products name other companies'
+      brands (an iPad case names Apple). No attempt is made to decide which
+      one is the product's own.
+
+    Multi-word brands are skipped entirely: 511 of 1,507 distinct brand values
+    (33.9%) contain a space, affecting 313 Walmart and 2,231 Amazon records.
+    Matching those reliably inside free text needs phrase handling that would
+    add complexity for a small gain, and R1 and R5 still reach those records.
+
+    The consequence for matching is described on :func:`_rule_r3`.
     """
     vocabulary = _known_brand_vocabulary(table_a, table_b)
     out: dict[str, set[str]] = {}
@@ -256,12 +274,32 @@ def _rule_r2(index: BlockingIndex, a_id: str) -> set[str]:
 
 
 def _rule_r3(index: BlockingIndex, a_id: str) -> set[str]:
-    """Same brand AND at least ``R3_MIN_SHARED_WORDS`` other shared words.
+    """A shared brand-vocabulary term AND ``R3_MIN_SHARED_WORDS`` other words.
 
     Brand alone is far too coarse to use by itself — the "hp" block holds 318
     Amazon records — so it acts as a cheap partition that further agreement
     then narrows. Requiring two other shared words rather than one is what
     keeps this rule from dominating the whole candidate set.
+
+    **What this rule actually does, as opposed to what its name suggests.**
+    "Brand" here means "a term in the harvested brand vocabulary", and that
+    vocabulary is looser than the word implies, in two measured ways:
+
+    1. *It contains ordinary words.* The vocabulary is every single-word value
+       that appears in either table's ``brand`` column, and some of those are
+       words like ``case`` (present in 2,055 records, used as a brand once),
+       ``digital`` (1,594 / 3) or ``iphone`` (690 / 4). **2,140 Amazon records
+       — 9.7% — have only such a term as their harvested brand.**
+    2. *It picks up brands a record merely mentions.* Accessories name the
+       device they fit, so ``roocase ... case for acer iconia tab a500``
+       harvests ``roocase``, ``acer`` and ``case``. **24.4% of Walmart and
+       34.2% of Amazon records harvest two or more brands.**
+
+    For that slice the rule is closer to "three or more shared words, one of
+    which happens to be in the brand list" than to "same brand". The two-word
+    requirement bounds the damage, and over-generating is the cheap direction
+    of error here, so this is accepted rather than fixed — but the rule should
+    not be described as brand agreement. See docs/DECISIONS.md (D16, D23).
     """
     same_brand: set[str] = set()
     for brand in index.a_brands[a_id]:

@@ -564,6 +564,10 @@ accepted residual.
 > count word frequency on the **Amazon side only** rather than pooled across
 > both tables. The threshold *values* and the reasoning for choosing them
 > stand unchanged.
+>
+> ⚠️ **R3 is also described inaccurately throughout this entry.** It does not
+> require brand agreement in the ordinary sense — see
+> [D23](#d23--correcting-how-r3-is-described) for what it actually matches on.
 
 **Decision.** Blocking runs five rules. A pair becomes a candidate if *any* of
 them accepts it.
@@ -572,7 +576,7 @@ them accepts it.
 | --- | --- | --- |
 | **R1** | A shared word that is uncommon across both tables | document frequency ≤ 100 |
 | **R2** | A shared word shaped like a part number (letters + digits, ≥5 chars) | any frequency |
-| **R3** | The same brand **plus** at least one other shared word | — |
+| **R3** | A shared brand-vocabulary term **plus** other shared words (see [D23](#d23--correcting-how-r3-is-described)) | — |
 | **R5** | A shared character sequence that is rare on the Amazon side | Amazon-side frequency ≤ 50 |
 | **R4** | Nearest neighbours by text similarity, for records nothing else reached | 100 neighbours |
 
@@ -703,7 +707,8 @@ pairs are — that cannot be known until the final evaluation.
 
 ### 1. Why R3 was tightened
 
-R3 as first specified — same brand plus *one* other shared word — was measured
+R3 as first specified — one shared brand-vocabulary term plus *one* other
+shared word — was measured
 for the first time in D16 and turned out to dominate the candidate set:
 
 | R3 setting | Candidates | Walmart orphans | Amazon-reach | worst record |
@@ -1368,6 +1373,87 @@ here.
 built, would mean guessing at metrics for components that do not exist. This is
 a firm commitment for the final-evaluation stage, not an open question — and it
 is recorded here so it cannot be quietly skipped.
+
+---
+
+## D23 — Correcting how R3 is described
+
+**Decision.** R3's documentation is corrected to describe what the rule
+actually does. **The rule itself is unchanged** — this is an accuracy fix to
+the description, not a change in behaviour.
+
+### What was wrong
+
+R3 was described everywhere as *"the same brand, plus other shared words"*.
+That overstates it. "Brand" in R3 means *a term in the harvested brand
+vocabulary*, and that vocabulary is looser than the word implies in two
+measured ways.
+
+**1. It contains ordinary words.** The vocabulary is every single-word value
+appearing in either table's `brand` column, so it inherits whatever sits there:
+
+| Term | Records containing it | Times used as a brand |
+| --- | ---: | ---: |
+| `case` | 2,055 | **1** |
+| `digital` | 1,594 | 3 |
+| `iphone` | 690 | 4 |
+| `dual` | 547 | 9 |
+
+47 such terms qualify. **2,140 Amazon records — 9.7% — have only one of these
+as their harvested brand.**
+
+**2. It picks up brands a record merely mentions.** Accessories name the device
+they fit:
+
+```
+A_37  roocase multi-angle folio leather case ... for acer iconia tab a500
+      harvests: roocase (its own brand), acer (the device), case (a word)
+
+A_64  los angeles lakers iphone 3g duo case ... tribeca
+      harvests: tribeca (its own brand), iphone (the device), case (a word)
+```
+
+**24.4% of Walmart and 34.2% of Amazon records harvest two or more terms.**
+
+For that slice, R3 is closer to *"three or more shared words, one of which
+happens to be in the brand list"* than to brand agreement.
+
+### Why the rule is not being changed
+
+The two-word requirement bounds the damage: a spurious brand term still needs
+two genuine shared words alongside it. And over-generating is the cheap
+direction of error under the asymmetry governing every blocking decision here
+— a dropped pair is unrecoverable, an extra one costs the scoring step a little
+work.
+
+Re-tuning would also mean redoing threshold work already measured and approved
+([D17](#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap)), for
+a rule whose behaviour is understood and bounded.
+
+**So the behaviour is accepted and the claim is corrected.** Given that this
+project's argument rests on its reasoning being honest, a rule described as
+doing something stronger than it does is the more damaging of the two errors.
+
+### A related limitation, now also stated
+
+Multi-word brands are skipped entirely — **511 of 1,507 distinct brand values
+(33.9%)** contain a space, affecting 313 Walmart and 2,231 Amazon records.
+Matching those reliably inside free text needs phrase handling that would add
+complexity for a small gain, and R1 and R5 still reach those records. It is a
+coverage limitation, not a correctness one.
+
+### How this was found, and a process note
+
+Both issues surfaced in a deliberate end-to-end review of the finished
+blocking design — reviewing the whole system at once, rather than one piece at
+a time as it was built. Neither was visible while the rules were being built
+individually.
+
+Correcting the wording was recommended at that review and **not carried out at
+the time**, which is why it needed a later pass. Two of the stale phrasings had
+also survived an earlier edit that silently matched nothing and reported
+success. Edits to documentation are now made with a replace that fails loudly
+when it matches nothing, rather than one that can quietly do nothing.
 
 ---
 
