@@ -1457,6 +1457,127 @@ when it matches nothing, rather than one that can quietly do nothing.
 
 ---
 
+## D24 — How abstained pairs are handled: build for humans, measure the AI
+
+**Decision.** Three parts, deliberately separated because only one of them can
+honestly be measured in this project.
+
+| | Approach | What this project does |
+| --- | --- | --- |
+| 1 | Human-only review | **Modelled** under a declared accuracy assumption |
+| 2 | AI-only review | **Measured** — the genuine headline result |
+| 3 | AI-assisted human | **Built and designed for**, justified from the literature, **not measured** |
+
+### Why the obvious choice is the one the research warns about
+
+AI-assisting-a-human looks like the safe middle option. The evidence says
+otherwise.
+
+[Vaccaro, Almaatouq & Malone (*Nature Human Behaviour*, 2024)](https://www.nature.com/articles/s41562-024-02024-1)
+— a preregistered meta-analysis of **106 studies and 370 effect sizes** — found
+human–AI combinations performed **significantly worse than the best of humans
+or AI alone**, with losses concentrated in **decision-making tasks**. Deciding
+whether two records match is a decision task.
+
+[Bansal et al. (CHI 2021)](https://dl.acm.org/doi/epdf/10.1145/3411764.3445717)
+found AI explanations **increased acceptance of the AI's recommendation
+regardless of whether it was correct**. Explanations raised agreement, not
+accuracy.
+
+The evidence is not one-sided. [Human-LLM Collaborative Annotation (CHI 2024)](https://dl.acm.org/doi/full/10.1145/3613904.3641960)
+found human *verification of* LLM labels beat both LLM-only and human-only —
+but "AI proposes, human verifies" is a different shape from "AI advises, human
+decides", and Vaccaro's moderator reconciles them: **gains when the human is
+stronger alone, losses when the AI is.**
+
+### 1. The interface shows evidence, never a recommendation
+
+The review interface presents: the two records, which blocking rules proposed
+the pair, where the matcher's evidence was in tension, and the specific point
+of disagreement. It does **not** display a suggested answer, a predicted label,
+or an AI-written argument for one side.
+
+This follows Bansal directly — a recommendation plus reasoning is the exact
+intervention shown to raise acceptance irrespective of correctness. It is also
+compatible with [Buçinca et al. (CSCW 2021)](https://www.eecs.harvard.edu/~kgajos/papers/2021/bucinca21trust.pdf),
+whose **cognitive forcing functions** — requiring analytic engagement before
+any AI opinion is revealed — significantly reduced over-reliance. Worth
+recording their honest caveat: *people rated the designs that helped most as
+the least pleasant to use.* Reducing over-reliance costs something in comfort.
+
+### 2. Only the AI-only arm produces a real number
+
+AI-only review is fully measurable: the language model decides each abstained
+pair, and the decisions are scored against the answer key at final evaluation.
+This is the headline result, and it answers [D7](#d7--ai-escalation-allowed-real-world-knowledge-judged-on-cost)'s
+question directly — *how much of the review queue can the AI clear at
+equal-or-better precision?*
+
+### 3. Human-only is modelled, with the assumption made visible
+
+> ⚠️ **ASSUMPTION — a model, not an observation.** No human will review these
+> pairs. Human accuracy is an input we supply, not something measured.
+
+Rather than invent a single accuracy figure, the model is run across a
+**range** — 80%, 90%, 95% and 100% correct — and the review economics reported
+as a sensitivity analysis. A single invented number would hide how much the
+conclusion depends on it; a range makes that dependence visible and is more
+honest than pretending to know.
+
+Grounding, such as it is: crowdsourced ER work (CrowdER, Corleone) treats
+worker accuracy as variable enough to require redundancy and voting, so high
+figures should not be assumed. And the abstained band is **by construction the
+hardest subset of pairs** — the ones a calibrated matcher could not separate —
+so published accuracy figures, human or machine, measured on full
+distributions do not transfer to it.
+
+### The constraint that forced this split
+
+**[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either)
+makes option 3 unmeasurable here.** The only people available to review pairs
+are the project's own participants, and hand-judging pairs is exactly what D19
+forbids. So the "human" in options 1 and 3 is necessarily simulated.
+
+And a simulated reviewer **has no psychology**. Every finding above — over-
+reliance, automation bias, anchoring, cognitive forcing — concerns how a real
+person's judgement shifts when a machine offers an opinion. A simulation cannot
+be anchored and cannot over-rely. Any figure produced for option 3 would
+therefore encode *our own assumption about how much assistance helps*, which is
+assuming the conclusion — the same error D14 and D19 exist to prevent.
+
+So option 3 is built and defended from the literature; it is not assigned a
+measured result.
+
+### What will and will not be claimed
+
+**Will:** "We measured AI-only review on the abstained band." · "We modelled
+human-only review across a stated range of accuracies." · "We designed the
+interface to withhold recommendations, on published evidence about
+over-reliance."
+
+**Will not:** "AI assistance improved reviewer accuracy by X%." That claim
+requires reviewers this project does not have.
+
+### The open variable
+
+Vaccaro's moderator — **whether the human or the AI is stronger, alone, on the
+hard band specifically** — decides which approach is actually right in
+deployment. It cannot be known until the band exists and the labels are
+unsealed.
+
+Measuring the AI-only arm supplies one half of that comparison as a real
+number. A strong result weakens the case for keeping a human in the loop at
+all; a weak one strengthens it. Either way the moderator gets **measured rather
+than guessed**, which is the most this project can honestly do.
+
+### Sequencing
+
+None of this can be built until the matcher exists, since the abstained band is
+defined by matcher scores. This entry records the design so it is settled
+before the work starts, not decided under pressure once scores are in hand.
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository

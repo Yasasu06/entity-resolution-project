@@ -118,9 +118,12 @@ across sources that refer to the same real-world company, with no shared ID.
 
 Aimed at Forward Deployed Engineer roles, so the emphasis is on engineering
 judgement, not just model accuracy. The distinguishing focus is **how the
-system handles genuinely uncertain cases**: routing an explicit "unsure" band to
-human review, with sparing AI escalation, rather than forcing every pair into a
-binary match/no-match verdict.
+system handles genuinely uncertain cases**. Rather than forcing every pair into
+a binary verdict, the matcher may abstain — the established name for this is
+**selective prediction**, and the standard way to report it is a
+**risk-coverage curve**. Abstained pairs are routed for review, with sparing AI
+escalation. Use that vocabulary rather than invented terms like "unsure band"
+(see [D22](docs/DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
 
 **Splink** is the intended core matching engine.
 
