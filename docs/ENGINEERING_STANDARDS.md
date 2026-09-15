@@ -3,12 +3,17 @@
 Standing constraints for this repository. They describe how the system is
 built and why, and apply to any change made to it.
 
-## 1. Code style
+## 1. Code and documentation style
 
 - Comments explain **why**, not what. The code already states what it does.
 - Prefer an obvious implementation over a clever one. Where the two conflict,
   legibility wins.
 - Favour explicitness over implicit behaviour.
+- **Write in neutral third person.** Code comments, documentation, decision
+  entries and commit messages describe the system and the reasoning behind it,
+  not a narrator working on it. No first-person narrative, no personal framing,
+  no commentary on who did what or how the work felt. This applies from the
+  first draft — it is a writing standard, not something corrected afterwards.
 
 ## 2. Never silently substitute data
 
@@ -97,6 +102,12 @@ invented terms such as "unsure band"
   and findings in `docs/`.
 - Significant decisions are recorded in `docs/` with their reasoning, so the
   repository explains *why*, not just *what*.
+- **Archives are exported from the tracked tree, never zipped from the working
+  directory.** Use `git archive --format=zip HEAD -o project.zip` or an
+  equivalent clean-tree export. A directory zip would sweep in the virtual
+  environment (~408 MB), generated intermediates under `data/processed/`, the
+  full `.git` history, and any untracked local files — none of which belong in
+  a distributed copy.
 
 ---
 
