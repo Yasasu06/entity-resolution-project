@@ -1,7 +1,7 @@
 # Initial data assessment
 
 Written before any cleaning or matching was done, from a direct reading of the
-raw files. The purpose was to choose a primary dataset on evidence rather than
+raw files. The aim was to select a primary dataset on evidence rather than
 on published accuracy scores.
 
 > ## ⚠️ Parts of this document are label-derived and are QUARANTINED

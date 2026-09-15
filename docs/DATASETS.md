@@ -81,7 +81,7 @@ it, and no synthetic stand-in was generated.
    setup friction to a project whose stated aim is to be reproducible from a
    single `git clone`.
 
-**Why deferring costs us little.** Company is a *textual* benchmark — long
+**Why deferring costs little.** Company is a *textual* benchmark — long
 free-text company descriptions — which is a meaningfully different matching
 problem from the structured-but-corrupted attribute matching this project is
 built around. Adding it would widen the project's scope rather than deepen it.
