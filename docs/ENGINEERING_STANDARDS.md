@@ -54,7 +54,7 @@ for the full reasoning and the trade-off accepted deliberately.
   supplied one. This rules out learned blocking schemes of the `dedupe`/Zingg
   kind, tuning thresholds by eye, and any model trained on judgements produced
   within the project (including a language model standing in for a human
-  judge). See [D19](DECISIONS.md#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+  judge). See [D19](DECISIONS.md#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key).
   The line: reasoning about the data's *structure* is permitted; judging
   whether a specific pair is a match, and feeding that back into a design
   choice, is not.
