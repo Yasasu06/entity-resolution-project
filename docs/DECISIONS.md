@@ -87,7 +87,7 @@ curated-file number is the most common way a project like this quietly
 overstates itself.
 
 **What this stage is actually asking:**
-- Can our own blocking and matching find the 962 known true matches when
+- Can the project's blocking and matching find the 962 known true matches when
   searching the full, realistic space rather than a pre-filtered one?
 - How many false positives does that produce at realistic rarity?
 - Does the approach run practically at that scale at all?
@@ -117,7 +117,7 @@ produce the number that matters ("routing the top N% most-uncertain pairs to a
 human lifts precision from X to Y, at a cost of Z reviews"). A user interface
 demonstrates front-end skill, which is not what this project is arguing. Built
 first, it would also lock in decisions about the review workflow before the
-data has told us what reviewers actually need to see.
+data has shown what reviewers actually need to see.
 
 ---
 
@@ -131,8 +131,8 @@ data has told us what reviewers actually need to see.
 
 **Why invent one at all.** Without a capacity limit, choosing a threshold is
 arbitrary — you can always "send more to review". With one, it becomes a real
-constrained problem: *given that we can only afford 2,000 reviews, where do we
-draw the uncertainty band to catch the most true matches?* That is the question
+constrained problem: *given a budget of only 2,000 reviews, where is the band
+drawn to catch the most true matches?* That is the question
 an actual deployment faces, and it makes the resulting design defensible.
 
 Replace with a real number if one ever becomes available.
@@ -148,7 +148,7 @@ evaluation at the very end of the project.
 
 **Why unsupervised.** Splink learns how much each kind of agreement between two
 records is worth using a statistical method that needs no answer key
-(expectation-maximisation). We *do* have an answer key, and could train on it —
+(expectation-maximisation). An answer key *does* exist, and could be trained on —
 but real client engagements almost never come with 10,000 labelled examples. A
 system that works without them is both a more honest simulation and a stronger
 claim: *"this works with no labelled data, and here is the labelled data
@@ -212,7 +212,7 @@ So the division of labour is:
 Embeddings also keep the second system compatible with the no-peek policy:
 they are self-supervised and need no labelled data, whereas a supervised
 transformer matcher could not legally be trained here at all
-([D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either),
+([D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key),
 [D22](#d22--how-the-two-systems-will-be-compared)).
 
 ---
@@ -246,10 +246,10 @@ column.
    direction, deliberately not attempted now: it is error-prone, and errors
    would contaminate everything downstream.
 
-**Why this is the centrepiece.** The story is not "I used a matching library".
-It is *"I diagnosed exactly why the standard tool underperforms on this
-specific messy data, and extended it to fix that."* That is the work a Forward
-Deployed Engineer actually does at a client site, where the data never matches
+**Why this is the centrepiece.** The contribution is not the use of a matching
+library, but the diagnosis of *why* the standard tool underperforms on this
+specific corruption, and the extension built to address it. That is the work a
+deployment engineer does at a client site, where the data never matches
 the tool's assumptions.
 
 ---
@@ -604,7 +604,7 @@ The returns bend sharply at the chosen point: the step before it buys +2.3
 percentage points of reach, the step after it buys +0.3. Loosening further
 spends compute for almost nothing.
 
-### Why we did not loosen R1 or R5 further to reach full coverage
+### Why R1 and R5 were not loosened further to reach full coverage
 
 At the chosen setting one Walmart record still had no candidates. Two ways to
 fix that: loosen the thresholds until it is swept up, or give it a dedicated
@@ -923,8 +923,8 @@ that were previously found by only one rule. Whether any of those pairs is a
 real match cannot be known until the final evaluation.
 
 That makes this the same kind of purchase as every other loosening in the
-blocking design — insurance bought against an unrecoverable failure we cannot
-currently measure, at a cost in compute we can. It is justified on the
+blocking design — insurance bought against an unrecoverable failure that cannot
+currently be measured, at a cost in compute that can. It is justified on the
 asymmetry, not on a demonstrated gain.
 
 ### A side benefit: one source of truth
@@ -940,7 +940,7 @@ Every figure here is a count from the two source tables, per [D14](#d14--strict-
 
 ---
 
-## D19 — No self-labelling: we will not create our own answer key either
+## D19 — No self-labelling: the project does not create its own answer key
 
 **Decision.** Nobody on this project hand-judges pairs to create a feedback
 signal. Not a batch of 30, not a batch of 3. This holds even though such
@@ -951,11 +951,11 @@ judgements would never touch the sealed `train`/`valid`/`test` files.
 [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
 forbids *reading* the answer key. It says nothing about *writing* one.
 
-That leaves an obvious loophole. Nothing stopped us pulling 40 raw candidate
+That leaves an obvious loophole. Nothing would prevent pulling 40 raw candidate
 pairs, deciding by eye which were genuine matches, and tuning thresholds
-against our own judgements. No sealed file would be opened. The letter of D14
-would be satisfied — and its entire purpose defeated, because we would have
-manufactured exactly the ground truth it exists to deny us.
+against those judgements. No sealed file would be opened. The letter of D14
+would be satisfied — and its entire purpose defeated, because that would
+manufacture exactly the ground truth it exists to deny.
 
 D19 closes that loophole explicitly.
 
@@ -965,11 +965,11 @@ This is worth being clear about: **the rejected approach is standard industry
 practice, and it works.** The two most widely used open-source entity
 resolution tools both depend on it. `dedupe` learns its blocking predicates
 from pairs a human labels interactively. Zingg reaches production quality from
-roughly 30-40 human-labelled pairs via active learning. A Forward Deployed
-Engineer arriving at a client site on Monday would very likely spend Tuesday
-labelling a few dozen pairs by hand, and would be right to.
+roughly 30-40 human-labelled pairs via active learning. An engineer deploying
+against a new client's data would very likely spend the second day labelling a
+few dozen pairs by hand, and would be right to.
 
-We are deliberately choosing a harder constraint than the industry standard.
+This is deliberately a harder constraint than the industry standard.
 
 The reason is that the project's claim depends on it. This build exists to
 demonstrate designing an entity resolution system *with genuinely zero access
@@ -980,13 +980,13 @@ that claim false, and the claim is the point.
 ### What this rules out, concretely
 
 - **Learned blocking schemes.** The `dedupe`/Zingg style of tuning blocking
-  predicates against labelled examples is off the table for this build. Our
+  predicates against labelled examples is off the table for this build. The
   blocking rules are justified by the structure of the data and by pure counts
   (reduction ratio, reachability, block sizes) — never by how well they
   separate known matches.
 - **Threshold tuning by eye.** Match/no-match thresholds cannot be chosen by
   sampling pairs and judging which look right.
-- **Any model trained on judgements we produced**, by hand or by asking a
+- **Any model trained on judgements produced within the project**, by hand or by asking a
   language model to stand in for a human judge.
 - **Iterating on a design because a sample "looked wrong."**
 
@@ -1030,7 +1030,7 @@ makes it possible; doing it now is what would make it meaningless.
 
 ### The cost, stated plainly
 
-This is stricter than real practice and we lose something real by it: no early
+This is stricter than real practice, and something real is lost by it: no early
 feedback, no way to catch a bad design choice before the final evaluation, and
 a system that may well perform worse than one tuned against 40 labelled pairs.
 That is the price of the claim, and it is being paid deliberately — consistent
@@ -1139,7 +1139,7 @@ Every figure above is a count or a text-similarity score computed from the two
 source tables. No labelled data was read, and no judgement about whether any
 particular pair is a genuine match informed the design, per
 [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
-[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+[D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key).
 
 ---
 
@@ -1176,7 +1176,7 @@ literature has three established evaluation metrics: **reduction ratio**,
   the answer key.** Under [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
   neither can be computed until the final evaluation.
 
-So the usual way of characterising a blocking step is unavailable to us for the
+So the usual way of characterising a blocking step is unavailable for the
 entire build. There is no named standard technique for describing the discarded
 set without labels. **Everything beyond the reduction ratio here is a design
 choice for this project, not an established method** — reasoned from the fact
@@ -1260,7 +1260,7 @@ not drift between runs.
 
 Every figure is a count or a set operation over the two source tables, per
 [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
-[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either).
+[D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key).
 
 ---
 
@@ -1312,7 +1312,7 @@ There is a second reason beyond cost. The published results that make deep
 learning look dominant on this dataset — EMTransformer at 83.95 F1 against
 Magellan's 38.06 — come from **supervised** models trained on labelled pairs.
 [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) and
-[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either)
+[D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key)
 forbid that outright. So the comparison here is **unsupervised classical versus
 self-supervised embedding**, and those published figures do not apply to it.
 The gap should be expected to be smaller and far less predictable — and the
@@ -1516,7 +1516,7 @@ equal-or-better precision?*
 ### 3. Human-only is modelled, with the assumption made visible
 
 > ⚠️ **ASSUMPTION — a model, not an observation.** No human will review these
-> pairs. Human accuracy is an input we supply, not something measured.
+> pairs. Human accuracy is a supplied input, not something measured.
 
 Rather than invent a single accuracy figure, the model is run across a
 **range** — 80%, 90%, 95% and 100% correct — and the review economics reported
@@ -1533,7 +1533,7 @@ distributions do not transfer to it.
 
 ### The constraint that forced this split
 
-**[D19](#d19--no-self-labelling-we-will-not-create-our-own-answer-key-either)
+**[D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key)
 makes option 3 unmeasurable here.** The only people available to review pairs
 are the project's own participants, and hand-judging pairs is exactly what D19
 forbids. So the "human" in options 1 and 3 is necessarily simulated.
@@ -1542,7 +1542,7 @@ And a simulated reviewer **has no psychology**. Every finding above — over-
 reliance, automation bias, anchoring, cognitive forcing — concerns how a real
 person's judgement shifts when a machine offers an opinion. A simulation cannot
 be anchored and cannot over-rely. Any figure produced for option 3 would
-therefore encode *our own assumption about how much assistance helps*, which is
+therefore encode *an assumption about how much assistance helps*, which is
 assuming the conclusion — the same error D14 and D19 exist to prevent.
 
 So option 3 is built and defended from the literature; it is not assigned a
@@ -1550,10 +1550,10 @@ measured result.
 
 ### What will and will not be claimed
 
-**Will:** "We measured AI-only review on the abstained band." · "We modelled
-human-only review across a stated range of accuracies." · "We designed the
-interface to withhold recommendations, on published evidence about
-over-reliance."
+**Will:** AI-only review on the abstained band *was measured*. · Human-only
+review *was modelled* across a stated range of accuracies. · The interface
+*was designed* to withhold recommendations, on published evidence about
+over-reliance.
 
 **Will not:** "AI assistance improved reviewer accuracy by X%." That claim
 requires reviewers this project does not have.
@@ -1685,8 +1685,6 @@ right — and better discovered by testing than left buried in a parameter.
 
 ## Working conventions
 
-- **Commit authorship.** All commits are authored solely by the repository
-  owner, with no AI or assistant attribution trailers.
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
   downloaded. Any cleaning produces new files elsewhere.
 - **Data provenance is verified, not assumed.** Every dataset records where it
