@@ -152,7 +152,7 @@ def build_index(table_a: pd.DataFrame, table_b: pd.DataFrame) -> BlockingIndex:
     """Prepare every lookup the rules need, in one pass over each table.
 
     The "inverted indexes" below map a piece of evidence to the Amazon records
-    containing it — the same idea a book index uses, letting us jump straight
+    containing it — the same idea a book index uses, jumping straight
     to the relevant records instead of scanning all 22,074 every time.
     """
     columns = attribute_columns(table_a)

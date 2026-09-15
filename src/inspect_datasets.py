@@ -42,7 +42,7 @@ def describe_source_table(path: Path) -> pd.DataFrame:
     """Report the structure and contents of one source table."""
     # dtype=str keeps every value exactly as written in the file. Without it
     # pandas would silently coerce things like IDs and prices, which would
-    # hide the formatting inconsistencies we are specifically looking for.
+    # hide the formatting inconsistencies this script targets.
     frame = pd.read_csv(path, dtype=str, keep_default_na=False, na_values=[""])
 
     print(f"\n  --- {path.name}  ({human_size(path.stat().st_size)}) ---")
