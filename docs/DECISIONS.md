@@ -1578,6 +1578,111 @@ before the work starts, not decided under pressure once scores are in hand.
 
 ---
 
+## D25 — The prior probability that two random records match
+
+**Decision.** Splink's `probability_two_random_records_match` is set to
+**λ = 2.0e-05**, derived label-free, and sensitivity-tested at final evaluation.
+
+> ⚠️ **ASSUMPTION — a declared estimate, not a measured quantity.** This number
+> cannot be computed without the answer key. It is derived from a documented
+> method plus one honest judgement call, recorded here in full so it can be
+> argued with. Flagged the same way as the review capacity in
+> [D5](#d5--review-capacity-is-an-assumption-clearly-labelled).
+
+### What this parameter is, and why it needs care
+
+Splink's matching model needs a starting point: **before looking at any
+evidence, how likely is it that two records picked at random are the same
+product?** Everything the comparisons contribute is an adjustment to that prior.
+
+The obvious way to set it is to divide the known number of matches by the size
+of the comparison space. **That is reading the answer key**, and would breach
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) at
+the single most consequential parameter in the model. So it is estimated
+instead.
+
+### The method
+
+Splink documents a label-free route: count the pairs caught by **high-precision
+deterministic rules** — rules strict enough that a pair satisfying one is very
+probably a match — then divide by an *assumed* recall for those rules.
+
+Two rules were used, both computed from the source tables alone:
+
+| Deterministic rule | Pairs found |
+| --- | ---: |
+| D1: shares a very rare identifier token (DF ≤ 2, length ≥ 6) | 380 |
+| D2: identical title (same bag of words) | 2 |
+| **Union** | **382** |
+
+### The judgement call: what recall do those rules have?
+
+This is the part that cannot be measured, so it was settled **on its own
+merits, before looking at what λ it implied** — the ordering matters, and is
+stated here so the reasoning can be checked rather than trusted.
+
+The rule requires *both* records to carry the same very rare identifier. Three
+measured facts say it cannot be catching most matches:
+
+- Only **54.7%** of Walmart and **61.0%** of Amazon records contain any
+  identifier-shaped token at all.
+- `modelno` is absent from roughly half of all records.
+- The two retailers punctuate part numbers differently — `rrvtps28pkr1` versus
+  `rr-vtps-28pk-r1` — which is the entire reason
+  [D15](#d15--fixing-how-text-is-split-for-n-gram-blocking) exists.
+
+**Estimated recall: 30–40%.** Taking 35% gives 1,091 implied matches and
+λ = 1.94e-05, rounded to **2.0e-05**.
+
+| Assumed recall | Implied matches | λ |
+| ---: | ---: | ---: |
+| 30% | 1,273 | 2.26e-05 |
+| **35%** | **1,091** | **1.94e-05** |
+| 50% | 764 | 1.36e-05 |
+| 70% | 546 | 9.68e-06 |
+
+### A structural ceiling, for sanity
+
+Walmart has only **2,554** records, so there can be at most 2,554 one-to-one
+matches however generous the assumption. That caps λ at **4.53e-05**. The
+chosen value implies 1,128 matches — about **44%** of Walmart's catalogue
+having an Amazon counterpart, which is plausible for two large retailers with
+overlapping electronics ranges, and comfortably inside the ceiling.
+
+### Honest note on prior exposure
+
+**The method is label-free. The person applying it is not.**
+
+The published match count for this benchmark appears in this project's own
+earlier documentation, so it is known to whoever set this parameter. A
+clean-room derivation cannot honestly be claimed. Had the recall assumption
+been quietly adjusted until λ landed somewhere comfortable, that would be
+precisely the leakage D14 exists to prevent — and it would be undetectable
+from the outside.
+
+What was actually done: the recall figure was fixed from the token-coverage
+reasoning above, and whatever λ fell out was reported. That is a stated
+discipline, not a guarantee, and it belongs in the same category as the prior
+contamination D14 already records rather than being presented as airtight.
+
+### The mitigation that actually settles it
+
+Arguing about the value matters less than showing it does not matter. λ is a
+weak prior that expectation-maximisation largely overrides, so its influence on
+final results should be small.
+
+**Commitment:** at final evaluation, results are recomputed across
+**λ ∈ [1e-05, 4e-05]** and the sensitivity reported. That range is deliberately
+wide — it spans 564 to 2,255 implied matches, or 22% to 88% of Walmart's
+catalogue.
+
+If conclusions hold across it, the assumption demonstrably is not driving
+anything, which is a far stronger claim than any argument for a particular
+value. If conclusions *do* move, that is a finding worth reporting in its own
+right — and better discovered by testing than left buried in a parameter.
+
+---
+
 ## Working conventions
 
 - **Commit authorship.** All commits are authored solely by the repository
