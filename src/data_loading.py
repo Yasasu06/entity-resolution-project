@@ -1,7 +1,7 @@
 """The single, canonical way to load raw benchmark data into this project.
 
 Every notebook and script should load data through this module rather than
-calling ``pd.read_csv`` directly. That gives us one place where the awkward
+calling ``pd.read_csv`` directly. That gives a single place where the awkward
 details of the raw files are handled, so a fix here fixes them everywhere.
 
 The most important of those details:
@@ -47,7 +47,7 @@ TABLE_A_PREFIX = "A"
 TABLE_B_PREFIX = "B"
 
 # Splink expects the identifier column to be called "unique_id" by default, so
-# we adopt that name here rather than renaming things later.
+# that name is adopted here rather than renaming things later.
 ID_COLUMN = "unique_id"
 
 # The labelled pair files that ship with the benchmark.

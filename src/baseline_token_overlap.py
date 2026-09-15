@@ -101,10 +101,10 @@ def score_pairs(pairs: pd.DataFrame, tokens_a: pd.Series, tokens_b: pd.Series) -
 def evaluate(labels: pd.Series, scores: pd.Series, threshold: float) -> dict[str, float]:
     """Score predictions at one threshold.
 
-    - **precision** — of the pairs we called matches, how many really were.
-      Low precision means we waste people's time with false alarms.
-    - **recall** — of the real matches, how many we found.
-      Low recall means we silently miss real duplicates.
+    - **precision** — of the pairs predicted as matches, how many really were.
+      Low precision wastes reviewer time on false alarms.
+    - **recall** — of the real matches, how many were found.
+      Low recall silently misses real duplicates.
     - **F1** — their harmonic mean, a single number balancing the two.
     """
     predicted = scores >= threshold

@@ -75,7 +75,7 @@ def _boundary_is_collapsible(left: str, right: str) -> bool:
 
     Note this looks at the single character touching the gap, not the whole
     token -- ``28pk`` + ``r1`` is *not* joined, because 'k' and 'r' meet at the
-    boundary. That is deliberate and costs us nothing in practice: the
+    boundary. That is deliberate and costs nothing in practice: the
     overlapping character sequences on either side still give the two records
     plenty of shared pieces to match on.
 

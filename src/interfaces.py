@@ -4,8 +4,8 @@ This project will eventually contain **two** complete entity resolution
 systems — one classical and rule-based, one built on embeddings — so that they
 can be compared. The comparison is only meaningful if their parts can be
 swapped: classical blocking with the embedding matcher, and the reverse. That
-tells us which *component* drives any difference in results, rather than
-leaving us with two black boxes and one number each.
+shows which *component* drives any difference in results, rather than
+leaving two black boxes and one number each.
 
 Swapping only works if both systems agree on what passes between the stages.
 This module defines that agreement, and is written before either system is
@@ -22,7 +22,7 @@ matching consumes that table and produces the same pairs with a score attached.
 
 The pitfall this exists to prevent is **coupling**. If a blocker computed
 embeddings and its matcher silently reused them, the two would be welded
-together and could never be swapped — and we would not find out until the very
+together and could never be swapped — and that would not surface until the very
 end, with both systems built. Passing nothing between the stages but this
 table keeps them genuinely independent.
 
@@ -39,7 +39,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Generated files live here. Unlike data/raw/, this directory is NOT committed:
 # everything in it is reproducible by rerunning the pipeline, which is the same
-# reasoning that led us not to store discarded pairs (D21).
+# reasoning applied to discarded pairs (D21).
 PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
 
 # The two identifier columns. These names match those returned by
