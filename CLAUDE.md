@@ -144,30 +144,112 @@ escalation. Use that vocabulary rather than invented terms like "unsure band"
 Where it disagrees with [`docs/DECISIONS.md`](docs/DECISIONS.md), the decision
 log wins.*
 
-**Decisions recorded:** D1–D14. The most recent, D14 (strict no-peek),
-supersedes D6 and invalidates the live status of the D9 baseline result.
+**Decisions recorded: D1–D25.** Several supersede earlier ones — D14 replaced
+D6 and voided the D9 baseline result; D17 and D18 changed settings first stated
+in D16; D23 corrected how R3 had been described throughout. When two entries
+disagree, the higher number wins.
 
-**Blocking design — in progress.** Status as stated by Yasaswi on 2026-09-12:
+## Blocking — complete
 
-- **R1, R2, R3 — approved.**
-- **R5 — being fixed.** It currently matches across word boundaries — tokens
-  glued together across a boundary — which is reported to produce roughly **79%
-  noise**. The fix is to make it respect word boundaries. Instructions for that
-  fix are coming separately.
-- **R4 — pending re-verification.** R4 appeared redundant against the other
-  rules, but that judgement was made while R5 was still unfixed. Re-check
-  whether R4 is genuinely redundant **after** the R5 fix lands, then decide to
-  keep or drop it.
+**Finalised, implemented in `src/blocking.py`, and fully documented.** Produces
+**564,450 candidate pairs** from 56,376,996 possible (98.9988% reduction), with
+**every record on both sides reachable** — no Walmart and no Amazon record is
+excluded by construction.
 
-> ⚠️ **The rule definitions themselves are not recorded anywhere in this
-> repository** — not in `docs/`, not in `src/`, not in git history. Only the
-> status above is written down. Do **not** reconstruct, guess, or re-derive what
-> R1–R5 match on. Ask Yasaswi for the current definitions, and write them into
-> `docs/DECISIONS.md` as a numbered decision — **after** the R5 fix lands.
->
-> Writing them up is **deliberately deferred until then**, so the rules are
-> documented accurately once rather than recorded now and immediately
-> corrected. This is a settled decision, not an oversight. Do not pre-empt it.
+The five rules, with their live settings:
 
-Remember that under rule 5 the blocking design is justified from data structure
-only — no checking rules against known matches.
+| Rule | Matches on | Setting |
+| --- | --- | --- |
+| R1 | A shared word that is uncommon **on the Amazon side** | DF ≤ 100 |
+| R2 | A shared part-number-shaped word (letters + digits) | length ≥ 5 |
+| R3 | A shared brand-vocabulary term **plus two** other shared words | ≥ 2 words |
+| R5 | A shared rare 5-character sequence. Word boundaries are collapsed **only where a digit sits next to them**, so split part numbers survive while ordinary words are not welded together | Amazon DF ≤ 50 |
+| R4 | Nearest neighbours, **in both directions**, only for records nothing else reached | 100 neighbours |
+
+Notes that matter for anyone reading the code:
+
+- **R4 is kept, not dropped.** An earlier judgement that it was redundant was
+  made while R5 was still broken; once the R5 noise was fixed that redundancy
+  disappeared. It now runs **symmetrically** — rescuing stranded Amazon records
+  as well as Walmart ones ([D17](docs/DECISIONS.md#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap))
+  — with a **short-sequence fallback tier** (4-grams, then 3-grams) for records
+  sharing no 5-gram with anything ([D20](docs/DECISIONS.md#d20--a-last-resort-tier-for-records-with-no-five-character-overlap)).
+  With R3 included it currently rescues nobody, and is retained deliberately as
+  a guarantee against a future threshold change reintroducing unreachable
+  records.
+- **R3 is not brand agreement**, despite its name. The brand vocabulary
+  includes ordinary words such as `case` and `digital`, and records pick up
+  brands they merely mention. See [D23](docs/DECISIONS.md#d23--correcting-how-r3-is-described)
+  before reasoning about it.
+- The rule definitions **are** now recorded — in
+  [D16](docs/DECISIONS.md#d16--final-blocking-design-five-rules-and-the-thresholds-behind-them),
+  [D17](docs/DECISIONS.md#d17--tightening-r3-and-closing-the-amazon-side-reachability-gap)
+  and [D23](docs/DECISIONS.md#d23--correcting-how-r3-is-described). An earlier
+  version of this section said they were written down nowhere and told sessions
+  to ask rather than read. That is no longer true.
+
+Also done: a summary of what blocking discarded
+([D21](docs/DECISIONS.md#d21--summarise-what-blocking-discards-rather-than-logging-it),
+regenerated into `docs/blocking_diagnostics.json`), and a fixed
+blocking↔matching interface contract in `src/interfaces.py`
+([D22](docs/DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
+
+## Matching — designed, approved in part, **not yet built**
+
+No matcher code exists. Splink is the engine. Approved so far:
+
+- **Field plan.** `title` is the primary comparison; three derived array
+  columns carry cross-field evidence (identifier tokens, brand terms, rare
+  tokens); `price` included loosely; `category` **dropped** as a field-to-field
+  comparison (the two retailers' taxonomies barely overlap — 55 categories
+  versus 592, only 15 shared); `modelno` folded into the identifier tokens
+  rather than compared as a column.
+- **Conflicting-evidence design.** Multi-level comparisons rather than binary,
+  missing values contributing **zero** weight rather than counting as
+  disagreement, and expectation-maximisation learning the weights.
+- **Integration path.** Splink cannot be handed an arbitrary pair list
+  directly, so each record carries an array of the pair-keys it belongs to and
+  blocking explodes that array. Tested at full scale: reproduces all 564,450
+  pairs exactly, in about 30 seconds. Two gotchas: records with no candidates
+  need an **empty** array (a shared placeholder silently pairs them with each
+  other), and table aliases must be named so Walmart sorts first, or Splink
+  returns the sides swapped.
+- **Identifier token split.** Separate rare and common identifier arrays, since
+  Splink's array comparison cannot weight by term frequency. For **matching
+  only**, the definition is broadened to include long pure-numeric tokens.
+  **Blocking's R2 definition is unchanged** — altering it would invalidate every
+  measured blocking figure.
+- **`probability_two_random_records_match` = 2.0e-05**, derived label-free and
+  to be sensitivity-tested across [1e-05, 4e-05] at final evaluation
+  ([D25](docs/DECISIONS.md#d25--the-prior-probability-that-two-random-records-match)).
+
+**Still open, to settle before or during the build:**
+
+1. **EM training blocking rules** — `estimate_parameters_using_expectation_maximisation`
+   takes its own rules, separate from prediction. Not yet designed.
+2. **The `title` comparison method.** Jaro-Winkler is built for short strings
+   like names; product titles run ~100 characters, so token-based similarity is
+   probably right. Undecided.
+3. The DF ≤ 5 cutoff separating rare from common identifiers is inherited from
+   blocking and untuned for matching.
+4. Price comparison bands are unspecified.
+5. **Clarification, not a question:** Splink's native term-frequency adjustment
+   does not work on array comparisons. The rare/common split **is** the
+   term-frequency mechanism for those columns.
+
+## After matching
+
+Selective prediction and review routing are designed but not built, and depend
+on match scores existing ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)):
+the review interface shows evidence but never a recommendation, AI-only review
+is measured for real, human-only review is modelled across a stated range of
+assumed accuracies.
+
+A **second, embedding-based system** follows, for comparison against the
+classical one ([D22](docs/DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
+Labels stay sealed until both are finished, then one evaluation covers both.
+
+73 tests currently pass.
+
+Remember that under rule 5 every design choice is justified from data structure
+only — no checking rules or thresholds against known matches.
