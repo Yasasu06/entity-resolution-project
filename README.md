@@ -1,6 +1,6 @@
-# Entity Resolution — Portfolio Project
+# Entity Resolution
 
-A learning/portfolio project exploring **entity resolution**: deciding when two
+A system for **entity resolution**: deciding when two
 records that came from different sources actually refer to the same real-world
 company, when there is no shared ID to join on.
 
@@ -103,7 +103,7 @@ pytest                                  # the test suite (73 tests)
 
 ## Highlights so far
 
-A few things this project is intended to demonstrate, concretely:
+Notable engineering outcomes:
 
 - **Blocking reduces 56.4 million possible pairs to 564,450 candidates**
   (98.9988% reduction) while keeping **100% of records on both sides reachable**
