@@ -11,12 +11,19 @@ gathered from the whole record. Each function below extracts one kind of
 evidence from wherever it happens to sit, producing a list that two records can
 be compared on by set intersection.
 
-Four lists are produced:
+Five lists are produced:
 
+- ``title_tokens``            - the words of the title alone
 - ``rare_identifier_tokens``  - part-number-shaped tokens that are rare
 - ``common_identifier_tokens`` - part-number-shaped tokens that are not
 - ``brand_terms``             - terms from the harvested brand vocabulary
 - ``rare_tokens``             - any uncommon word, whatever its shape
+
+``title_tokens`` is the exception to the gather-from-everywhere rule above: it
+holds the title and nothing else, because the title comparison is deliberately
+title-against-title. Evidence from the other columns reaches the model through
+the four lists that follow it. Using the same tokeniser as everywhere else
+means ``1TB`` and ``1 tb`` reduce to the same tokens on both sides.
 
 Rarity is judged by **document frequency pooled across both tables** - how many
 records in total contain the token. That differs from blocking rule R1, which
@@ -56,6 +63,7 @@ RARE_IDENTIFIER_MAX_DF = 5
 RARE_TOKEN_MAX_DF = 20
 
 FEATURE_COLUMNS = [
+    "title_tokens",
     "rare_identifier_tokens",
     "common_identifier_tokens",
     "brand_terms",
@@ -111,6 +119,8 @@ def add_features(
         built: dict[str, list[list[str]]] = {name: [] for name in FEATURE_COLUMNS}
         for _, row in table.iterrows():
             tokens = set(word_tokens(record_text(row, columns)))
+            # Title only - see the note on title_tokens in the module docstring.
+            built["title_tokens"].append(sorted(set(word_tokens(str(row["title"])))))
             identifiers = {t for t in tokens if is_identifier_shaped(t)}
             # Sorted so the columns are deterministic run to run, which keeps
             # the pipeline reproducible and any diff meaningful.
