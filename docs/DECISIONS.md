@@ -1810,6 +1810,133 @@ measured blocking figure.
 
 ---
 
+## D27 — Comparing titles by proportion of shared words
+
+**Decision.** The title comparison is custom SQL computing **word-level
+Jaccard** — shared words as a proportion of all distinct words across the pair
+— sorted into five levels plus a null level. Implemented in
+`src/comparisons.py`, with `title_tokens` added to `src/features.py`.
+
+### Splink's built-in Jaccard would have been actively harmful
+
+`JaccardAtThresholds` generates `jaccard("title_l", "title_r")`, and DuckDB's
+`jaccard()` compares **character sets, not words**: `jaccard('cat', 'act')`
+returns 1.0.
+
+On titles of this length that barely discriminates. Measured across the
+candidate set:
+
+| Percentile | Character Jaccard | Word Jaccard |
+| --- | ---: | ---: |
+| p05 | 0.484 | 0.000 |
+| median | 0.636 | 0.065 |
+| p95 | 0.788 | 0.226 |
+| **usable range** | **0.304** | **0.857** |
+
+The entire population sits inside a band of 0.30, because any two long
+lowercase English strings draw on most of the same alphabet. A concrete pair:
+
+```
+"sumdex slr camera sling pack 39.99"  vs  "slr camera sling pack sumdex poc-484bk"  -> 0.667
+"sumdex slr camera sling pack 39.99"  vs  "kingston datatraveler 8 gb usb flash..."  -> 0.500
+```
+
+The same product reordered, and an unrelated product, are **0.167 apart**.
+
+### Jaro-Winkler is the wrong family for this data
+
+| | chars (median / p90 / max) | words (median / p90) |
+| --- | --- | --- |
+| Walmart | 73 / 108 / 205 | 12 / 19 |
+| Amazon | 84 / 128 / **857** | 14 / 23 |
+
+Jaro-Winkler is built for short strings and weights a shared **prefix**
+heavily, which suits `Jon`/`John` and not a 14-word product listing. The two
+retailers reorder words freely, so a prefix bonus rewards an accident of word
+order rather than agreement.
+
+### ArrayIntersectAtSizes has a length bias
+
+Splink's array comparison grades on the raw count of shared elements, which
+scales with how much text a record happens to contain:
+
+| Walmart title length | Median shared words | Median word-Jaccard |
+| --- | ---: | ---: |
+| Short (≤ 10 words) | 1 | 0.059 |
+| Long (≥ 25 words) | **3** | 0.070 |
+
+Three times the raw overlap for essentially the same normalised similarity.
+Unnormalised counts would systematically favour verbose listings, and Amazon
+titles reach 857 characters. Dividing by the union size removes that bias,
+which is the reason for custom SQL rather than a built-in.
+
+### The levels
+
+Placed against the measured distribution rather than at round numbers. The
+counts below are the pairs falling **within** each band, which are mutually
+exclusive:
+
+| Level | Condition | Pairs | Share |
+| --- | --- | ---: | ---: |
+| Exact | token sets identical | **5** | 0.001% |
+| High | Jaccard ≥ 0.60 | 390 | 0.069% |
+| Medium | Jaccard ≥ 0.35 | 5,126 | 0.908% |
+| Low | Jaccard ≥ 0.20 | 37,717 | 6.682% |
+| None | below 0.20 | 521,212 | 92.340% |
+
+- **0.60** sits just above p99.9 (0.556).
+- **0.35** is almost exactly p99 (0.350) — a boundary the data suggests rather
+  than one imposed on it.
+- **0.20** is close to p95 (0.226).
+- **Exact match keeps its own level** despite covering only 5 pairs: agreement
+  that rare should carry far more weight than merely close agreement, and
+  merging it into the band above would discard that.
+
+Five levels rather than two because a comparison that can only say "agree or
+disagree" forces "close but not identical" into one of them. Splink learns each
+level's weight; these cuts only decide where the boundaries fall.
+
+### Implementation notes worth recording
+
+The expression uses the inclusion-exclusion identity
+`|A union B| = |A| + |B| - |A intersect B|`, because **DuckDB has no
+`list_union`** and because this avoids building the union list at all. The
+token lists are distinct and sorted upstream, so the identity is exact.
+
+It casts to `DOUBLE`, not `FLOAT`. Single precision introduced errors around
+3e-8 — small, but enough to move a pair sitting exactly on a threshold into the
+wrong level. Verified against the same calculation in Python: double precision
+agrees **exactly across all 564,450 pairs**, single precision did not.
+
+`title_tokens` is the one derived column holding a single field rather than
+evidence gathered from the whole record, because this comparison is
+deliberately title-against-title. The other four columns carry cross-field
+evidence. It uses the same tokeniser as everything else, so `1TB` and `1 tb`
+reduce identically on both sides.
+
+### Thresholds are placed on shape, not on separation
+
+> ⚠️ **A limit on what these numbers mean.**
+
+Every threshold above comes from where candidate pairs *fall* — percentiles of
+an observed distribution. None comes from how well a threshold **separates
+matches from non-matches**, because that requires the answer key sealed by
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+
+So these are defensible starting points, not optimised ones. A cut at p99 is a
+natural break in the data; whether it is the *right* break for distinguishing
+products is unverified and stays unverified until the final evaluation.
+
+### A known fragility
+
+The exact-match level rests on **5 pairs**. Expectation-maximisation may be
+unable to estimate a stable m-probability from a level that fires so rarely.
+If it proves unstable, the agreed fallback is to fold exact match into the
+≥ 0.60 level, losing the distinction but gaining a level with enough support to
+estimate. Recorded in advance rather than discovered during training.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
