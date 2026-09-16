@@ -1683,6 +1683,133 @@ right — and better discovered by testing than left buried in a parameter.
 
 ---
 
+## D26 — Blocking rules for expectation-maximisation training
+
+**Decision.** Three EM training sessions, run in order **T1 → T3 → T2**,
+blocking on a different derived column each time.
+
+| | Blocks on | Pairs generated | Cannot estimate | Estimates |
+| --- | --- | ---: | --- | --- |
+| **T1** | `rare_identifier_tokens` | **930** | rare identifiers | title, brand, rare tokens, common identifiers, price |
+| **T3** | `rare_tokens` (DF ≤ 20) | **22,918** | rare tokens | title, both identifier columns, brand, price |
+| **T2** | `brand_terms` | **868,299** | brand terms | title, both identifier columns, rare tokens, price |
+
+Counts verified with Splink's `count_comparisons_from_blocking_rule` before
+any session is run, as its documentation recommends.
+
+### Why training rules are a separate question from prediction rules
+
+Prediction blocking must reproduce the exact candidate set, because a pair it
+never generates can never be matched. That requirement is what forced the
+pair-key construction recorded in [D22](#d22--how-the-two-systems-will-be-compared).
+
+Training has no such requirement. From Splink's documentation:
+
+> *"Unlike blocking rules for prediction, it does not matter if Training Rules
+> exclude some true matches — it just needs to generate examples of matches and
+> non-matches."*
+
+Training needs a **sample**, not a reproduction. So these rules are ordinary
+`block_on(..., arrays_to_explode=[...])` expressions with no special
+machinery.
+
+### The constraint that determines how many sessions are needed
+
+Verified in Splink's source rather than assumed — `em_training_session.py`
+extracts the columns named in a training rule and drops any comparison that
+uses them:
+
+```python
+# Remove comparison columns which are either 'used up' by the blocking rules
+if set(br_cols).intersection(cc_cols):
+    comparisons_to_deactivate.append(cc)
+```
+
+Blocking on a column fixes it at agreement, leaving no variation to learn
+from. **Every comparison therefore needs at least one session that does not
+block on it.** The three sessions above satisfy this: each derived column is
+estimated in the other two, and `title`, `price` and
+`common_identifier_tokens` are never blocked, so they are estimated in all
+three — which is what the primary signal warrants.
+
+### Why these three, at these thresholds
+
+Splink notes EM works best on a block containing *"anywhere between around
+0.1% and 99.9% true matches"*, and works badly under extreme imbalance. The
+three rules were chosen to enrich differently:
+
+- **T1** selects on near-decisive evidence — two records sharing a rare
+  part-number-shaped token. The most concentrated sample available, and the
+  smallest. It runs first so the broader sessions begin from better estimates.
+- **T3** at DF ≤ 20 rather than the stricter DF ≤ 5, which yields only ~3,500
+  pairs and is probably too concentrated as well as too small.
+- **T2** is the volume session: broad, weakly enriched, and by far the largest.
+  If it proves slow, Splink's `max_pairs` caps it without altering the rule.
+
+Total across all three is roughly 892,000 pairs. Per Splink's documentation,
+training cost is the **sum** across sessions rather than a cumulative union.
+
+### Training samples the full space, not the candidate set
+
+> ⚠️ **ASSUMPTION — standard practice, but stated rather than assumed.**
+
+These rules generate pairs from the complete input tables, not from the
+564,450 candidates that blocking produced. That is how Splink training
+normally works, and it should be sound: EM estimates the *m* probabilities —
+*P(agreement | match)* — and u probabilities come separately from
+`estimate_u_using_random_sampling` over the full space. Both are conditional on
+match status, which is a property of the population rather than an artefact of
+how candidates were selected.
+
+Training could instead be confined to the candidate set by combining the
+pair-key condition with each rule. That is **not** done here: it adds real
+complexity for a concern that is theoretical. Recorded so the choice is
+visible.
+
+### The match concentration is inferred, not measured
+
+> ⚠️ **A limit on what can be claimed.**
+
+Splink's 0.1%–99.9% guidance concerns the proportion of *true matches* inside
+each training block. That proportion is exactly what the answer key would
+reveal, and [D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+seals it away.
+
+So the reasoning that T1 is heavily concentrated and T2 only weakly so is
+**structural inference from token rarity, not measurement**. It is plausible —
+a shared rare part number really should imply a match far more often than a
+shared brand does — but it is unverified, and will stay unverified until the
+final evaluation.
+
+The practical consequence is worth stating plainly: **if EM converges poorly,
+a badly-proportioned training block is a likely cause, and diagnosing that
+without labels will be difficult.** Recorded before building rather than
+discovered afterwards.
+
+### Supporting work
+
+The four derived comparison columns are implemented in `src/features.py`:
+`rare_identifier_tokens`, `common_identifier_tokens`, `brand_terms` and
+`rare_tokens`. Coverage across the source tables:
+
+| Column | Walmart non-empty | Amazon non-empty |
+| --- | ---: | ---: |
+| `rare_identifier_tokens` | 78.3% | 72.7% |
+| `common_identifier_tokens` | 8.1% | 7.5% |
+| `brand_terms` | 89.0% | 91.2% |
+| `rare_tokens` | 98.9% | 98.6% |
+
+Two details recorded there rather than left implicit. Rarity is judged by
+document frequency **pooled across both tables**, unlike blocking rule R1 which
+counts on the Amazon side only ([D18](#d18--r1-counts-word-frequency-on-the-amazon-side-only));
+the difference is deliberate, since R1's threshold governs candidate *cost*
+while this one governs how *informative* agreement is. And the identifier shape
+test accepts pure-numeric tokens as well as mixed ones, which blocking's R2
+does not — **R2 is unchanged**, since altering it would invalidate every
+measured blocking figure.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
