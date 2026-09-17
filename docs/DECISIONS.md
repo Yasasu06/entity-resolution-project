@@ -1937,6 +1937,107 @@ estimate. Recorded in advance rather than discovered during training.
 
 ---
 
+## D28 — Absence of evidence is not evidence of disagreement
+
+**Decision.** The derived comparison columns emit `None` rather than an empty
+list when a record carries no evidence of that kind, so Splink's null level
+fires and contributes zero weight.
+
+### The defect
+
+Splink's array comparison opens with a null level:
+
+```sql
+"brand_terms_l" IS NULL OR "brand_terms_r" IS NULL
+```
+
+`src/features.py` originally emitted `[]` for a record with no brand terms. **An
+empty list is not NULL** — `[] IS NULL` is false — so it fell past that level to
+the final one and collected the weight for **disagreement**.
+
+Those are opposite meanings. A record carrying no brand term has nothing to say
+about brand; that is not evidence against a match.
+
+### Scale, measured across all 564,450 candidate pairs
+
+| Comparison | Pairs scored as disagreement through absence |
+| --- | ---: |
+| `common_identifier_tokens` | **550,934 — 97.61%** |
+| `rare_identifier_tokens` | 264,117 — 46.79% |
+| `brand_terms` | 92,001 — 16.30% |
+| `rare_tokens` | 15,416 — 2.73% |
+
+`common_identifier_tokens` would have contributed evidence *against* a match on
+97.61% of pairs, on the strength of a field most records simply do not have.
+
+### Why this contradicts the project's own reasoning
+
+It inverts [D8](#d8--the-field-scrambling-problem-and-the-plan-for-it). The
+benchmark's corruption is precisely what emptied these fields — values were
+moved into `title` and their own column blanked. Scoring absence as
+disagreement penalises a record **for having been corrupted**, which is the
+opposite of what the cross-field design exists to do.
+
+It also contradicts the conflicting-evidence design recorded in
+[D22](#d22--how-the-two-systems-will-be-compared), which states that missing
+values contribute zero weight rather than counting as disagreement. The
+principle was right; the implementation did not honour it.
+
+### The fix preserves genuine conflict
+
+Only true absence becomes null. Two records that both carry brand terms which
+happen not to overlap still produce two non-empty lists and an empty
+intersection, and still reach the disagreement level — correctly.
+
+| Situation | Arrays | Before | After |
+| --- | --- | --- | --- |
+| One side has no brand at all | `["sony"]` vs `[]` | disagreement ✗ | **null, zero weight** ✓ |
+| Both have brands, different ones | `["sony"]` vs `["canon"]` | disagreement ✓ | disagreement ✓ |
+| Both have the same brand | `["sony"]` vs `["sony"]` | agreement ✓ | agreement ✓ |
+
+Verified end to end through DuckDB: `None` becomes SQL NULL, the null level
+fires for absence, and does not fire for conflict or agreement. Two tests pin
+the distinction so the two cases cannot silently collapse into one again.
+
+### Result
+
+Comparisons contributing weight, across all 564,450 candidate pairs:
+
+| Contributing | Pairs | Share |
+| --- | ---: | ---: |
+| 1 of 5 | 4,731 | 0.84% |
+| 2 of 5 | 57,883 | 10.25% |
+| 3 of 5 | 237,168 | 42.02% |
+| 4 of 5 | 255,559 | 45.28% |
+| 5 of 5 | 9,109 | 1.61% |
+
+**No pair has all five comparisons null.** `title_tokens` is populated on 100%
+of records on both sides, so the title comparison always fires at some level and
+every pair carries real evidence. The thinnest case is 4,731 pairs — 0.84% —
+resting on the title comparison alone.
+
+### How this was found
+
+A direct safety check: *across the candidate set, are there pairs where every
+comparison is blank, leaving nothing to score?* The answer to that question was
+reassuring — zero such pairs. The defect was found while measuring it, and
+would not have surfaced from reading the code, since `[]` and `None` look
+equally innocuous until they meet SQL's null semantics.
+
+It would also have been invisible in the output. The model would have trained
+and predicted without error, simply weighting most of the candidate set
+slightly against matching for reasons that were an artefact of representation.
+
+### A sparsity note carried forward
+
+Even corrected, `common_identifier_tokens` is null on 97.61% of pairs, so it
+fires on roughly 2.4%. Expectation-maximisation may be unable to estimate a
+stable weight from that. If it proves unestimable, the fallback is to merge it
+into the rare identifier comparison — the same concern already recorded for the
+5-pair exact-title level in [D27](#d27--comparing-titles-by-proportion-of-shared-words).
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

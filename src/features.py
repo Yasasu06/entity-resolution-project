@@ -71,6 +71,30 @@ FEATURE_COLUMNS = [
 ]
 
 
+def _absent_if_empty(values: set[str]) -> list[str] | None:
+    """Return a sorted list, or ``None`` when there is nothing to report.
+
+    The distinction matters more than it looks. Splink treats a NULL comparison
+    as *no evidence* and gives it zero weight, but an **empty list is not
+    NULL** - ``[] IS NULL`` is false in SQL, so an empty list falls through to
+    the final level and collects the weight for *disagreement*.
+
+    Those are opposite meanings. A record carrying no brand term has nothing to
+    say about brand; it is not evidence against a match. On this dataset the
+    difference is severe, because the benchmark's corruption is what emptied
+    these fields: scoring absence as disagreement would penalise records
+    precisely for having been corrupted. Measured before the correction,
+    97.61% of candidate pairs were being scored as disagreeing on
+    ``common_identifier_tokens``, a field most records simply do not have.
+
+    Genuine conflict is unaffected. Two records that both carry brand terms
+    which happen not to overlap still produce two non-empty lists, an empty
+    intersection, and the disagreement level - which is correct. Only true
+    absence becomes NULL. See docs/DECISIONS.md (D28).
+    """
+    return sorted(values) if values else None
+
+
 def is_identifier_shaped(token: str) -> bool:
     """Does this token look like a manufacturer code?
 
@@ -115,22 +139,23 @@ def add_features(
     frequency = pooled_document_frequency(table_a, table_b)
     brands = _known_brand_vocabulary(table_a, table_b)
 
-    def features_for(table: pd.DataFrame) -> dict[str, list[list[str]]]:
-        built: dict[str, list[list[str]]] = {name: [] for name in FEATURE_COLUMNS}
+    def features_for(table: pd.DataFrame) -> dict[str, list[list[str] | None]]:
+        built: dict[str, list[list[str] | None]] = {name: [] for name in FEATURE_COLUMNS}
         for _, row in table.iterrows():
             tokens = set(word_tokens(record_text(row, columns)))
             # Title only - see the note on title_tokens in the module docstring.
-            built["title_tokens"].append(sorted(set(word_tokens(str(row["title"])))))
+            built["title_tokens"].append(
+                _absent_if_empty(set(word_tokens(str(row["title"])))))
             identifiers = {t for t in tokens if is_identifier_shaped(t)}
             # Sorted so the columns are deterministic run to run, which keeps
             # the pipeline reproducible and any diff meaningful.
-            built["rare_identifier_tokens"].append(
-                sorted(t for t in identifiers if frequency[t] <= RARE_IDENTIFIER_MAX_DF))
-            built["common_identifier_tokens"].append(
-                sorted(t for t in identifiers if frequency[t] > RARE_IDENTIFIER_MAX_DF))
-            built["brand_terms"].append(sorted(tokens & brands))
-            built["rare_tokens"].append(
-                sorted(t for t in tokens if frequency[t] <= RARE_TOKEN_MAX_DF))
+            built["rare_identifier_tokens"].append(_absent_if_empty(
+                {t for t in identifiers if frequency[t] <= RARE_IDENTIFIER_MAX_DF}))
+            built["common_identifier_tokens"].append(_absent_if_empty(
+                {t for t in identifiers if frequency[t] > RARE_IDENTIFIER_MAX_DF}))
+            built["brand_terms"].append(_absent_if_empty(tokens & brands))
+            built["rare_tokens"].append(_absent_if_empty(
+                {t for t in tokens if frequency[t] <= RARE_TOKEN_MAX_DF}))
         return built
 
     out = []

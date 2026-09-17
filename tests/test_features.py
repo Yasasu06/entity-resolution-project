@@ -60,13 +60,69 @@ def test_identifier_tokens_split_by_rarity():
     assert "1080p" not in a2["rare_identifier_tokens"][0]
 
 
+# --- absence must not be mistaken for disagreement ----------------------------
+
+def test_absent_evidence_is_none_not_an_empty_list():
+    """None becomes SQL NULL, which Splink scores as no evidence.
+
+    An empty list is NOT null in SQL, so it would fall through to the final
+    comparison level and collect the weight for *disagreement* - the opposite
+    meaning. See docs/DECISIONS.md (D28).
+    """
+    a = make_table([{"title": "plain words only"}], "A")
+    b = make_table([{"title": "other plain words"}], "B")
+    a2, _ = add_features(a, b)
+    assert a2["rare_identifier_tokens"][0] is None, "no identifiers -> None, not []"
+    assert a2["common_identifier_tokens"][0] is None
+    assert a2["brand_terms"][0] is None, "no brand terms -> None, not []"
+
+
+def test_present_evidence_is_still_a_list():
+    a = make_table([{"title": "acme widget ph3100u", "brand": "acme"}], "A")
+    b = make_table([{"title": "acme widget ph3100u", "brand": "acme"}], "B")
+    a2, _ = add_features(a, b)
+    assert a2["rare_identifier_tokens"][0] == ["ph3100u"]
+    assert isinstance(a2["brand_terms"][0], list)
+
+
+def test_conflict_and_absence_are_distinguishable():
+    """The distinction the fix exists to preserve.
+
+    Two records with *different* brands disagree, and both sides stay non-empty
+    so the comparison reaches the disagreement level. A record with *no* brand
+    says nothing, and becomes null. These must not collapse into one case.
+    """
+    a = make_table([{"title": "sony camera", "brand": "sony"}], "A")
+    b = make_table([
+        {"title": "canon camera", "brand": "canon"},   # conflict
+        {"title": "generic camera"},                   # absence
+    ], "B")
+    a2, b2 = add_features(a, b)
+
+    # conflict: both sides carry brand terms, they simply do not overlap
+    assert a2["brand_terms"][0] is not None
+    assert b2["brand_terms"][0] is not None
+    assert not (set(a2["brand_terms"][0]) & set(b2["brand_terms"][0]))
+
+    # absence: nothing to say about brand at all
+    assert b2["brand_terms"][1] is None
+
+
+def test_title_tokens_are_none_only_when_a_title_has_no_words():
+    a = make_table([{"title": "real words here"}, {"title": "---"}], "A")
+    a2, _ = add_features(a, make_table([{"title": "other"}], "B"))
+    assert a2["title_tokens"][0] is not None
+    assert a2["title_tokens"][1] is None, "punctuation-only title has no tokens"
+
+
 def test_all_feature_columns_are_added_to_both_tables():
     a, b = add_features(make_table([{"title": "acme alpha 2gb"}], "A"),
                         make_table([{"title": "acme beta 4gb"}], "B"))
     for frame in (a, b):
         for name in FEATURE_COLUMNS:
             assert name in frame.columns
-            assert isinstance(frame[name][0], list)
+            value = frame[name][0]
+            assert value is None or isinstance(value, list)
 
 
 def test_columns_are_sorted_and_deterministic():
@@ -76,8 +132,10 @@ def test_columns_are_sorted_and_deterministic():
     first_a, _ = add_features(*tables)
     second_a, _ = add_features(*tables)
     for name in FEATURE_COLUMNS:
-        assert first_a[name][0] == sorted(first_a[name][0]), f"{name} must be sorted"
-        assert first_a[name][0] == second_a[name][0], f"{name} must be deterministic"
+        value = first_a[name][0]
+        if value is not None:
+            assert value == sorted(value), f"{name} must be sorted"
+        assert value == second_a[name][0], f"{name} must be deterministic"
 
 
 def test_original_columns_are_left_untouched():
