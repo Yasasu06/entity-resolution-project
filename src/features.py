@@ -62,6 +62,10 @@ RARE_IDENTIFIER_MAX_DF = 5
 # be worth comparing on.
 RARE_TOKEN_MAX_DF = 20
 
+# A numeric price, or None. Kept separate from FEATURE_COLUMNS because it is a
+# single value rather than a list of evidence.
+PRICE_COLUMN = "price_value"
+
 FEATURE_COLUMNS = [
     "title_tokens",
     "rare_identifier_tokens",
@@ -69,6 +73,23 @@ FEATURE_COLUMNS = [
     "brand_terms",
     "rare_tokens",
 ]
+
+
+def parse_price(raw: object) -> float | None:
+    """Return a usable price, or ``None`` where there is not one.
+
+    Anything that will not parse becomes None, and so does any price at or
+    below zero. A zero price in this data reads as an absent value rather than
+    a free product, and a relative difference measured against zero is
+    undefined in any case. Treating those as missing rather than as a price of
+    nought follows the same principle as the array columns: absence is not
+    evidence of disagreement. See docs/DECISIONS.md (D28, D30).
+    """
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def _absent_if_empty(values: set[str]) -> list[str] | None:
@@ -139,8 +160,9 @@ def add_features(
     frequency = pooled_document_frequency(table_a, table_b)
     brands = _known_brand_vocabulary(table_a, table_b)
 
-    def features_for(table: pd.DataFrame) -> dict[str, list[list[str] | None]]:
-        built: dict[str, list[list[str] | None]] = {name: [] for name in FEATURE_COLUMNS}
+    def features_for(table: pd.DataFrame) -> dict[str, list]:
+        built: dict[str, list] = {name: [] for name in FEATURE_COLUMNS}
+        built[PRICE_COLUMN] = []
         for _, row in table.iterrows():
             tokens = set(word_tokens(record_text(row, columns)))
             # Title only - see the note on title_tokens in the module docstring.
@@ -156,6 +178,7 @@ def add_features(
             built["brand_terms"].append(_absent_if_empty(tokens & brands))
             built["rare_tokens"].append(_absent_if_empty(
                 {t for t in tokens if frequency[t] <= RARE_TOKEN_MAX_DF}))
+            built[PRICE_COLUMN].append(parse_price(row["price"]))
         return built
 
     out = []

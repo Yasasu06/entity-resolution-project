@@ -2161,6 +2161,91 @@ probabilities.
 
 ---
 
+## D30 — Comparing prices by relative difference
+
+**Decision.** Price is compared by `|a - b| / max(a, b)` — the gap as a share of
+the larger price — in five levels plus a null level. Prices at or below zero are
+parsed to NULL and treated as missing.
+
+### Why relative rather than absolute
+
+Five pounds is most of the price of a cable and a rounding error on a
+television. An absolute threshold would be far too strict at one end of the
+catalogue and meaningless at the other. Dividing by the larger of the two values
+keeps the result between 0 and 1 and makes it symmetric, so argument order
+cannot change the answer.
+
+### Why zero and negative prices are missing, not zero
+
+A price of zero in this data reads as an absent value rather than a free
+product, and a relative difference measured against zero is undefined in any
+case. Treating those as missing follows the principle established in
+[D28](#d28--absence-of-evidence-is-not-evidence-of-disagreement): absence is not
+evidence of disagreement. This affects 2,499 candidate pairs.
+
+### The levels, placed against the measured distribution
+
+Across the 119,109 candidate pairs carrying a usable price on both sides, the
+relative difference has p5 = 0.023 and p10 = 0.109, with a **median of 0.624** —
+the typical usable pair differs by 62%, which is what a candidate set of mostly
+non-matches should look like.
+
+| Level | Pairs in band | Cumulative |
+| --- | ---: | ---: |
+| Exact match | 1,177 | 1,177 |
+| Within 2% | 4,553 | 5,730 |
+| Within 10% | 5,387 | 11,117 |
+| Within 20% | 7,571 | 18,688 |
+| More than 20% apart | 100,421 | 119,109 |
+| **Null** | **445,341** | |
+
+**78.9% of candidate pairs reach the null level** and contribute nothing, which
+is the intended behaviour: only 21.1% carry a usable price on both sides.
+
+### What the model learned
+
+| Level | m | u | Weight |
+| --- | ---: | ---: | ---: |
+| Exact match | 0.0262 | 0.000662 | **+5.31 bits** |
+| Within 2% | 0.0536 | 0.00938 | +2.52 bits |
+| Within 10% | 0.0875 | 0.0349 | **+1.33 bits** |
+| Within 20% | 0.1233 | 0.0495 | **+1.32 bits** |
+| More than 20% apart | 0.7034 | 0.906 | −0.36 bits |
+
+Price is **weak evidence, as expected**. An exact price match is worth +5.31
+bits against +12.39 for an exact title match and +11.52 for a shared rare
+identifier. The structural prediction — that two retailers pricing
+independently would make price a poor signal — is confirmed by the data rather
+than assumed.
+
+Including it was still the right call. Letting the model learn how little price
+agreement is worth is more defensible than asserting in advance that it is
+worthless, and an exact price match on an expensive item does carry real
+information.
+
+### Two of the five levels collapsed
+
+**"Within 10%" and "Within 20%" learned essentially the same weight — +1.33 and
++1.32 bits.** The 10% boundary is not carrying information: a pair 15% apart is
+being treated exactly like one 5% apart.
+
+Those two levels could be merged into a single "within 20%" band without losing
+anything the model is using. That is **not** done here, because the levels were
+approved as specified and the collapse is a finding to report rather than a
+licence to change the design unilaterally. Recorded as an open simplification.
+
+This is worth noting as a general point: level boundaries placed on the shape of
+a distribution are not guaranteed to correspond to boundaries the *model* finds
+meaningful. Here, one of four did not.
+
+### Effect on the scores
+
+Minimal. Pairs above 0.99 moved from 4,419 to 4,454 and the overall shape is
+unchanged, with 93.3% still below 0.01. A weak comparison covering 21% of pairs
+should not move much, and it did not.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

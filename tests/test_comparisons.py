@@ -12,6 +12,11 @@ import duckdb
 import pytest
 
 from src.comparisons import (
+    PRICE_CLOSE,
+    PRICE_LOOSE,
+    PRICE_TIGHT,
+    price_comparison,
+    relative_price_difference_sql,
     TITLE_HIGH,
     TITLE_LOW,
     TITLE_MEDIUM,
@@ -101,3 +106,65 @@ def test_comparison_uses_double_precision():
     import src.comparisons as comparisons
     assert "::DOUBLE" in inspect.getsource(comparisons)
     assert "::FLOAT" not in inspect.getsource(comparisons)
+
+
+# --- price -------------------------------------------------------------------
+
+def price_difference(left, right):
+    """Evaluate the real price expression, not a copy of it."""
+    con = duckdb.connect()
+    expression = relative_price_difference_sql("l", "r")
+    return con.execute(
+        f"SELECT {expression} FROM (SELECT ?::DOUBLE AS l, ?::DOUBLE AS r)",
+        [left, right],
+    ).fetchone()[0]
+
+
+def test_identical_prices_are_zero_apart():
+    assert price_difference(49.99, 49.99) == 0.0
+
+
+def test_difference_is_relative_not_absolute():
+    """Five pounds means something different on a cable and a television."""
+    cable = price_difference(10.0, 15.0)       # 5 apart on a small price
+    television = price_difference(1000.0, 1005.0)  # 5 apart on a large one
+    assert cable > television
+    assert cable == pytest.approx(1 / 3)
+
+
+def test_measure_is_symmetric():
+    """Argument order must not change the answer."""
+    assert price_difference(40.0, 50.0) == price_difference(50.0, 40.0)
+
+
+def test_difference_stays_within_zero_and_one():
+    for a, b in ((1.0, 1000.0), (1000.0, 1.0), (5.0, 5.01)):
+        value = price_difference(a, b)
+        assert 0.0 <= value <= 1.0
+
+
+def test_missing_price_yields_null():
+    """A pair without two usable prices must contribute nothing."""
+    assert price_difference(None, 20.0) is None
+    assert price_difference(20.0, None) is None
+
+
+def test_price_thresholds_ascend():
+    assert PRICE_TIGHT < PRICE_CLOSE < PRICE_LOOSE
+
+
+def test_price_levels_are_ordered_with_a_null_level_first():
+    levels = price_comparison().get_comparison("duckdb").comparison_levels
+    assert levels[0].is_null_level
+    assert [l.label_for_charts for l in levels][1] == "Exact match"
+    assert len(levels) == 6
+
+
+def test_zero_and_negative_prices_are_treated_as_missing():
+    """A zero price reads as absent data, not as a free product (D28, D30)."""
+    from src.features import parse_price
+    assert parse_price(0) is None
+    assert parse_price(-5) is None
+    assert parse_price("not a price") is None
+    assert parse_price(None) is None
+    assert parse_price("19.99") == 19.99

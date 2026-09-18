@@ -39,7 +39,7 @@ from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 from splink.blocking_rule_library import CustomRule
 from splink.comparison_library import ArrayIntersectAtSizes
 
-from src.comparisons import title_comparison
+from src.comparisons import price_comparison, title_comparison
 from src.data_loading import ID_COLUMN, load_source_tables
 from src.features import add_features
 from src.interfaces import (
@@ -142,10 +142,16 @@ def attach_pair_keys(
 
 def build_settings() -> SettingsCreator:
     """The model: what is compared, and how pairs are generated."""
-    comparisons = [title_comparison()] + [
-        ArrayIntersectAtSizes(column, sizes)
-        for column, sizes in ARRAY_COMPARISONS.items()
-    ]
+    comparisons = (
+        [title_comparison()]
+        + [
+            ArrayIntersectAtSizes(column, sizes)
+            for column, sizes in ARRAY_COMPARISONS.items()
+        ]
+        # Price is never blocked on in any training round, so it is estimable
+        # in all four.
+        + [price_comparison()]
+    )
     return SettingsCreator(
         link_type="link_only",
         comparisons=comparisons,
