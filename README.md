@@ -24,8 +24,8 @@ doesn't support a confident answer, saying so rather than guessing.
 | **Blocking** (candidate pair generation) | ✅ Done — 564,450 candidates from 56.4M possible pairs, 100% record reachability on both sides |
 | Blocking diagnostics (what was discarded, and why) | ✅ Done |
 | Blocking ↔ matching interface contract | ✅ Done |
-| **Matching** (Splink probabilistic scoring) | 🔜 Designed, approved, not yet built |
-| Selective prediction / review-band design | ✅ Designed (not yet built — depends on match scores) |
+| **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
+| Selective prediction / review-band design | 🔜 Designed, not yet built — depends on match scores |
 | Second system (embedding-based), for comparison | 📋 Planned |
 | Final evaluation against sealed labels | 🔒 Not started — labels stay sealed until everything above is finished |
 

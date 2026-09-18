@@ -167,9 +167,17 @@ regenerated into `blocking_diagnostics.json`), and a fixed
 blocking↔matching interface contract in `src/interfaces.py`
 ([D22](DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
 
-### Matching — designed, approved in part, **not yet built**
+### Matching — complete
 
-No matcher code exists. Splink is the engine. Approved so far:
+Implemented in `src/matcher.py`. Scores all 564,450 candidate pairs with Splink,
+unsupervised, in about 157 seconds: u estimated by random sampling over 50
+million pairs, four expectation-maximisation sessions, then prediction. Every
+model parameter is estimated; none is imputed.
+
+Scores are strongly bimodal — 93.3% below 0.01 and 0.8% above 0.99, with a
+sparse middle that the abstention band can sit in.
+
+Settled during the build:
 
 - **Field plan.** `title` is the primary comparison; three derived array
   columns carry cross-field evidence (identifier tokens, brand terms, rare
@@ -196,16 +204,23 @@ No matcher code exists. Splink is the engine. Approved so far:
   to be sensitivity-tested across [1e-05, 4e-05] at final evaluation
   ([D25](DECISIONS.md#d25--the-prior-probability-that-two-random-records-match)).
 
-**Still open, to settle before or during the build:**
+**Open items carried forward:**
 
-1. **EM training blocking rules** — `estimate_parameters_using_expectation_maximisation`
-   takes its own rules, separate from prediction. Not yet designed.
-2. **The `title` comparison method.** Jaro-Winkler is built for short strings
-   like names; product titles run ~100 characters, so token-based similarity is
-   probably right. Undecided.
-3. The DF ≤ 5 cutoff separating rare from common identifiers is inherited from
-   blocking and untuned for matching.
-4. Price comparison bands are unspecified.
+1. **Two price levels collapsed.** "Within 10%" and "Within 20%" learned
+   essentially the same weight, +1.33 and +1.32 bits, so the 10% boundary
+   carries no information and the two could be merged
+   ([D30](DECISIONS.md#d30--comparing-prices-by-relative-difference)).
+2. **`m` probabilities do not perfectly normalise.** They should sum to 1
+   within a comparison; `rare_tokens` sums to 1.0725 and `title` to 0.9541,
+   because separate EM sessions estimate different levels against different
+   populations and Splink does not renormalise across them
+   ([D29](DECISIONS.md#d29--a-fourth-training-round-and-a-lesson-about-which-statistic-governs)).
+3. **The λ tension.** 4,454 pairs score at or above 0.99 against a prior
+   implying roughly 1,128 matches. Either the prior is low or the model is
+   overconfident; only the sensitivity check at final evaluation can tell
+   ([D25](DECISIONS.md#d25--the-prior-probability-that-two-random-records-match)).
+4. The DF ≤ 5 cutoff separating rare from common identifiers is inherited from
+   blocking and remains untuned for matching.
 5. **Clarification, not a question:** Splink's native term-frequency adjustment
    does not work on array comparisons. The rare/common split **is** the
    term-frequency mechanism for those columns.

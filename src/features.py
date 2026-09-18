@@ -19,6 +19,12 @@ Five lists are produced:
 - ``brand_terms``             - terms from the harvested brand vocabulary
 - ``rare_tokens``             - any uncommon word, whatever its shape
 
+A sixth column, ``price_value``, is also produced. It is a single number
+rather than a list of evidence, so it is not one of the lists above, but it
+is derived here for the same reason: the raw column is text, and anything
+unparseable or at or below zero has to become NULL rather than a price of
+nought.
+
 ``title_tokens`` is the exception to the gather-from-everywhere rule above: it
 holds the title and nothing else, because the title comparison is deliberately
 title-against-title. Evidence from the other columns reaches the model through
@@ -42,7 +48,7 @@ import collections
 import pandas as pd
 
 from src.blocking import _known_brand_vocabulary, record_text
-from src.data_loading import ID_COLUMN, attribute_columns
+from src.data_loading import attribute_columns
 from src.text_normalisation import word_tokens
 
 # A token is "identifier shaped" if it is long enough and either mixes letters
