@@ -2038,6 +2038,129 @@ into the rare identifier comparison — the same concern already recorded for th
 
 ---
 
+## D29 — A fourth training round, and a lesson about which statistic governs
+
+**Decision.** A fourth expectation-maximisation session blocks on
+`common_identifier_tokens`. Training order is now, by concentration:
+rare identifiers, common identifiers, rare tokens, brand terms.
+
+### The defect it fixes
+
+The first full matcher run left one parameter unestimated:
+
+```
+Level All other comparisons on comparison rare_tokens not observed in dataset,
+unable to train m value
+```
+
+That level — **no rare-token overlap** — applies to **526,116 pairs, 93.2% of
+the candidate set**, at prediction time. Expectation-maximisation had never
+seen a single example of it.
+
+The cause was that the three training blocks in
+[D26](#d26--blocking-rules-for-expectation-maximisation-training) were not
+independent. Each selects on agreement over something that is *itself* a rare
+token: rare identifiers are rare tokens, and brand terms with document
+frequency ≤ 20 are rare tokens. Every block therefore guaranteed rare-token
+overlap, and the dominant prediction case never appeared in training.
+
+D26 had recorded the risk that training blocks might not represent the
+prediction population. It did not anticipate that the three blocks would be
+correlated with one another.
+
+### Why `common_identifier_tokens` was expected to fail, and did not
+
+The proposal looked unpromising on inspection. `common_identifier_tokens` means
+document frequency above 5; `rare_tokens` means 20 or below. Tokens between 6
+and 20 therefore sit in **both** columns, so blocking on the first ought to
+imply agreement on the second.
+
+Measured at token level, that held:
+
+| | Count | Share |
+| --- | ---: | ---: |
+| Distinct common identifier tokens | 145 | |
+| ...also inside `rare_tokens` | **119** | **82.1%** |
+| ...genuinely outside (DF > 20) | 26 | 17.9% |
+
+Measured at **pair** level, the conclusion reversed:
+
+| Within the block | Pairs | Share |
+| --- | ---: | ---: |
+| `rare_tokens` null | 43 | 0.66% |
+| `rare_tokens` some overlap | 786 | 11.98% |
+| **`rare_tokens` zero overlap** | **5,732** | **87.36%** |
+
+The reason is that pair generation scales as the **product** of the two posting
+lists, so a handful of high-frequency tokens dominate:
+
+| Token | Pooled DF | In `rare_tokens`? | Pairs generated |
+| --- | ---: | --- | ---: |
+| `1080p` | 156 | No | 3,275 |
+| `500gb` | 66 | No | 728 |
+| `00001` | 56 | No | 384 |
+| `cat5e` | 70 | No | 325 |
+
+**90.2% of the block's pairs come from the 26 tokens outside `rare_tokens`.**
+The 119 overlapping tokens are numerous but individually rare, and contribute
+almost nothing.
+
+**The lesson worth keeping:** counting token *types* answered a different
+question from counting the *pairs* those types generate, and only the second
+governs what a training block contains. The same distinction caused hand
+estimates of the D26 block sizes to run about 3.5% high, by counting a pair
+once per shared key where Splink counts distinct pairs. A statistic that
+sounds like the right one is not necessarily the one that governs.
+
+### Result
+
+The block contains 6,561 pairs — between T1 at 930 and T3 at 22,918 — and the
+session converges in 20 iterations in 3.6 seconds.
+
+**Every parameter in the model is now estimated. No level is imputed.**
+
+The previously imputed level:
+
+| | Before T4 | After T4 |
+| --- | ---: | ---: |
+| m probability | 0.8304 *(imputed)* | **0.7612** *(estimated)* |
+| Weight | −0.27 bits | **−0.39 bits** |
+
+Normalisation of the `rare_tokens` m probabilities improved substantially, from
+a sum of **1.4152** to **1.0695** against an ideal of 1.0.
+
+### Honest note on how much this changed
+
+Very little, in the scores themselves. Pairs above 0.99 moved from 4,518 to
+4,419, and the overall shape is unchanged — 93.4% still below 0.01.
+
+The imputed value had been close enough that its practical effect was small.
+The point of the fix is not that the numbers moved but that they are now
+derived rather than guessed: an imputed parameter applied to 93% of the
+candidate set is not something to leave in place because it happens to look
+about right.
+
+### A residual imprecision, recorded rather than hidden
+
+The m probabilities within a comparison should sum to 1. After four sessions:
+
+| Comparison | Sum |
+| --- | ---: |
+| `rare_identifier_tokens` | 1.0000 |
+| `common_identifier_tokens` | 1.0000 |
+| `brand_terms` | 0.9949 |
+| `title` | **0.9372** |
+| `rare_tokens` | **1.0695** |
+
+Separate EM sessions estimate different levels against different populations,
+and Splink does not renormalise across them. Two comparisons are off by 6-7%.
+This is a property of multi-session training rather than a defect introduced
+here, and it is far better than the 42% overshoot before T4 — but the model is
+not perfectly calibrated, and that should be known when reading its
+probabilities.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

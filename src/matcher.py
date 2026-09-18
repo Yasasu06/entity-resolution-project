@@ -75,7 +75,20 @@ ARRAY_COMPARISONS = {
 # Each EM session blocks on one column, which makes that column unestimable for
 # the session. Ordered most-concentrated first so the broader sessions start
 # from better estimates. See D26.
-TRAINING_COLUMNS = ["rare_identifier_tokens", "rare_tokens", "brand_terms"]
+#
+# common_identifier_tokens was added after the first full run, which left the
+# no-overlap level of rare_tokens untrained: the other three blocks all select
+# on something that is itself a rare token, so none of them ever contained a
+# pair without rare-token overlap - while 93.2% of pairs at prediction time
+# have exactly that. This block is dominated by high-frequency specification
+# tokens such as '1080p', which sit outside rare_tokens, and 87% of its pairs
+# have no rare-token overlap. See D29.
+TRAINING_COLUMNS = [
+    "rare_identifier_tokens",
+    "common_identifier_tokens",
+    "rare_tokens",
+    "brand_terms",
+]
 
 # How many random pairs to draw when estimating u. Larger is more accurate and
 # slower; this is enough to see every comparison level that occurs at a
