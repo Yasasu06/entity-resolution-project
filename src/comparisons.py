@@ -113,3 +113,81 @@ def title_comparison() -> CustomComparison:
             },
         ],
     )
+
+
+# Relative-difference bands for price, placed against the measured distribution
+# over candidate pairs where both sides carry a usable price. The 5th and 10th
+# percentiles of that distribution are 0.023 and 0.109, so the two tight bands
+# isolate genuine agreement rather than slicing into the bulk - whose median
+# pair differs by 62%. See docs/DECISIONS.md (D30).
+PRICE_TIGHT = 0.02
+PRICE_CLOSE = 0.10
+PRICE_LOOSE = 0.20
+
+
+def relative_price_difference_sql(left_column: str, right_column: str) -> str:
+    """SQL for ``|a - b| / max(a, b)``: the gap as a share of the larger price.
+
+    Relative rather than absolute, because a five pound difference means
+    something entirely different on a ten pound cable and a thousand pound
+    television.
+
+    Dividing by the larger of the two keeps the result within 0 to 1 and
+    symmetric, so the order of the arguments cannot change the answer. Both
+    values are guaranteed positive upstream - anything at or below zero is
+    parsed to NULL - so the denominator cannot be zero, but GREATEST is wrapped
+    in NULLIF regardless rather than relying on that invariant holding forever.
+    """
+    return (
+        f"abs({left_column} - {right_column}) "
+        f"/ NULLIF(GREATEST({left_column}, {right_column}), 0)"
+    )
+
+
+_PRICE_DIFFERENCE = relative_price_difference_sql('"price_value_l"', '"price_value_r"')
+
+
+def price_comparison() -> CustomComparison:
+    """Compare prices by how far apart they are, in proportion.
+
+    Price is weak evidence here and is expected to stay weak: the two retailers
+    price independently, and only 21.1% of candidate pairs carry a usable price
+    on both sides at all. Among those that do, the median pair differs by 62%.
+
+    It is included because a near-identical price on an expensive item is worth
+    something, and because letting the model learn how little price agreement is
+    worth is more honest than asserting in advance that it is worthless. The
+    null level means the 78.9% of pairs without two usable prices contribute
+    nothing rather than counting against the pair.
+    """
+    return CustomComparison(
+        output_column_name="price",
+        comparison_description="Price, by relative difference",
+        comparison_levels=[
+            {
+                "sql_condition": '"price_value_l" IS NULL OR "price_value_r" IS NULL',
+                "label_for_charts": "Null",
+                "is_null_level": True,
+            },
+            {
+                "sql_condition": '"price_value_l" = "price_value_r"',
+                "label_for_charts": "Exact match",
+            },
+            {
+                "sql_condition": f"({_PRICE_DIFFERENCE}) <= {PRICE_TIGHT}",
+                "label_for_charts": f"Within {PRICE_TIGHT:.0%}",
+            },
+            {
+                "sql_condition": f"({_PRICE_DIFFERENCE}) <= {PRICE_CLOSE}",
+                "label_for_charts": f"Within {PRICE_CLOSE:.0%}",
+            },
+            {
+                "sql_condition": f"({_PRICE_DIFFERENCE}) <= {PRICE_LOOSE}",
+                "label_for_charts": f"Within {PRICE_LOOSE:.0%}",
+            },
+            {
+                "sql_condition": "ELSE",
+                "label_for_charts": f"More than {PRICE_LOOSE:.0%} apart",
+            },
+        ],
+    )
