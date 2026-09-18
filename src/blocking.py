@@ -1,7 +1,7 @@
 """Blocking: cutting 56 million possible pairs down to a workable shortlist.
 
 Matching every Walmart record against every Amazon record would mean
-2,554 x 22,074 = 56,378,196 comparisons. Almost all of those are obviously
+2,554 x 22,074 = 56,376,996 comparisons. Almost all of those are obviously
 unrelated. *Blocking* is the cheap first pass that decides which pairs are
 worth comparing properly, so the expensive scoring only runs where it might
 matter.

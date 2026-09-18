@@ -7,11 +7,10 @@ and that nothing here reaches for labelled data.
 Run with:  pytest
 """
 
-import pandas as pd
 
 from src.blocking import build_index, generate_candidates
 from src.blocking_diagnostics import collect
-from tests.test_blocking import COLUMNS, make_table
+from tests.test_blocking import make_table
 
 
 def small_setup():

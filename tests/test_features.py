@@ -8,7 +8,6 @@ deterministic.
 Run with:  pytest
 """
 
-import pandas as pd
 
 from src.features import (
     FEATURE_COLUMNS,
