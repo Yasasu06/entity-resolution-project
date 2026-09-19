@@ -31,7 +31,7 @@ doesn't support a confident answer, saying so rather than guessing.
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (24 entries and growing). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (31 entries and growing). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
@@ -43,8 +43,8 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading, blocking rules, diagnostics, the blocking/matching interface contract |
-| `tests/` | Automated tests (73 passing) covering the code in `src/` |
-| `docs/` | Decision log, dataset provenance, and generated diagnostics |
+| `tests/` | Automated tests (126 passing) covering the code in `src/` |
+| `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
 
 ## Data
 
@@ -142,6 +142,17 @@ Every significant decision on this project — and the reasoning behind it — i
 recorded in [`docs/DECISIONS.md`](docs/DECISIONS.md), written to be readable
 with no prior context. On a project like this the reasoning matters as much as
 the code.
+
+### Pre-registration
+
+The final decision rule — its exact thresholds, the logic that applies them, and
+every measurement that will be taken once the labels are unsealed — is fixed in
+advance in
+[`docs/PRE_REGISTRATION.md`](docs/PRE_REGISTRATION.md), dated and committed
+before any labelled data was read. Once labels are visible it is impossible to
+demonstrate, even in good faith, that a threshold was not adjusted to improve
+the result. Writing the rule down first is what makes the final number a
+result rather than a claim.
 
 ## License
 

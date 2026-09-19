@@ -2259,6 +2259,15 @@ first defined target for AI escalation.
 Scoped to the confident region only; see [Scope](#scope-and-what-is-deliberately-left-open)
 at the end.
 
+> **Note added 19 September 2026.** The counts in this entry — 4,454 pairs,
+> 1,412 records, 257 exactly tied — were measured at p ≥ 0.99, the working
+> threshold at the time of writing. The accept threshold was afterwards fixed at
+> **6.0 bits (p ≥ 0.9846)** in [`PRE_REGISTRATION.md`](PRE_REGISTRATION.md),
+> under which **346** records are tied. The figures below are left as they were
+> measured rather than restated, so that the evidence the decision actually
+> rested on stays visible. The policy is unchanged; only the region it applies
+> to has moved.
+
 ### The problem
 
 Scoring all 564,450 candidate pairs leaves 4,454 pairs above 0.99, but those
