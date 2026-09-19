@@ -117,10 +117,11 @@ invented terms such as "unsure band"
 Where it disagrees with [`DECISIONS.md`](DECISIONS.md), the decision
 log wins.*
 
-**Decisions recorded: D1–D25.** Several supersede earlier ones — D14 replaced
+**Decisions recorded: D1–D31.** Several supersede earlier ones — D14 replaced
 D6 and voided the D9 baseline result; D17 and D18 changed settings first stated
-in D16; D23 corrected how R3 had been described throughout. When two entries
-disagree, the higher number wins.
+in D16; D23 corrected how R3 had been described throughout; D29 added a fourth
+training round to the three set out in D26. When two entries disagree, the
+higher number wins.
 
 ### Blocking — complete
 

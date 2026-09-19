@@ -2246,6 +2246,195 @@ should not move much, and it did not.
 
 ---
 
+## D31 — Tied partners: when the model cannot choose between candidates
+
+**Decision.** A **tie** is defined as a within-record match-weight gap of **one
+bit or less** between a record's best candidate and its runner-up. Tied
+candidates are **not** resolved by taking the highest score. The record and its
+whole candidate set go to human review as a **single item**, and the reviewer
+may answer *none of these*. The underlying cause — a missing comparison — is
+recorded as a known limitation rather than patched, and tied groups become the
+first defined target for AI escalation.
+
+Scoped to the confident region only; see [Scope](#scope-and-what-is-deliberately-left-open)
+at the end.
+
+### The problem
+
+Scoring all 564,450 candidate pairs leaves 4,454 pairs above 0.99, but those
+involve only **1,412 distinct Walmart records**. The average confident Walmart
+record claims 3.1 Amazon partners and the worst claims 20. Something has to be
+decided about records whose candidates the model ranks equally, because a naive
+reading of the output would report all of them as matches.
+
+### Measuring ties in bits, not in probability
+
+An early reading compared probabilities and concluded that 61.8% of confident
+records had a tied runner-up. **That figure was wrong, and the error is worth
+recording.** Above 0.99 the probability scale compresses: every one of the 4,454
+confident pairs sits inside a window 0.0087 wide, so pairs the model separates
+clearly still look identical when compared as probabilities.
+
+The model's own currency is match weight in bits. Measured there:
+
+| Gap, best vs runner-up | Records | Share |
+| --- | ---: | ---: |
+| Exactly 0 — identical evidence | 257 | 18.2% |
+| 0 to 1 bit | 87 | 6.1% |
+| 1 to 2 bits | 214 | 15.2% |
+| 2 to 8 bits | 158 | 11.2% |
+| More than 8 bits — decisive | 696 | 49.3% |
+
+The real figure is roughly 18%, not 62%. Half of all confident records are
+separated by more than 8 bits, meaning the runner-up is over 256 times less
+likely.
+
+**This measurement is exactly immune to the prior.** The value of
+`probability_two_random_records_match` enters every pair's match weight as the
+same additive constant, so it cancels completely in a within-record difference.
+Of all the analysis carried out on these scores, this is the part least affected
+by the calibration concerns recorded in [D25](#d25--the-prior-probability-that-two-random-records-match).
+The `m` normalisation drift does still affect gaps, since it changes individual
+comparison weights.
+
+### Why one bit, and why the number is robust
+
+The gap distribution is not smooth. It has a sparse region immediately below
+one bit:
+
+| Gap band | Records |
+| --- | ---: |
+| (0.00, 0.25] | 23 |
+| (0.25, 0.50] | 41 |
+| (0.50, 0.75] | **10** |
+| (0.75, 1.00] | **13** |
+| (1.00, 1.25] | 72 |
+| (1.25, 1.50] | 36 |
+| (1.50, 2.00] | 106 |
+
+Only 23 records fall across the whole (0.5, 1.0] interval. A threshold placed
+anywhere in that valley selects between 321 and 344 records, so the exact
+placement barely changes the outcome — the boundary is not slicing through a
+dense cluster. That robustness is the argument for the number; it is empirical
+rather than assumed.
+
+The interpretation is also defensible on its own terms: a one-bit gap means the
+runner-up is half as likely as the winner. No reviewer would call that
+distinguishable.
+
+At one bit, **344 records are tied, covering 1,624 of the 4,454 confident
+pairs.**
+
+### The cause is a missing comparison, not a scoring defect
+
+In every case examined, the attribute that would settle the question is present
+in the text and no comparison captures it.
+
+**A_501** — Walmart *"edge tech **512mb** proshot 100x compact flash memory
+card"* ties across **eleven** Amazon Edge ProShot cards, of 4GB, 8GB, 16GB and
+32GB. None of the eleven is a 512MB card. Very likely *zero* are correct.
+
+**A_2402** — Walmart *"crown ecostep mat **36 x 60 midnight blue**, et0035mb"*
+ties between `et0310mb` (36×120, right colour, wrong size) and `et0035ch`
+(36×60, right size, wrong colour). Neither is correct.
+
+**A_2401** — Walmart *"amzer luxe argyle high-gloss skin case … **smoke gray**"*
+ties between the hot pink variant and the smoke grey variant. Here the correct
+answer *is* present; the model cannot see that one token decides it.
+
+**A_1285** — Walmart *"paperpro compact stapler 15 sheet, modelno 1510"* ties
+across eight staplers of differing model numbers and sheet capacities.
+
+The mechanism: `title` is compared by proportion of shared words
+([D27](#d27--comparing-titles-by-proportion-of-shared-words)), so `512mb` is one
+token among fifteen and weighs no more than `memory`. The identifier
+comparisons fire on any shared rare token, and `proshot` is shared by all
+eleven.
+
+A supporting measurement, **observational rather than causal**: where a usable
+price exists on both sides the tie rate is **6.6%**; where it is absent, it is
+**21.8%**. Price is the one attribute that separates a 512MB card from a 32GB
+one. The median gap is almost unchanged (7.45 against 7.90 bits), so price does
+not generally increase separation — it specifically breaks exact ties. Price
+availability may also stand in for record quality more broadly.
+
+### What was decided, and what was rejected
+
+Four policies were costed against the 4,454 confident pairs.
+
+| Option | Predicted | Reviewed | Outcome |
+| --- | ---: | ---: | --- |
+| A — every tied partner is a match | 4,454 | 0 | Rejected |
+| B — keep the highest-scoring partner | 1,412 | 0 | **Rejected** |
+| C — abstain on tied *pairs* | 2,830 | 1,624 pairs | Rejected |
+| D — abstain on tied *groups* | 2,830 | 1,624 pairs as **344 items** | **Adopted** |
+
+**Option A is rejected** because A_501 alone would contribute eleven predicted
+matches of which at most one, and probably none, is correct.
+
+**Option B is rejected, and specifically so.** In the 257 records where the gap
+is exactly zero the top score is *equal*, so selecting the highest-scoring
+partner is decided by row order — a coin flip. Option B is the worst of the four
+precisely because its errors arrive carrying high confidence, which is the one
+failure mode selective prediction exists to prevent.
+
+**C and D touch identical pairs** and differ only in presentation. That
+difference is the entire point.
+
+### The review unit is the record, not the pair
+
+*Is A_501 ↔ B_11152 a match?* cannot be answered in isolation. A reviewer can
+only answer it by seeing all eleven candidates together and noticing that not
+one of them is a 512MB card. The unit of review is therefore **one Walmart
+record together with its confident candidate set**, which converts 1,624
+pair-decisions into **344 record-decisions** — better value from a fixed review
+budget, and the correct unit of work regardless of budget.
+
+**The review process must accept *none of these* as a valid answer.** A_501 and
+A_2402 both appear to have no correct partner present. An interface that forced
+a choice among the candidates would manufacture errors rather than record the
+truth, and would corrupt the very judgements the review exists to collect. This
+extends the queue design in [D24](#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai).
+
+### The obvious fix is deliberately not applied
+
+The direct remedy is a comparison weighting capacity, colour, size and variant
+tokens. **It is not built.** It would be constructed from four hand-picked
+examples with no labelled data available to validate it, which is how a model
+becomes fitted to its author's intuitions rather than to the problem. Recorded
+as a known limitation.
+
+This also stays within the no-peek rule: choosing a comparison because it
+resolves cases that *look* wrong is a weak form of the same self-labelling that
+[D14](#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished) rules out.
+
+### Tied groups are the first defined AI escalation target
+
+Separating *512MB* from *32GB*, or *smoke grey* from *hot pink*, requires
+semantics rather than string overlap — the capability the AI system has and the
+classical system provably lacks. The 344 tied groups are a well-defined
+escalation target, and they sharpen the comparison the project is built to make:
+not a diffuse accuracy difference, but *on the cases where the classical system
+is demonstrably blind, how much does AI escalation recover?*
+
+This is the escalation criterion anticipated in
+[D22](#d22--how-the-two-systems-will-be-compared), now with a concrete
+population attached.
+
+### Scope, and what is deliberately left open
+
+**This analysis covers only the region above 0.99**, because that is the region
+characterised so far. Ties occur throughout the score range. The policy is
+**not** applied more widely until the main confident/unsure boundary is settled;
+applying it first and choosing the boundary afterwards would mean measuring
+twice. The 344 records and 1,624 pairs above are therefore figures for the
+p ≥ 0.99 region, not final counts.
+
+Nothing is implemented by this entry. It records the definition, the policy and
+the reasoning; the code follows once the boundary is fixed.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
