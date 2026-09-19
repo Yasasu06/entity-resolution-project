@@ -25,7 +25,7 @@ doesn't support a confident answer, saying so rather than guessing.
 | Blocking diagnostics (what was discarded, and why) | ✅ Done |
 | Blocking ↔ matching interface contract | ✅ Done |
 | **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
-| Selective prediction / review-band design | 🔜 Designed, not yet built — depends on match scores |
+| **Selective prediction** / review-band design | 🔜 Rule pre-registered — 6.0-bit threshold, 1.0-bit margin, −3.5-bit floor; 1,072 auto-accept, 1,113 to review — not yet implemented |
 | Second system (embedding-based), for comparison | 📋 Planned |
 | Final evaluation against sealed labels | 🔒 Not started — labels stay sealed until everything above is finished |
 
