@@ -62,6 +62,8 @@ ACCEPTED_PATH = PROCESSED_DIR / "accepted_classical.csv"
 ACCEPT = "accept"
 REVIEW_TIED = "review_tied"
 REVIEW_UNSURE = "review_unsure"
+# Refused auto-acceptance by the quantity veto rather than by its score (D37).
+REVIEW_QUANTITY = "review_quantity_conflict"
 DIFFERENT = "confidently_different"
 
 # What a reviewer may answer. "none of these" is not a fallback: some records
@@ -107,6 +109,32 @@ def assign_outcomes(ranked: pd.DataFrame) -> pd.DataFrame:
         confident & (out["margin_bits"] > MARGIN_BITS), ACCEPT,
         np.where(confident, REVIEW_TIED,
                  np.where(out["best_bits"] >= FLOOR_BITS, REVIEW_UNSURE, DIFFERENT)))
+    return out
+
+
+def apply_quantity_veto(
+    outcomes: pd.DataFrame, table_a: pd.DataFrame, table_b: pd.DataFrame
+) -> pd.DataFrame:
+    """Refuse auto-acceptance where the two records state conflicting quantities.
+
+    A 512MB card is not a 32GB card, and the matcher cannot see the difference:
+    every comparison measures token overlap, so the differing token joins the set
+    rather than displacing anything (D36). This runs *after* scoring and changes
+    no score, which is why it costs nothing elsewhere in the pipeline.
+
+    Its reach is small - about 1.5% of accepted pairs - and that is the honest
+    figure, not the 9.6% the planted probes suggest (D37).
+    """
+    from src.quantity_veto import conflicting_pairs
+
+    accepted = outcomes[outcomes["outcome"] == ACCEPT]
+    if accepted.empty:
+        return outcomes
+    pairs = pd.DataFrame({LEFT_ID: accepted.index,
+                          RIGHT_ID: accepted["best_candidate"].to_numpy()})
+    vetoed = conflicting_pairs(pairs, table_a, table_b, LEFT_ID, RIGHT_ID)
+    out = outcomes.copy()
+    out.loc[accepted.index[vetoed.to_numpy()], "outcome"] = REVIEW_QUANTITY
     return out
 
 
@@ -166,7 +194,8 @@ def build_review_items(
     columns = attribute_columns(table_a)
     left = table_a.set_index("unique_id")
     right = table_b.set_index("unique_id")
-    needs_review = outcomes[outcomes["outcome"].isin([REVIEW_TIED, REVIEW_UNSURE])]
+    needs_review = outcomes[outcomes["outcome"].isin(
+        [REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY])]
 
     # Only candidates above the floor are worth a reviewer's attention at all.
     shown_pool = ranked[ranked["bits"] >= FLOOR_BITS]
@@ -230,11 +259,14 @@ def main() -> None:
 
     ranked = rank_candidates(scores)
     outcomes = assign_outcomes(ranked)
+    before = int((outcomes["outcome"] == ACCEPT).sum())
+    outcomes = apply_quantity_veto(outcomes, table_a, table_b)
+    vetoed = before - int((outcomes["outcome"] == ACCEPT).sum())
 
     counts = outcomes["outcome"].value_counts()
     total = len(outcomes)
     print(f"{len(scores):,} scored pairs over {total:,} Walmart records\n")
-    for name in (ACCEPT, REVIEW_TIED, REVIEW_UNSURE, DIFFERENT):
+    for name in (ACCEPT, REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY, DIFFERENT):
         n = int(counts.get(name, 0))
         print(f"  {name:<24} {n:>6,} records  ({n / total:6.1%})")
 
@@ -250,6 +282,8 @@ def main() -> None:
     items = build_review_items(ranked, outcomes, table_a, table_b)
     QUEUE_PATH.write_text(json.dumps(items, indent=2))
 
+    print(f"  refused by the quantity veto {vetoed:>6,} records  "
+          f"({vetoed / total:.1%}) - routed to review")
     shown = sum(b["shown"] for i in items for b in i["candidate_blocks"])
     truncated = sum(1 for i in items for b in i["candidate_blocks"] if b["truncated"])
     per_item = [sum(b["shown"] for b in i["candidate_blocks"]) for i in items]

@@ -3053,6 +3053,109 @@ identity-bearing tokens — which is a design change rather than a threshold cha
 
 ---
 
+## D37 — A quantity veto, its honest reach, and where the classical approach stops
+
+**Decision.** A pair is refused auto-acceptance when both records state a
+quantity of the same family and share no value. Implemented as a **post-hoc
+veto**, not a model comparison. It moves **16 of 1,072** accepted records into
+review — **1.5%**.
+
+The design, the expected gain and the test that could disprove it were fixed in
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md) section 9 before the code existed.
+
+### Why a veto rather than a comparison
+
+[D36](#d36--the-accepted-set-does-not-reliably-identify-products-and-a-threshold-will-not-fix-it)
+found the matcher cannot separate a real partner from a near-miss differing in
+one identity-bearing attribute. The natural response is a new comparison. The
+evidence pointed elsewhere.
+
+Adding a comparison requires **retraining**, which changes every score and
+invalidates the thresholds in section 1, the analyses in sections 3 and 6, and
+the measurements in D34, D35 and D36. That is a large, cascading cost for a gain
+measured in advance at 1.5%.
+
+A signal this precise and this rare is also badly served as one weighted term
+among six, where expectation-maximisation can dilute it against the evidence it
+is meant to override. **As a veto it cannot be outvoted, changes no score, and
+can be switched off on its own.**
+
+### The honest gain
+
+| Measurement | Value |
+| --- | ---: |
+| Clean catches on the section 8 planted probes | 85 of 889 (**9.6%**) |
+| Quantity conflicts among the 1,072 real accepts | **16 (1.5%)** |
+| Of those judged by the independent AI, share it also rejected | **10 of 10** |
+
+**The reportable figure is 1.5%, not 9.6%.** The probe number is inflated roughly
+sixfold because the section 8 recipe *manufactured* capacity and dimension
+conflicts far above their natural rate. Optimising against one's own probe and
+quoting its improvement would have overstated this fix by six times.
+
+Where it fires it appears to be right: every one of the ten flagged accepts that
+the independent judge had assessed was one it rejected.
+
+### The held-out validation
+
+Fixed in section 9.3 before the veto was written. The veto was **not modified
+after these results**, which would have voided the test.
+
+| Test | Generated | Result | Predicted |
+| --- | ---: | --- | --- |
+| **H2** — unit swap, number unchanged | 133 | **63.9% caught** | catch — **passed** |
+| **H3** — colour swap, negative control | 400 | **0 firings** | no firing — **passed** |
+| **H1** — quantity stated outside the title | **1** | 0 caught | **inconclusive** |
+
+**H1 could not be run.** Exactly one accepted pair in the dataset states a storage
+quantity outside its title, so the test had no population. It is recorded as
+inconclusive rather than failed, and rather than quietly dropped.
+
+Its single failure is nonetheless informative, and explains H2's 63.9% as well.
+**A conflict requires *both* records to state a comparable quantity.** The
+binding constraint is not extraction, nor which attributes are read — it is how
+often two listings both happen to mention a capacity. That is the whole reason
+the real-world reach is 1.5%, and no better implementation would raise it much.
+
+False-fire rate on the 1,072 accepted pairs: 16, the same 1.5%. Whether those are
+false at all is doubtful, given the AI rejected ten of ten.
+
+### Where the classical approach stops
+
+The veto covers quantities. It does **not** cover conflicting **model numbers**,
+which were 648 of the 889 probes — the large majority of the problem.
+
+That exclusion is deliberate and rests on measurement.
+`rare_identifier_tokens` non-overlap carries **−0.0389 bits**, from m ≈ 0.97:
+roughly 97% of the pairs the model treats as matches already share no rare
+identifier, because retailers legitimately carry different catalogue numbers for
+the same product — a Walmart SKU and an Amazon ASIN are *supposed* to differ.
+**A conflicting identifier is therefore not evidence of a different product**, and
+a rule penalising it would damage true matches.
+
+Separating "a different catalogue number for the same product" from "a different
+product" requires knowing what the number denotes. No rule over token sets has
+that knowledge, and none can be given it.
+
+**This is a structural boundary of the classical approach, not an omission.** It
+is also the clearest evidence yet for what the AI-based system is for: the one
+classical fix that works cleanly reaches 1.5% of the problem, and the remaining
+majority needs semantics. That is a finding about where the two approaches
+genuinely differ, reached without ever consulting a label.
+
+### Effect on the pipeline
+
+| | Before | After |
+| --- | ---: | ---: |
+| Auto-accepted | 1,072 | **1,056** |
+| Review queue | 1,113 | **1,129** |
+
+Scores are unchanged, so nothing measured previously is invalidated. Vetoed
+records carry the distinct outcome `review_quantity_conflict`, so a reviewer sees
+why the pair was withheld rather than inferring it from a score.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

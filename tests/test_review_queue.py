@@ -17,6 +17,8 @@ import pytest
 from src.interfaces import LEFT_ID, RIGHT_ID
 from src.review_queue import (
     ACCEPT,
+    REVIEW_QUANTITY,
+    apply_quantity_veto,
     ACCEPT_BITS,
     DIFFERENT,
     DISPLAY_TIE_BITS,
@@ -227,3 +229,42 @@ def test_the_item_records_why_it_needs_review():
             ("A_1", "B_2", 3.0), ("A_1", "B_3", -1.0)]    # merely unsure
     reasons = {i["walmart_id"]: i["reason"] for i in _items(rows)}
     assert reasons == {"A_0": REVIEW_TIED, "A_1": REVIEW_UNSURE}
+
+
+# --- the quantity veto, wired in ----------------------------------------------
+
+def test_a_quantity_conflict_is_refused_auto_acceptance():
+    """The matcher cannot see 512MB against 32GB; the veto can (D37)."""
+    a = make_table([{"title": "edge proshot 512mb compact flash card"}], "A")
+    b = make_table([{"title": "edge proshot 32gb compact flash card"}], "B")
+    s = scores_from_bits([("A_0", "B_0", 12.0)])
+    outcomes = assign_outcomes(rank_candidates(s))
+    assert outcomes.loc["A_0", "outcome"] == ACCEPT      # accepted on score alone
+    vetoed = apply_quantity_veto(outcomes, a, b)
+    assert vetoed.loc["A_0", "outcome"] == REVIEW_QUANTITY
+
+
+def test_matching_quantities_are_left_accepted():
+    a = make_table([{"title": "edge proshot 32gb compact flash card"}], "A")
+    b = make_table([{"title": "edge proshot 32 gb compactflash memory card"}], "B")
+    s = scores_from_bits([("A_0", "B_0", 12.0)])
+    out = apply_quantity_veto(assign_outcomes(rank_candidates(s)), a, b)
+    assert out.loc["A_0", "outcome"] == ACCEPT
+
+
+def test_the_veto_never_touches_records_that_were_not_accepted():
+    """It refuses acceptance; it cannot promote or reclassify anything else."""
+    a = make_table([{"title": "widget 512mb"}], "A")
+    b = make_table([{"title": "widget 32gb"}], "B")
+    s = scores_from_bits([("A_0", "B_0", 1.0)])          # below the accept bar
+    out = apply_quantity_veto(assign_outcomes(rank_candidates(s)), a, b)
+    assert out.loc["A_0", "outcome"] == REVIEW_UNSURE
+
+
+def test_a_silent_record_is_not_a_conflict():
+    """Absence of a stated quantity is not disagreement (D28)."""
+    a = make_table([{"title": "edge proshot 32gb card"}], "A")
+    b = make_table([{"title": "edge proshot memory card"}], "B")
+    s = scores_from_bits([("A_0", "B_0", 12.0)])
+    out = apply_quantity_veto(assign_outcomes(rank_candidates(s)), a, b)
+    assert out.loc["A_0", "outcome"] == ACCEPT
