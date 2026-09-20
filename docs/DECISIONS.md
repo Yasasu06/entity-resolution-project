@@ -2606,6 +2606,127 @@ open.
 
 ---
 
+## D33 — How many candidates a reviewer sees, and how truncation is disclosed
+
+**Decision.** A review item shows the record's **top tie group in full, always**,
+followed by **10 further candidates** in score order. Any tie group displayed
+incompletely is **labelled with its true size** — for example, *"showing 10 of
+221 equally scored"*.
+
+Tie groups are formed at the 0.05-bit epsilon fixed in
+[D32](#d32--tied-candidates-are-shown-as-an-unordered-set-not-a-ranked-list).
+
+### The problem
+
+The 1,113 records routed to review carry **15,374 candidates** above the
+−3.5-bit floor: median 8 per record, p90 29, **maximum 292**. Nobody reviews 292
+candidates, so the list must be cut. The question is where, and what the cut
+costs.
+
+### Why not a flat cap
+
+A flat cap cuts through tie groups, and after
+[D32](#d32--tied-candidates-are-shown-as-an-unordered-set-not-a-ranked-list)
+that is the most damaging thing it can do: it shows an arbitrary subset of a set
+the interface has just declared unordered, with no indication that anything is
+missing.
+
+| Flat cap | Pairs shown | Top tie group split | Loses a candidate within 1 bit |
+| ---: | ---: | ---: | ---: |
+| 5 | 4,555 | 86 | 133 |
+| 10 | 7,366 | 26 | 51 |
+| 15 | 9,116 | 11 | 20 |
+| 20 | 10,227 | 6 | 11 |
+| 50 | 12,918 | 0 | 0 |
+
+Only a cap near 50 removes the problem, at the cost of showing up to 50 items on
+every long record.
+
+Splitting the top group is also concentrated where it matters least by name and
+most in fact: at a cap of 5 it affects **15 tied records but 71 unsure ones**.
+Tie groups among the tied population reach only 11 members, while unsure records
+— whose score profiles are flat and undifferentiated — reach 37.
+
+### Why the top group is shown whole
+
+Showing the top tie group in full removes top-group splitting **by
+construction**, at any value of k. The cost is a longer worst case, but it falls
+on very few records: at k = 10 the longest list is 46 items and only **8 of
+1,113 records** exceed 20. Those are exactly the records where a reviewer must
+see the whole set to answer *none of these* — the eleven Edge ProShot cards in
+[D31](#d31--tied-partners-when-the-model-cannot-choose-between-candidates) are
+that shape.
+
+Compared like for like, a flat cap of 10 shows 7,366 pairs and splits 26 top
+groups; the whole top group plus 8 shows 7,714 — 348 more — and splits none.
+
+### Truncation cannot be eliminated, only disclosed
+
+D32's rule applies to **every** tie group, not only the leading one, and the
+adopted structure still truncates lower groups: 260 of them at k = 10.
+
+The obvious remedy — show complete tie groups until some number of candidates is
+reached — was measured and **rejected**. Group sizes run to **221 members**, so
+keeping every group whole pushes the longest list to **226 items**. Trading 292
+for 226 is not a solution.
+
+Truncation is therefore unavoidable. What made it objectionable was never that a
+subset is shown, but that an arbitrary subset was **presented as though it were
+ranked**. A group labelled with its true size is honest: the reviewer sees that
+an undifferentiated mass exists and that the displayed members are a sample
+rather than a shortlist.
+
+**The label is therefore part of the decision, not a refinement of it.** At
+k = 10, 260 lower groups are truncated — median true size 10, p90 24, with **37
+groups larger than 20** and one of 221. Unlabelled, those are precisely the
+misleading displays D32 exists to prevent.
+
+### Why ten
+
+| k | Pairs | Avg/record | Max | Lists > 20 | Loses within 1 bit | Loses within 2 bits |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 5 | 6,286 | 5.6 | 41 | 7 | 34 | 176 |
+| 8 | 7,714 | 6.9 | 44 | 8 | 18 | 106 |
+| **10** | **8,452** | **7.6** | **46** | **8** | **11** | **77** |
+| 12 | 9,060 | 8.1 | 48 | 8 | 8 | 60 |
+| 15 | 9,805 | 8.8 | 51 | **16** | 6 | 42 |
+
+At k = 10, **11 of 1,113 records (1.0%)** lose a candidate within one bit of
+their best. Dropping to 8 nearly doubles that to 18, saving 738 pairs — about
+0.7 rows per record, which does not buy back seven records where a genuinely
+plausible candidate is hidden.
+
+Above 10 the return collapses. k = 12 recovers three records; k = 15 recovers
+five more but **doubles the lists over 20 items, from 8 to 16**, moving the cost
+from the metric onto the reviewer.
+
+The long tail does not move with k at all — lists over 20 items sit at 8 records
+for k = 8, 10 and 12, because length is driven by large top tie groups, which are
+shown whole by design. Choosing 10 over 8 does not meaningfully worsen the worst
+case, 44 against 46.
+
+The typical review stays small: median list under 10, average 7.6 candidates.
+
+### The judgement this rests on, stated plainly
+
+The one-bit plausibility bar was chosen because it is the same currency as the
+margin in D31 and the accept rule in
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md). Measured at **two** bits the
+picture is far less comfortable: **77 records** lose a candidate at k = 10,
+against 11 at one bit.
+
+If a candidate a quarter as likely as the leader still deserves to be seen, k = 15
+or a wider rule is defensible. This is a judgement about how much benefit of the
+doubt a reviewer should be given, and the data does not settle it. It is recorded
+here rather than buried so that it can be revisited against real labels.
+
+### Scope
+
+This entry completes the review-queue display design. Nothing is implemented by
+it. The queue itself, and the "none of these" outcome required by D31, follow.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
