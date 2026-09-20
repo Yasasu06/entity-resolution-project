@@ -25,7 +25,7 @@ doesn't support a confident answer, saying so rather than guessing.
 | Blocking diagnostics (what was discarded, and why) | ✅ Done |
 | Blocking ↔ matching interface contract | ✅ Done |
 | **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
-| **Selective prediction** / review-band design | 🔜 Rule pre-registered — 6.0-bit threshold, 1.0-bit margin, −3.5-bit floor; 1,072 auto-accept, 1,113 to review — not yet implemented |
+| **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 1,072 records auto-accepted, 1,113 queued for review |
 | Second system (embedding-based), for comparison | 📋 Planned |
 | Final evaluation against sealed labels | 🔒 Not started — labels stay sealed until everything above is finished |
 
@@ -43,7 +43,7 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading, blocking rules, diagnostics, the blocking/matching interface contract |
-| `tests/` | Automated tests (126 passing) covering the code in `src/` |
+| `tests/` | Automated tests (149 passing) covering the code in `src/` |
 | `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
 
 ## Data
