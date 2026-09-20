@@ -720,3 +720,70 @@ product" requires knowing what the number denotes. That is semantic knowledge th
 classical system does not have and cannot be given by a rule over token sets.
 **This is a structural boundary of the classical approach, not an omission**, and
 it is the clearest case yet for what the AI-based system exists to provide.
+
+---
+
+## 10. Which splits are opened, and what the answer key can and cannot say
+
+**Added 20 September 2026. Written before any labelled file has been opened, and
+the last thing added before unsealing.**
+
+Sections 1 to 9 refer throughout to "unsealing `train`, `valid` or `test`"
+without ever fixing which are used. That gap is closed here rather than settled
+in the moment, when a split could be chosen for its result.
+
+### 10.1 The splits
+
+**All three splits are combined, and that is the headline.** `test` alone is
+reported alongside it.
+
+The benchmark's three-way split exists so that supervised methods can fit on one
+part and be judged on another. **This system fits nothing.** Its prior was
+derived structurally, its thresholds were placed on the shape of the score
+distribution, its comparisons were trained by expectation-maximisation without
+labels, and the whole rule was pre-registered before any answer was available.
+No split was ever used to tune anything, so none is contaminated and none needs
+holding back.
+
+Combining gives the largest evaluation sample and the most reliable estimates.
+Reporting `test` alone as well costs one extra computation and allows comparison
+with published results on this benchmark.
+
+**Reading `valid` first and `test` later is rejected.** It would create exactly
+the opportunity this document exists to remove: seeing one result, adjusting,
+and then reporting the other. There is one pass.
+
+### 10.2 The closed-world assumption
+
+**The answer key labels only the benchmark's curated pairs — roughly 10,242 of
+them. This system scored 564,450.** For the large majority of scored pairs the
+key says nothing at all.
+
+Precision is therefore computed under the standard convention for these
+benchmarks:
+
+> **Any pair not labelled `1` in the answer key is treated as a non-match.**
+
+This is an assumption, not a fact, and it has a consequence that runs against
+this project: **if the matcher found a genuine match that the benchmark's own
+pair sampling never included, it will be scored as a false positive.** Reported
+precision is therefore a lower bound on true precision.
+
+It is declared here, before any result is seen, precisely so that it cannot be
+produced afterwards as an explanation for a disappointing number. On the evidence
+already gathered it is unlikely to be doing much work: D36 found fabricated
+near-misses tying or beating true partners, which no labelling convention
+explains away.
+
+Recall is computed against the matches the key does contain. Matches absent from
+the key cannot be counted in either direction, and no claim is made about them.
+
+### 10.3 What is reported
+
+1. Every measurement fixed in sections 3, 6.6 and 7.5, over the combined splits.
+2. The same headline figures over `test` alone.
+3. The closed-world assumption restated wherever precision is quoted.
+4. Results that contradict this project's earlier decisions, reported as such —
+   in particular section 3.2.7, which commits to reporting that D31 was wrong if
+   selecting the highest-scoring partner among tied candidates would have beaten
+   chance.
