@@ -419,3 +419,104 @@ For each arm, over the agreed population:
    stated alongside.
 6. The share of the review queue the AI could clear at precision equal to or
    better than the modelled human — the question D7 asked.
+
+---
+
+## 7. The baseline comparison
+
+**Added 19 September 2026, before any labelled data has been read.**
+
+[D9](DECISIONS.md#d9--establish-a-deliberately-dumb-baseline-before-building-anything-clever)'s baseline result was voided by
+[D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+Section 3.4.13 commits to re-running the baseline before any comparison against
+it is reported. This section fixes what that comparison actually is, because as
+things stood it was not well defined.
+
+### 7.1 Two problems with the baseline as it was written
+
+**It was supervised and the real system was not.** `choose_threshold` picks the
+threshold maximising F1 on `train` labels. The matcher never saw a label: its
+prior was derived structurally, its thresholds were placed on the shape of the
+score distribution, and the whole rule was pre-registered blind. A baseline
+granted a supervised tuning step that the real system was denied does not
+measure what a reader would assume it measures.
+
+**They did not evaluate the same thing.** The baseline scored the benchmark's
+own curated pairs - the decision step alone, on a set where roughly 9.4% of
+pairs are matches. The real system runs the full pipeline over 564,450
+candidates drawn from 56,376,996 possible pairs. The baseline module says so
+itself: *those two numbers are not comparable*. A third asymmetry: the system
+emits at most one match per record, the baseline predicted per pair with no such
+constraint.
+
+### 7.2 The decision rule
+
+Fixed here:
+
+* **Similarity**: Jaccard over all attribute values combined, as already
+  implemented - the baseline stays deliberately unsophisticated.
+* **Candidate set**: the same 564,450 candidate pairs the real system scores.
+* **One match per Walmart record**, taking its highest-scoring candidate. This
+  matches the system's one-to-one constraint so the two produce the same shape
+  of output.
+* **Accept at Jaccard ≥ 0.34.**
+
+The baseline gains the structural treatment the system had - a label-free
+threshold and the one-to-one constraint - and none of the sophistication. That
+isolates what the probabilistic model buys.
+
+### 7.3 Why 0.34: equal coverage
+
+The threshold is set so that the baseline auto-accepts **the same number of
+records the system does**, and the two are compared on precision at matched
+coverage. Neither can then buy precision by abstaining more, and nothing about
+the choice requires a label.
+
+The system auto-accepts **1,072** records. On this data:
+
+| Threshold | Records accepted |
+| ---: | ---: |
+| 0.33 | 1,161 |
+| **0.34** | **1,055** |
+| 0.35 | 1,021 |
+
+A search at 0.0005 resolution finds no value closer than 1,055, so 0.34 is the
+round number at the nearest achievable point.
+
+### 7.4 Why the flat-spot method was not reused
+
+The thresholds in section 1 were placed on **measured flat spots** - regions
+where moving the threshold changes the outcome least. The same method was tried
+here first, and **it does not transfer.** It is recorded rather than omitted, so
+that the two pre-registrations read consistently to anyone comparing them.
+
+It worked for the matcher because that distribution is genuinely lumpy: a single
+match-weight value held 17.9% of all pairs and the top five held roughly 57%, so
+a threshold physically could not land between them. The baseline's is not:
+
+| | Matcher (bits) | Baseline (Jaccard) |
+| --- | ---: | ---: |
+| Largest single value | 17.9% of pairs | 4.15% of records |
+| Top five values | ~57% | 15.5% |
+
+With 250 distinct values over 2,554 records the scale is near-continuous, so
+churn stops measuring structure and starts measuring **density**. Normalised by
+how many records remain, it rises steadily with the threshold - 0.133 at 0.20,
+0.283 at 0.40, 0.412 at 0.66 - which is the signature of a distribution with no
+flat spots at all.
+
+Taken at face value the method would have selected **0.66, accepting 68 of 2,554
+records**: a crippled baseline, and a result flattering to the real system
+produced by an argument that does not apply to it. The "flattest" placement was
+simply the emptiest one.
+
+### 7.5 What is reported
+
+1. **Headline**: precision of the baseline's accepted set at matched coverage,
+   against the system's, over the same candidates.
+2. **Supporting**: the **full precision-recall curve** across all thresholds.
+   This is what makes the headline uncherry-pickable - if the baseline beats the
+   system at some other threshold, the curve says so and that is reported.
+3. **Secondary**: the original curated-pairs run, kept for continuity with the
+   benchmark literature, labelled **supervised and not comparable** to either
+   number above.
