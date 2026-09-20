@@ -161,6 +161,10 @@ img{max-width:100%}
     text-transform:uppercase;color:var(--accent);margin-bottom:4px}
   footer{border-top:1px solid var(--rule);padding-block:30px;color:var(--faint);
     font-size:.82rem}
+  .foot-links{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+  .foot-links a{color:var(--accent);text-decoration:none;
+    border-bottom:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+  .foot-links a:hover,.foot-links a:focus-visible{border-bottom-color:var(--accent)}
   @media (max-width:640px){
     .bar{grid-template-columns:106px 1fr 50px;font-size:.8rem}
     .rec .f{grid-template-columns:64px 1fr}
