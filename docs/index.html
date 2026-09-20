@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 <nav><div class="wrap">
@@ -115,14 +115,12 @@
 
   <div class="tool" id="tool">
     <div class="tool-hd">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span class="badge" id="rec-id">&mdash;</span>
-        <span class="badge q" id="rec-why">&mdash;</span>
-      </div>
-      <span class="tally" id="tally">no decisions yet</span>
+      <span class="badge" id="rec-id">&mdash;</span>
+      <span class="badge q" id="rec-why">&mdash;</span>
     </div>
     <div class="subject">
-      <div class="eyebrow" style="margin-bottom:7px">Walmart record</div>
+      <div class="eyebrow" style="margin-bottom:9px">Walmart record</div>
+      <div class="ttl" id="subject-title"></div>
       <div class="rec" id="subject"></div>
     </div>
     <div class="cands" id="cands"></div>
@@ -130,7 +128,9 @@
       <button class="act primary" id="btn-confirm" disabled>Confirm selected match</button>
       <button class="act" id="btn-none">None of these</button>
       <button class="act" id="btn-cant">Can&rsquo;t tell</button>
-      <button class="act" id="btn-next" style="margin-left:auto" hidden>Next record &rarr;</button>
+      <span class="spacer"></span>
+      <span class="tally" id="tally">no decisions yet</span>
+      <button class="act" id="btn-next" hidden>Next record &rarr;</button>
     </div>
     <div class="reveal" id="reveal" hidden></div>
   </div>
@@ -233,6 +233,6 @@
     &mdash; 2,554 and 22,074 records, 56,376,996 possible pairs, reduced to 564,450
     candidates. Figures on this page are measured, not illustrative.</p>
 </div></footer>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

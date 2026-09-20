@@ -14,8 +14,10 @@
   function esc(s){ return String(s == null ? "" : s)
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  function fields(rec){
-    return FIELDS.filter(function(f){ return rec[f] != null && rec[f] !== ""; })
+  function fields(rec, skipTitle){
+    return FIELDS.filter(function(f){
+        if (skipTitle && f === "title") return false;
+        return rec[f] != null && rec[f] !== ""; })
       .map(function(f){ return '<div class="f"><span>'+f+'</span><span>'+esc(rec[f])+'</span></div>'; })
       .join("");
   }
@@ -25,7 +27,8 @@
     picked = null; done = false;
     $("rec-id").textContent = c.id;
     $("rec-why").textContent = REASON[c.outcome] || c.outcome;
-    $("subject").innerHTML = fields(c.walmart);
+    $("subject-title").textContent = c.walmart.title || "";
+    $("subject").innerHTML = fields(c.walmart, true);
     $("reveal").hidden = true;
     $("reveal").classList.remove("in");
     $("btn-next").hidden = true;
@@ -139,7 +142,7 @@
     $("tool").scrollIntoView({ block: "start", behavior: "smooth" });
   });
 
-  fetch("data.json")
+  fetch("data.json?v=3")
     .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
     .then(function(d){ cards = d.cards; render(); })
     .catch(function(){
