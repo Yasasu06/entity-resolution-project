@@ -2925,6 +2925,134 @@ section 6.6.
 
 ---
 
+## D36 — The accepted set does not reliably identify products, and a threshold will not fix it
+
+**Finding.** Two independent label-free methods agree that the matcher's
+auto-accepted pairs are unreliable at the level of *product identity*. A planted
+near-miss — a real listing with one attribute mutated so that it is definitely a
+different product — **ties or beats the true partner in 49.0% of cases**, and
+would clear the accept threshold on its own **91.2%** of the time.
+
+A higher threshold does not help. **This is a defect in what the model can see,
+not in where the line is drawn.**
+
+No labelled data was read. Everything below is constructed or independently
+judged.
+
+### The two methods
+
+**An independent AI judge** was asked to decide 704 of the 1,072 accepted pairs,
+stratified across the score range and reweighted to the population. It disagreed
+with **31.0%** of them. Disagreement fell monotonically with score — 72.6% in the
+6–8 bit band against 11.2% above 16 bits — which is the signature of a real
+signal rather than a capricious judge.
+
+**Planted-match probes**, whose recipe was fixed in
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md) section 8 *before any probe was
+generated*, supply a second estimate with **no model judgement at all**. Ground
+truth is constructed: the clone is a different product because the mutation made
+it one.
+
+For each of the 1,072 accepted pairs, the Amazon partner was cloned with exactly
+one identity-changing mutation — capacity ×4, a dimension +2, a model number's
+last digit incremented, or a colour swapped. 889 clones were produced (17.1%
+skipped, no rule applying), using: model 648, capacity 133, colour 86,
+dimension 22.
+
+### The results
+
+| Metric | Result |
+| --- | ---: |
+| **Usurpation** — near-miss scores strictly above the true partner | **15.7%** |
+| **Tie-or-beat** — near-miss at or above the true partner | **49.0%** |
+| **Would-be-accepted** — near-miss clears 6.0 bits alone | **91.2%** |
+| **Benign retention** — same product, 20% of title tokens dropped, still accepted | 87.9% |
+| Skip rate | 17.1% |
+
+Distance from the true partner:
+
+| | Clones | Share |
+| --- | ---: | ---: |
+| Clone wins outright | 140 | 15.7% |
+| **Exact tie** | **296** | **33.3%** |
+| Behind by ≤ 1 bit | 177 | 19.9% |
+| Behind by > 8 bits | 141 | 15.9% |
+
+**The median gap is 0.00 bits.** Changing a 32GB card to 128GB, or incrementing
+one digit of a model number, typically changes the score not at all.
+
+### Why a higher threshold does not fix it
+
+A rule of `S = 12, M = 4` had been proposed on the strength of the AI evidence,
+where disagreement did fall with score. The probe rules it out:
+
+| Restricted to accepts with a true score of | Usurpation |
+| --- | ---: |
+| ≥ 6 bits (all 889) | 15.7% |
+| ≥ 12 bits (582) | **16.3%** |
+
+Near-miss confusion is **not concentrated at low scores**. Raising the threshold
+would have discarded roughly half the automation and left the failure mode
+untouched. The two methods disagree here for a reason worth stating: the AI's
+disagreement includes *ranking* errors, which score does predict, while the probe
+isolates *product discrimination*, which it does not.
+
+### The diagnosis
+
+The comparisons cannot see the token that decides identity. `title` is compared
+as a proportion of shared words, so `128gb` is one token among fifteen and weighs
+no more than `memory`; the identifier comparisons fire on any shared rare token.
+A clone differing in exactly the decisive token therefore presents almost the
+same evidence as the original.
+
+This is the missing-comparison finding of
+[D31](#d31--tied-partners-when-the-model-cannot-choose-between-candidates),
+measured on the **accepted** set rather than the tied one, and far larger than it
+appeared there. D31 recorded it as affecting 346 tied records. It affects the
+pairs the system ships without review.
+
+### Two errors made in producing this result
+
+**The first run was contaminated, and an assertion caught it.** Clones were
+round-tripped through CSV, which changed column dtypes: `None` became `NaN` and
+stringified differently, altering the derived tokens of **6,019 original records**
+— the corpus the probe was meant to hold fixed. A self-check comparing original
+features before and after planting failed, and the run was rebuilt in memory.
+Without that check the probe would have produced plausible numbers from a
+corrupted corpus.
+
+**The second run double-counted, and arithmetic caught it.** 44 Amazon records
+are the best partner for more than one Walmart record, so cloning per accepted
+pair built duplicate clone rows, yielding 971 "near-miss" pairs from 889 clones.
+The discrepancy surfaced only because the reported count did not match the number
+generated. The figures above are from the corrected run; an earlier set was
+wrong.
+
+Both are recorded because a probe of this kind is only worth what its construction
+is worth, and a reader has no way to audit that from the numbers alone.
+
+### What remains defensible
+
+* **Blocking** — 564,450 candidates from 56,376,996, full reachability. Untested
+  by this probe (section 8.2) but unaffected by it.
+* **The ranking** — score continues to predict the AI's agreement, and the
+  within-record margin carries independent signal.
+* **The discipline** — pre-registration, the seal, and the fact that this finding
+  was reachable at all without touching a label.
+
+**What is not defensible is describing the current auto-accept set as reliable.**
+On this evidence the system cannot be recommended for unattended production use
+at its present automated fraction.
+
+### Scope
+
+This entry records the finding. It does **not** decide the response. The options
+range from leaving the pre-registered rule untouched and reporting the weakness,
+through reducing the automated fraction, to adding a comparison that can see
+identity-bearing tokens — which is a design change rather than a threshold change.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
