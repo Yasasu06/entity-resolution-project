@@ -20,11 +20,16 @@ jupyterlab==4.6.3   # environment for exploratory notebooks in notebooks/
 nbstripout==0.9.1   # strips notebook outputs before commit (see docs/DECISIONS.md)
 
 # --- AI escalation arm ------------------------------------------------------
-anthropic==1.7.0     # the AI-only review arm (docs/PRE_REGISTRATION.md section 6)
+openai==3.16.2      # the AI-only review arm (docs/PRE_REGISTRATION.md section 6)
 
-# NOTE: unlike the pins above, this one is verified only as far as importing the
-# package and constructing a client. No API call has been made, because the arm
-# has not been run. Re-verify when credentials are first used.
+# The arm calls gpt-5.4-mini-2026-03-17, a dated snapshot so that it cannot be
+# repointed under a pre-registered experiment. Section 6.2 originally committed
+# to claude-opus-5; the change is recorded as a dated amendment there rather
+# than as a silent edit.
+#
+# This pin is verified further than an import: the model was called on the same
+# path the arm uses, and confirmed to honour temperature=0 rather than merely
+# accept it. No escalation run has been made.
 
 # --- Testing ----------------------------------------------------------------
 pytest==9.1.1       # test runner for the code in src/

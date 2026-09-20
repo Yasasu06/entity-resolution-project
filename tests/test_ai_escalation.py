@@ -21,7 +21,9 @@ import src.ai_escalation as ai
 from src.ai_escalation import (
     MIN_UNANIMOUS_AGREEMENT,
     SHUFFLE_SALTS,
+    CONTROL_SALT,
     Decision,
+    RecordRuns,
     Response,
     judge,
     judge_with_shuffles,
@@ -75,9 +77,16 @@ NONE = '{"decision": "none_of_these", "amazon_id": null, "reasoning": "no match.
 
 def test_the_real_responder_refuses_to_run_without_credentials(monkeypatch):
     """The mock is for tests. It is never a fallback for a missing key."""
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(ai, "ENV_FILE", Path("/nonexistent"))
     with pytest.raises(RuntimeError):
-        ai.anthropic_responder()
+        ai.openai_responder()
+
+
+def test_the_model_is_the_dated_snapshot_the_amendment_names():
+    """A floating alias could be repointed under a pre-registered experiment."""
+    assert ai.MODEL == "gpt-5.4-mini-2026-03-17"
+    assert ai.TEMPERATURE == 0
 
 
 def test_a_malformed_reply_is_an_error_not_an_abstention():
@@ -166,17 +175,28 @@ def test_judging_records_the_token_cost():
     assert (d.input_tokens, d.output_tokens) == (100, 20)
 
 
-def test_each_record_is_judged_once_per_ordering():
+def test_each_record_is_judged_once_per_ordering_plus_a_control():
     responder = replying(MATCH)
-    decisions = judge_with_shuffles(item(n_tied=6), responder)
-    assert len(decisions) == len(SHUFFLE_SALTS) == len(responder.calls)
+    record = judge_with_shuffles(item(n_tied=6), responder)
+    assert len(record.orderings) == len(SHUFFLE_SALTS)
+    assert len(responder.calls) == len(SHUFFLE_SALTS) + 1, "the control is a fourth call"
     assert len(set(responder.calls)) > 1, "the orderings must actually differ"
+
+
+def test_the_control_repeats_the_first_ordering_exactly():
+    """Only then is a disagreement attributable to sampling rather than order."""
+    responder = replying(MATCH)
+    judge_with_shuffles(item(n_tied=6), responder)
+    assert CONTROL_SALT == SHUFFLE_SALTS[0]
+    assert responder.calls[-1] == responder.calls[0]
 
 
 # --- stability ----------------------------------------------------------------
 
-def _runs(keys):
-    return {"A_0": [Decision(d, a, "") for d, a in keys]}
+def _runs(keys, control=None):
+    orderings = [Decision(d, a, "") for d, a in keys]
+    ctrl = Decision(*control, "") if control else orderings[0]
+    return {"A_0": RecordRuns(orderings=orderings, control=ctrl)}
 
 
 def test_three_identical_answers_are_unanimous():
@@ -196,11 +216,17 @@ def test_abstentions_agree_regardless_of_named_candidate():
     assert gate["unanimous"] == 1
 
 
+def _same(key, n=3):
+    d = Decision(*key, "")
+    return RecordRuns(orderings=[d] * n, control=d)
+
+
 def test_the_gate_fails_below_the_floor():
-    runs = {f"A_{i}": [Decision("match", f"B_{i % 2}", "")] * 3 for i in range(10)}
+    runs = {f"A_{i}": _same(("match", f"B_{i % 2}")) for i in range(10)}
     for i in range(6):                       # six of ten made inconsistent
-        runs[f"A_{i}"] = [Decision("match", "B_0", ""), Decision("match", "B_1", ""),
-                          Decision("match", "B_0", "")]
+        mixed = [Decision("match", "B_0", ""), Decision("match", "B_1", ""),
+                 Decision("match", "B_0", "")]
+        runs[f"A_{i}"] = RecordRuns(orderings=mixed, control=mixed[0])
     gate = stability(runs, {k: item(k, n_tied=20) for k in runs})
     assert gate["unanimous_rate"] == pytest.approx(0.4)
     assert not gate["meets_floor"] and not gate["passes"]
@@ -209,7 +235,7 @@ def test_the_gate_fails_below_the_floor():
 def test_the_gate_requires_beating_chance_as_well_as_the_floor():
     """A record with few options agrees often by luck; the floor alone would
     let that through."""
-    runs = {f"A_{i}": [Decision("match", "B_0", "")] * 3 for i in range(10)}
+    runs = {f"A_{i}": _same(("match", "B_0")) for i in range(10)}
     tiny = {k: item(k, n_tied=1) for k in runs}          # 1 candidate + 2 outcomes
     gate = stability(runs, tiny)
     assert gate["expected_rate_by_chance"] == pytest.approx(1 / 9)
@@ -232,7 +258,7 @@ def test_the_whole_arm_runs_against_a_mock():
     assert results["A_0"]["decision"] == "match"
     assert results["A_0"]["unanimous"] is True
     assert len(results["A_0"]["runs"]) == len(SHUFFLE_SALTS)
-    assert results["A_0"]["input_tokens"] == 300      # three calls at 100
+    assert results["A_0"]["input_tokens"] == 400      # three orderings plus control
     assert gate["records"] == 2
     json.dumps(results)                                # must be serialisable
 
@@ -276,3 +302,37 @@ def test_a_real_looking_key_is_accepted(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-value")
     monkeypatch.setattr(ai, "ENV_FILE", Path("/nonexistent"))
     assert ai.require_api_key() == "sk-test-value"
+
+
+# --- the same-ordering control ------------------------------------------------
+
+def test_a_flip_against_the_control_is_counted_as_sampling_noise():
+    """The control saw an identical prompt, so a disagreement cannot be
+    position bias - there was no change in position."""
+    runs = _runs([("match", "B_1")] * 3, control=("match", "B_2"))
+    gate = stability(runs, {"A_0": item()})
+    assert gate["control_flips"] == 1
+    assert gate["control_flip_rate"] == 1.0
+    assert gate["unanimous_rate"] == 1.0, "the orderings still agreed among themselves"
+
+
+def test_a_stable_control_reports_no_noise():
+    gate = stability(_runs([("match", "B_1")] * 3), {"A_0": item()})
+    assert gate["control_flips"] == 0 and gate["control_flip_rate"] == 0.0
+
+
+def test_the_control_does_not_by_itself_fail_the_gate():
+    """It caps how much instability can be blamed on presentation; it is
+    reported alongside rather than used to disqualify."""
+    runs = {f"A_{i}": _runs([("match", "B_1")] * 3, control=("match", "B_2"))["A_0"]
+            for i in range(10)}
+    gate = stability(runs, {k: item(k) for k in runs})
+    assert gate["control_flip_rate"] == 1.0
+    assert gate["passes"], "the gate turns on the orderings, not the control"
+
+
+def test_the_control_outcome_is_recorded_per_record():
+    results, gate = run([item("A_0", n_tied=3)], replying(MATCH))
+    assert results["A_0"]["control_flipped"] is False
+    assert results["A_0"]["control"]["decision"] == "match"
+    assert "control_flip_rate" in gate

@@ -278,6 +278,49 @@ audit and is **not** scored.
 [D7](DECISIONS.md#d7--ai-escalation-allowed-real-world-knowledge-judged-on-cost)
 judges escalation on cost reduction rather than accuracy alone.
 
+
+#### Amendment, 19 September 2026 — the model was changed
+
+**The commitment above is left standing and unedited.** This project pre-registered
+`claude-opus-5`, and that is what section 6.2 says. It was changed before the arm
+ran, and this block records the change rather than hiding it in a revision.
+
+| | |
+| --- | --- |
+| Originally committed | `claude-opus-5` |
+| Now used | **`gpt-5.4-mini-2026-03-17`** |
+| Reason | Account access, and cost: the cheapest viable option was preferred |
+| Date | 19 September 2026 |
+
+**When this happened matters.** No call had been made, no result existed, and no
+labelled data had been read. The change could not have been influenced by an
+outcome, because there was no outcome. Had the arm already run, replacing the
+model would have voided the pre-registration rather than amended it.
+
+**A dated snapshot, not a floating alias.** `gpt-5.4-mini` without the date can be
+repointed to a different model without notice, which would leave this document
+naming something that no longer exists. The dated identifier cannot.
+
+**What was verified before fixing on it**, because published information about
+whether this model belongs to the reasoning family was contradictory:
+
+| Check | Result |
+| --- | --- |
+| Accepts `temperature=0` on the call path used | Yes |
+| **Honours** it — three runs of a variance-prone prompt | Yes, identical output each time |
+| Reports reasoning tokens | No — `reasoning_tokens: 0` |
+
+The second check is the one that mattered. A model that accepted the parameter and
+ignored it would satisfy the letter of section 6.2 while breaking what it is for:
+the stability gate in 6.3 assumes that variation between runs comes from candidate
+ordering. If the model sampled freely at temperature 0, a flip would no longer mean
+what the gate says it means.
+
+**What this changes about the claim.** The arm now measures what *an OpenAI model*
+can do with this queue. It is not a result about Claude, and the write-up must not
+imply one. The question D7 and D24 pose — how much of the review queue an AI can
+clear, and at what cost — is unchanged, because neither is specific to a vendor.
+
 ### 6.3 The stability gate, and what disqualifies the arm
 
 A language model is exposed to position bias in the same way a human reviewer
@@ -303,6 +346,29 @@ Two criteria, both fixed now:
 
 If the arm fails either criterion, that is **reported as the finding**, and its
 accuracy is not presented as a headline result.
+
+
+#### The same-ordering control
+
+Determinism at temperature 0 was confirmed on a short prompt. Real prompts are
+roughly 644 tokens with long candidate lists, and identical output is not
+guaranteed to hold as strongly at that length: large-batch inference can vary
+slightly even at temperature 0.
+
+Each record is therefore judged a **fourth** time, using **the same ordering as the
+first run**. Any disagreement between those two is sampling noise, because nothing
+about the input changed.
+
+This costs one extra call per record and needs no labels. It separates the two
+things the gate would otherwise confuse:
+
+* run 1 against run 4 — **sampling noise**, the input was identical
+* runs 1 to 3 against each other — **position bias**, the ordering differed
+
+The control rate is **reported alongside the gate result**. A high control rate
+does not by itself disqualify the arm, but it caps how much of the measured
+instability can honestly be attributed to presentation, and the gate result must
+be read against it.
 
 ### 6.4 The human-only arm
 

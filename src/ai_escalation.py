@@ -86,12 +86,21 @@ def require_api_key(name: str = "OPENAI_API_KEY") -> str:
 
 # --- fixed in PRE_REGISTRATION.md section 6 -----------------------------------
 
-MODEL = "claude-opus-5"
+# Changed from claude-opus-5 before the arm ran; see the amendment in
+# PRE_REGISTRATION.md section 6.2. A dated snapshot, so it cannot be
+# repointed under the experiment. Verified to honour temperature 0, not
+# merely to accept it.
+MODEL = "gpt-5.4-mini-2026-03-17"
 TEMPERATURE = 0
 MAX_TOKENS = 512
 
 # Three runs, three orderings. The salts only need to differ from each other.
 SHUFFLE_SALTS = ("", "#run2", "#run3")
+
+# A fourth run repeating the first ordering. Any disagreement between them is
+# sampling noise, since the input was identical - which is what separates it
+# from the position bias the gate measures.
+CONTROL_SALT = SHUFFLE_SALTS[0]
 
 # The disqualification floor. Below this, two decisions in five turn on the
 # order candidates happened to be displayed in, and reporting them as a measured
@@ -224,9 +233,29 @@ def judge(item: dict, responder: Responder, salt: str = "") -> Decision:
                     reply.input_tokens, reply.output_tokens, reply.text)
 
 
-def judge_with_shuffles(item: dict, responder: Responder) -> list[Decision]:
-    """Judge one record once per ordering."""
-    return [judge(item, responder, salt) for salt in SHUFFLE_SALTS]
+@dataclass
+class RecordRuns:
+    """What one record produced: three orderings, plus the control."""
+    orderings: list[Decision]
+    control: Decision
+
+    def unanimous(self) -> bool:
+        return len({d.key() for d in self.orderings}) == 1
+
+    def control_flipped(self) -> bool:
+        """The control repeats run 1's ordering, so a difference is sampling
+        noise rather than position bias - nothing about the input changed."""
+        return self.control.key() != self.orderings[0].key()
+
+    def all_decisions(self) -> list[Decision]:
+        return [*self.orderings, self.control]
+
+
+def judge_with_shuffles(item: dict, responder: Responder) -> RecordRuns:
+    """Judge one record once per ordering, then once more at the first ordering."""
+    orderings = [judge(item, responder, salt) for salt in SHUFFLE_SALTS]
+    control = judge(item, responder, CONTROL_SALT)
+    return RecordRuns(orderings=orderings, control=control)
 
 
 # --- stability ----------------------------------------------------------------
@@ -238,17 +267,21 @@ def _options(item: dict) -> int:
     return shown + 2
 
 
-def stability(runs: dict[str, list[Decision]], items: dict[str, dict]) -> dict:
+def stability(runs: dict[str, RecordRuns], items: dict[str, dict]) -> dict:
     """Measure how often the three orderings agreed, and against what chance.
 
     Agreement alone is not enough: a record with two candidates would agree
     often by luck. The comparison is therefore against the agreement expected
     from choosing uniformly at random among that record's own options.
+
+    The control rate is reported alongside. It does not disqualify the arm on
+    its own, but it caps how much of the measured instability can honestly be
+    blamed on presentation rather than on sampling.
     """
-    unanimous, expected = 0, 0.0
-    for record_id, decisions in runs.items():
-        keys = {d.key() for d in decisions}
-        unanimous += len(keys) == 1
+    unanimous, expected, control_flips = 0, 0.0, 0
+    for record_id, record in runs.items():
+        unanimous += record.unanimous()
+        control_flips += record.control_flipped()
         k = _options(items[record_id])
         # probability that three uniform draws from k options all coincide
         expected += 1 / (k * k)
@@ -256,6 +289,7 @@ def stability(runs: dict[str, list[Decision]], items: dict[str, dict]) -> dict:
     n = len(runs)
     rate = unanimous / n if n else 0.0
     chance = expected / n if n else 0.0
+    control_rate = control_flips / n if n else 0.0
     return {
         "records": n,
         "unanimous": unanimous,
@@ -265,6 +299,8 @@ def stability(runs: dict[str, list[Decision]], items: dict[str, dict]) -> dict:
         "beats_chance": rate > chance,
         "meets_floor": rate >= MIN_UNANIMOUS_AGREEMENT,
         "passes": rate >= MIN_UNANIMOUS_AGREEMENT and rate > chance,
+        "control_flips": control_flips,
+        "control_flip_rate": control_rate,
     }
 
 
@@ -277,7 +313,7 @@ def majority_decision(decisions: list[Decision]) -> Decision:
 
 # --- the real responder -------------------------------------------------------
 
-def anthropic_responder() -> Responder:
+def openai_responder() -> Responder:
     """Build a responder backed by the real API.
 
     Raises if the SDK or the key is missing. It deliberately does not fall back
@@ -285,26 +321,27 @@ def anthropic_responder() -> Responder:
     than one that did not run.
     """
     try:
-        import anthropic
+        from openai import OpenAI
     except ImportError as exc:
         raise RuntimeError(
-            "the 'anthropic' package is not installed; add it to requirements.txt"
+            "the 'openai' package is not installed; see requirements.txt"
         ) from exc
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise RuntimeError("ANTHROPIC_API_KEY is not set; this arm cannot run")
 
-    client = anthropic.Anthropic()
+    require_api_key()
+    client = OpenAI()
 
     def respond(prompt: str) -> Response:
-        reply = client.messages.create(
-            model=MODEL, max_tokens=MAX_TOKENS, temperature=TEMPERATURE,
+        reply = client.chat.completions.create(
+            model=MODEL,
             messages=[{"role": "user", "content": prompt}],
+            temperature=TEMPERATURE,
+            max_completion_tokens=MAX_TOKENS,
         )
+        usage = reply.usage
         return Response(
-            text="".join(block.text for block in reply.content
-                         if getattr(block, "type", None) == "text"),
-            input_tokens=reply.usage.input_tokens,
-            output_tokens=reply.usage.output_tokens,
+            text=reply.choices[0].message.content or "",
+            input_tokens=usage.prompt_tokens,
+            output_tokens=usage.completion_tokens,
         )
 
     return respond
@@ -313,21 +350,25 @@ def anthropic_responder() -> Responder:
 # --- running ------------------------------------------------------------------
 
 def run(items: list[dict], responder: Responder) -> tuple[dict, dict]:
-    """Judge every item three times and summarise stability."""
+    """Judge every item three times, plus the control, and summarise stability."""
     runs = {item["walmart_id"]: judge_with_shuffles(item, responder) for item in items}
     by_id = {item["walmart_id"]: item for item in items}
 
     results = {}
-    for record_id, decisions in runs.items():
-        chosen = majority_decision(decisions)
+    for record_id, record in runs.items():
+        chosen = majority_decision(record.orderings)
         results[record_id] = {
             "decision": chosen.decision,
             "amazon_id": chosen.amazon_id,
             "reasoning": chosen.reasoning,
-            "unanimous": len({d.key() for d in decisions}) == 1,
-            "runs": [{"decision": d.decision, "amazon_id": d.amazon_id} for d in decisions],
-            "input_tokens": sum(d.input_tokens for d in decisions),
-            "output_tokens": sum(d.output_tokens for d in decisions),
+            "unanimous": record.unanimous(),
+            "control_flipped": record.control_flipped(),
+            "runs": [{"decision": d.decision, "amazon_id": d.amazon_id}
+                     for d in record.orderings],
+            "control": {"decision": record.control.decision,
+                        "amazon_id": record.control.amazon_id},
+            "input_tokens": sum(d.input_tokens for d in record.all_decisions()),
+            "output_tokens": sum(d.output_tokens for d in record.all_decisions()),
         }
     return results, stability(runs, by_id)
 
@@ -340,10 +381,11 @@ def load_queue(tied_only: bool = True) -> list[dict]:
 
 def main(tied_only: bool = True) -> None:
     items = load_queue(tied_only)
-    print(f"{len(items):,} records, {len(SHUFFLE_SALTS)} orderings each "
-          f"= {len(items) * len(SHUFFLE_SALTS):,} calls to {MODEL}")
+    calls = len(items) * (len(SHUFFLE_SALTS) + 1)
+    print(f"{len(items):,} records, {len(SHUFFLE_SALTS)} orderings plus a control "
+          f"= {calls:,} calls to {MODEL}")
 
-    results, gate = run(items, anthropic_responder())
+    results, gate = run(items, openai_responder())
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_PATH.write_text(json.dumps(results, indent=2))
@@ -356,6 +398,8 @@ def main(tied_only: bool = True) -> None:
     print(f"  expected by chance          {gate['expected_rate_by_chance']:.1%}")
     print(f"  floor                       {gate['floor']:.0%}")
     print(f"  stability gate              {'PASSED' if gate['passes'] else 'FAILED'}")
+    print(f"  control flips (same order)  {gate['control_flips']:,} "
+          f"({gate['control_flip_rate']:.1%})  - sampling noise, not position bias")
     print(f"\n  tokens                      {tokens_in:,} in, {tokens_out:,} out")
     print(f"  results written to          {RESULTS_PATH.name}")
     if not gate["passes"]:
