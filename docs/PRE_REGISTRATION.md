@@ -530,3 +530,94 @@ simply the emptiest one.
 3. **Secondary**: the original curated-pairs run, kept for continuity with the
    benchmark literature, labelled **supervised and not comparable** to either
    number above.
+
+---
+
+## 8. Planted-match probes
+
+**Added 20 September 2026, before the probes were generated or run, and before
+any labelled data has been read.**
+
+An independent AI judge disagreed with **31%** of the auto-accepted pairs
+(population-weighted, 704 of 1,072 judged). That is one judge, one prompt, one
+sample. This section fixes a second estimate of the same quantity by a
+mechanically different route, whose ground truth is **constructed rather than
+judged**.
+
+The recipe is written here first because a corruption scheme is a researcher
+degree of freedom: probes can be designed to make a system look excellent or
+catastrophic, and the author will not necessarily notice they have done it.
+
+### 8.1 What is planted
+
+For every one of the **1,072 auto-accepted pairs** `(W, A)`, two clones of the
+Amazon record `A` are generated.
+
+**A near-miss clone `A'` — definitionally NOT a match for `W`.** Exactly one
+mutation is applied, taking the **first rule that matches**, so the choice is
+deterministic:
+
+1. **Capacity.** A title token matching `\d+\s?(kb|mb|gb|tb)` has its number
+   multiplied by 4 (by 8 if ×4 reproduces a value already in the title).
+2. **Dimension.** A number immediately preceding `inch`, `in`, or `"` has 2
+   added to it.
+3. **Model number.** A token of at least five characters containing both
+   letters and digits has its final digit incremented, 9 wrapping to 0.
+4. **Colour.** A colour word from the fixed list `black, white, blue, red,
+   green, silver, grey, gray, pink, purple` is replaced by the next word in
+   that list, wrapping.
+
+If no rule matches, no near-miss clone is produced and the record counts toward
+a reported **skip rate**. Every mutation changes the product's identity: a 32GB
+card is not a 512MB card.
+
+**A benign clone `A''` — still the same product.** A fixed 20% of the title's
+tokens are deleted, chosen by a generator seeded with the record id. Other
+attributes are untouched. This simulates a terser listing of the same item.
+
+### 8.2 How they are scored
+
+The clones are paired with `W` and scored **through the already-trained model**.
+
+**The model is not retrained, and blocking is not re-run.** Retraining on data
+containing planted records would let the probes influence the parameters they
+are testing. Re-blocking would shift document frequencies, which the blocking
+thresholds depend on.
+
+The consequence is stated plainly: **this probe tests the matcher, not the
+blocker.** Whether blocking would have retrieved a planted record is not
+measured here and no claim about blocking recall follows from it.
+
+### 8.3 What is measured
+
+| Metric | Definition |
+| --- | --- |
+| **Usurpation rate** | Share of near-miss clones scoring **strictly higher** than the true partner `A` for the same `W` |
+| **Tie-or-beat rate** | Share scoring **greater than or equal to** `A` |
+| **Would-be-accepted rate** | Share of near-miss clones that would clear the accept rule on their own |
+| **Benign retention** | Share of benign clones still scoring at or above the accept threshold |
+| **Skip rate** | Share of accepted pairs where no mutation rule applied |
+
+### 8.4 How the result will be read
+
+**No pass/fail bar is set**, because there is no principled basis for one.
+
+The probe's purpose is **corroboration**. The AI judge put disagreement on the
+accepted set at 31%. If planted near-misses usurp or tie at a broadly comparable
+rate, two independent methods agree and the finding is no longer one judge's
+opinion. If the planted rate is far lower, either the AI is stricter than the
+task requires or the synthetic mutations are easier than real confusions — and
+that ambiguity will be reported rather than resolved in whichever direction
+flatters the system.
+
+### 8.5 Known limitations, recorded in advance
+
+* The probes are generated from partners of **already-accepted** pairs, so they
+  describe the region the system is confident about. They are not a general
+  precision estimate.
+* Synthetic mutations may be systematically easier or harder than the confusions
+  that occur naturally. The **direction** of the result transfers more reliably
+  than its level.
+* Benign clones test tolerance of terser text only. They say nothing about other
+  kinds of listing variation.
+* Blocking is untested, per 8.2.
