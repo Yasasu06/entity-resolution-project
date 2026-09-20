@@ -26,6 +26,7 @@ doesn't support a confident answer, saying so rather than guessing.
 | Blocking ↔ matching interface contract | ✅ Done |
 | **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
 | **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 1,072 records auto-accepted, 1,113 queued for review |
+| **Human review** of the queued records | 🔜 Not started — 1,113 records queued and unreviewed; the interactive interface is deferred ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
 | Second system (embedding-based), for comparison | 📋 Planned |
 | Final evaluation against sealed labels | 🔒 Not started — labels stay sealed until everything above is finished |
 
@@ -42,7 +43,7 @@ and why.
 | `data/raw/` | Benchmark datasets exactly as downloaded — never edited by hand |
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
-| `src/` | Reusable Python code — data loading, blocking rules, diagnostics, the blocking/matching interface contract |
+| `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, and a simple token-overlap baseline |
 | `tests/` | Automated tests (149 passing) covering the code in `src/` |
 | `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
 
