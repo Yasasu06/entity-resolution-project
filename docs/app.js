@@ -27,6 +27,7 @@
     $("rec-why").textContent = REASON[c.outcome] || c.outcome;
     $("subject").innerHTML = fields(c.walmart);
     $("reveal").hidden = true;
+    $("reveal").classList.remove("in");
     $("btn-next").hidden = true;
     $("btn-confirm").disabled = true;
     ["btn-confirm","btn-none","btn-cant"].forEach(function(b){ $(b).disabled = false; });
@@ -124,6 +125,7 @@
         '<div class="row"><span class="lbl">The system</span><span>' + esc(sysTxt) + "</span></div>" +
       "</div>";
     $("reveal").hidden = false;
+    requestAnimationFrame(function(){ $("reveal").classList.add("in"); });
     ["btn-confirm","btn-none","btn-cant"].forEach(function(b){ $(b).disabled = true; });
     $("btn-next").hidden = false;
     tally();

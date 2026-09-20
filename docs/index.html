@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="theme-color" content="#0F1316">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Before the Answer Key</title>
 <meta name="description" content="An entity-resolution system built without reading a label, with every prediction recorded before the answer key was opened.">
@@ -37,45 +38,65 @@
 
   <div class="stack" id="predictions">
     <h2>Predicted blind, then measured</h2>
+    <div class="tallies">
+      <span class="tal ok"><span class="n">8</span><span class="l">held</span></span>
+      <span class="tal bad"><span class="n">3</span><span class="l">failed</span></span>
+      <span class="tal na"><span class="n">1</span><span class="l">registered as unknowable</span></span>
+    </div>
     <div class="scroller"><table>
-      <thead><tr><th>Claim made before any label was read</th><th>What the answer key said</th><th></th></tr></thead>
+      <thead><tr><th>Claim made before any label was read</th><th>What the answer key said</th></tr></thead>
       <tbody>
-        <tr><td>Blocking keeps essentially every true match</td><td class="num">99.90% recall &mdash; 961 of 962</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>The prior implies roughly 1,128 matches exist</td><td class="num">962 actual</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>&ldquo;Confidently different&rdquo; is our most exposed claim</td><td class="num">0.5% wrong &mdash; 2 of 369</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>Picking the top tied candidate is near a coin flip</td><td class="num">66.3% vs 53.4% chance</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>Tied groups often hold no correct partner at all</td><td class="num">correct one present just 25.7%</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>The display cap costs some true matches</td><td class="num">11 of 1,129</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>The auto-accepted set is unreliable</td><td class="num">43% of accepts wrong</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>Aggregate confidence is badly inflated</td><td class="num">12,941 implied vs 962 real</td><td><span class="mark ok">&check;</span></td></tr>
-        <tr><td>&ldquo;A threshold will not fix it&rdquo;</td><td class="num">precision 56.8% &rarr; 75.0% when raised</td><td><span class="mark bad">&times;</span></td></tr>
-        <tr><td>An AI judge put ~31% of accepts wrong</td><td class="num">43% were &mdash; too generous</td><td><span class="mark bad">&times;</span></td></tr>
-        <tr><td>A test-only figure would be reported</td><td class="num">not computable &mdash; splits partition pairs</td><td><span class="mark bad">&times;</span></td></tr>
-        <tr><td><em>No prediction recorded</em> &mdash; do low-scoring records have partners?</td><td class="num">4.7% of 859 do</td><td><span class="mark na">&ndash;</span></td></tr>
+        <tr class="ok"><td>Blocking keeps essentially every true match</td><td>99.90% recall &mdash; 961 of 962</td></tr>
+        <tr class="ok"><td>The prior implies roughly 1,128 matches exist</td><td>962 actual</td></tr>
+        <tr class="ok"><td>&ldquo;Confidently different&rdquo; is our most exposed claim</td><td>0.5% wrong &mdash; 2 of 369</td></tr>
+        <tr class="ok"><td>Picking the top tied candidate is near a coin flip</td><td>66.3% vs 53.4% chance</td></tr>
+        <tr class="ok"><td>Tied groups often hold no correct partner at all</td><td>present just 25.7% of the time</td></tr>
+        <tr class="ok"><td>The display cap costs some true matches</td><td>11 of 1,129</td></tr>
+        <tr class="ok"><td>The auto-accepted set is unreliable</td><td>43% of accepts wrong</td></tr>
+        <tr class="ok"><td>Aggregate confidence is badly inflated</td><td>12,941 implied vs 962 real</td></tr>
+        <tr class="bad"><td>&ldquo;A threshold will not fix it&rdquo;</td><td>precision 56.8% &rarr; 75.0% when raised</td></tr>
+        <tr class="bad"><td>An AI judge put ~31% of accepts wrong</td><td>43% were &mdash; too generous</td></tr>
+        <tr class="bad"><td>A test-only figure would be reported</td><td>not computable</td></tr>
+        <tr class="na"><td><em>No prediction recorded</em> &mdash; do low-scoring records have partners?</td><td>4.7% of 859 do</td></tr>
       </tbody>
     </table></div>
-    <p class="note col">Eight held, three failed, one was registered in advance as
-      unknowable. The misses are here because a table showing only successes would be
-      worth nothing.</p>
+    <p class="note col">The misses are here because a table showing only successes
+      would be worth nothing. Two of the three are cases where this project was too
+      pessimistic or too narrow, not too flattering.</p>
   </div>
 
   <div class="stack">
-    <div class="figs">
-      <div class="fig"><div class="v" id="f-f1">60.94%</div><div class="k">System F1</div></div>
-      <div class="fig"><div class="v">57.66%</div><div class="k">Baseline F1, best case</div></div>
-      <div class="fig"><div class="v">59.96%</div><div class="k">Precision</div></div>
-      <div class="fig"><div class="v">994</div><div class="k">Accepted unattended</div></div>
-      <div class="fig"><div class="v">1,191</div><div class="k">Sent to review</div></div>
+    <div class="verdict-pair">
+      <div class="big"><span class="v num">60.94%</span><span class="k">Our system, F1</span></div>
+      <div class="big sub"><span class="v num">57.66%</span><span class="k">Five-line heuristic, its best case</span></div>
     </div>
-    <div class="bars col">
-      <div class="bar"><span>System</span><span class="t"><i style="width:60.94%"></i></span><span class="num">60.9%</span></div>
-      <div class="bar dim"><span>Token-overlap baseline</span><span class="t"><i style="width:57.66%"></i></span><span class="num">57.7%</span></div>
-      <div class="bar dim"><span>Same, at matched coverage</span><span class="t"><i style="width:54.24%"></i></span><span class="num">54.2%</span></div>
+    <div class="chart">
+      <div class="ch-row lead">
+        <span class="nm">System</span>
+        <span class="track"><i style="width:60.94%"></i><b style="left:57.66%"></b></span>
+        <span class="val">60.9</span>
+      </div>
+      <div class="ch-row">
+        <span class="nm">Token-overlap baseline, best threshold</span>
+        <span class="track"><i style="width:57.66%"></i></span>
+        <span class="val">57.7</span>
+      </div>
+      <div class="ch-row">
+        <span class="nm">Same, at matched coverage</span>
+        <span class="track"><i style="width:54.24%"></i></span>
+        <span class="val">54.2</span>
+      </div>
+      <div class="ch-scale" aria-hidden="true">
+        <span></span>
+        <span class="ch-ticks"><span style="left:0">0</span><span style="left:25%">25</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:100%">100</span></span>
+        <span class="ch-pad"></span>
+      </div>
     </div>
-    <p class="note col">Six probabilistic comparisons trained by expectation&ndash;maximisation
-      beat a five-line token-overlap heuristic, tuned to its own optimum, by
-      3.3&nbsp;points. That is the honest headline: the system works, modestly, and its
-      unattended output is <strong>not</strong> deployable.</p>
+    <p class="note col">The hairline on the top bar marks the baseline. Six
+      probabilistic comparisons trained by expectation&ndash;maximisation beat a
+      five-line token-overlap heuristic, tuned to its own optimum, by
+      3.3&nbsp;points. That is the honest headline: the system works, modestly, and
+      its unattended output is <strong>not</strong> deployable.</p>
   </div>
 </div></section>
 
