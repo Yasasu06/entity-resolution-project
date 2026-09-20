@@ -3240,6 +3240,115 @@ calibration problem.
 
 ---
 
+## D39 — The final evaluation
+
+**The labels were unsealed on 20 September 2026 and read once.** This entry
+records what the answer key says. Nothing above the boundary commit `9819d63` has
+been edited, and nothing was adjusted after these numbers were seen.
+
+The answer key contains **10,242 labelled pairs with 962 matches**, covering
+**852 of the 2,554 Walmart records**.
+
+### The headline
+
+| | n | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| **System** — 6.0 bits, margin 1.0, quantity veto | 1,056 | **56.82%** | **62.37%** | **59.46%** |
+| **Baseline** — Jaccard ≥ 0.34, matched coverage | 1,055 | 51.85% | 56.86% | 54.24% |
+| Baseline, its best point anywhere on the curve | 1,021 | 52.89% | 63.38% | **57.66%** |
+
+The system beats the baseline by **5.2 F1 points** at matched coverage, and by
+**1.8 points** against the best the baseline achieves at any threshold. A
+Fellegi-Sunter model with six comparisons, trained by expectation-maximisation,
+outperforms a five-line token-overlap heuristic tuned to its own optimum by under
+two points.
+
+### What the evaluation vindicated
+
+**Blocking: 99.90% recall** — 961 of 962 true matches survive into the candidate
+set, and 100% on `test` alone. The component that received the most scrutiny was
+right.
+
+**"Confidently different": 2 of 369 wrong (0.5%).** Section 4 named a substantial
+failure here as the one outcome that would constitute outright failure of the
+rule. It did not happen.
+
+**The prior was sound; the posterior was not.** λ implied **1,128** matches
+against an actual **962** — close. The sum of posteriors was **12,941**, inflated
+**13.5×**. The λ tension recorded since D25 resolves in favour of λ: the
+derivation was right and the model's aggregate confidence was badly wrong, which
+is exactly what D36 found by other means.
+
+**[D31](#d31--tied-partners-when-the-model-cannot-choose-between-candidates)
+stands.** Section 3.2.7 committed to reporting that D31 was wrong if selecting
+the highest-scoring tied partner beat chance. Where the true partner is in the
+tied group, argmax is right **66.3%** of the time against **53.4%** by chance —
+**+12.9 points**, better than a coin flip but not decisively. More importantly,
+**the true partner is present in only 25.7% of tied groups**, so D31's insistence
+that "none of these" be answerable was not a nicety.
+
+**The display ceiling is 99.03%** — D33's cap of ten truncated the true partner
+away for only **11 of 1,129** records. That judgement, recorded as one the
+label-free data could not settle, cost almost nothing.
+
+### What failed
+
+**Precision. 456 of 1,056 auto-accepted pairs are wrong.**
+
+The independent AI judge estimated roughly 31% error on this set. The truth is
+**43%**. **The judge was too generous**, which is worth recording: the
+corroborating method used in D36 understated the problem rather than overstating
+it.
+
+**The structural cause is now visible.** Only **852 of 2,554** Walmart records
+have any match in the key at all; 1,702 have none. The system auto-accepted
+1,056. **At least 204 of those are wrong by counting alone**, before any question
+of which partner was chosen. The matcher had no mechanism for concluding that a
+record simply has no counterpart.
+
+**The AI arm: 39.70% precision, 76.19% accuracy.** Its accuracy is carried almost
+entirely by correctly answering "none of these" 688 times — only **18.1%** of
+queued records have a true match. As a rejecter it is effective; as a matcher it
+is weak, and D37's hope that semantics would recover what the classical system
+could not is not supported by this result.
+
+**The modelled human reaches 99.03% at perfect accuracy**, against the AI's
+76.19%. Under [D24](#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)'s
+framing this is the regime where Vaccaro's meta-analysis predicts AI assistance
+*harms* rather than helps: the human is stronger alone.
+
+### Two corrections made during the evaluation
+
+**The test-only figure could not be computed honestly, and section 10.1 cannot be
+met as written.** The first attempt scored all 1,056 accepts against `test`'s 193
+matches and produced 12.69% precision — meaningless, because matches labelled in
+`train` were counted as false positives. The deeper problem is structural:
+**746 of the 900 records appearing in `test` also appear in `train`**. The
+benchmark splits *pairs*; this system decides *records*. A record-level figure on
+a pair-level split cannot be computed without double-counting. Only the combined
+figure is reported. This is a flaw in the pre-registration, not a result.
+
+**The chance baseline for the tie test was wrong at first.** It averaged
+1/group-size over all 346 tied records, including those where the true partner
+was absent and no choice could have been right. That made argmax appear *worse*
+than chance. Restricted to the 89 records where the answer is present, the
+comparison is 66.3% against 53.4%.
+
+### What this project can and cannot claim
+
+**It cannot claim a working production matcher.** 56.82% precision on unattended
+output is not deployable, and no threshold available in this model fixes it —
+D38 established that before the labels were read.
+
+**It can claim that every material weakness was found before the answer key was
+opened.** D36 predicted the precision failure and was *conservative* about its
+size. D38 declined a change that would have improved the reported numbers without
+addressing the cause. The prior, the blocking, the display cap and the tie policy
+were all validated. The two components that failed had been publicly documented
+as failing, with evidence, weeks before this measurement existed.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
