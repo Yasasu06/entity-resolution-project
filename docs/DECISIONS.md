@@ -3156,6 +3156,90 @@ why the pair was withheld rather than inferring it from a score.
 
 ---
 
+## D38 — The accept threshold stays at 6.0 bits, and why that is not complacency
+
+**Decision.** The pre-registered rule in
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md) section 1 is **left exactly as
+committed**: accept at **6.0 bits** with a **1.0-bit margin**, confidently
+different below **−3.5 bits**. A change to `S = 12, M = 4` was proposed on the
+strength of the AI cross-check and is **rejected**.
+
+This closes the investigation opened by
+[D36](#d36--the-accepted-set-does-not-reliably-identify-products-and-a-threshold-will-not-fix-it).
+It does **not** close the weakness that investigation found.
+
+### The argument for raising it, stated fairly
+
+It should be said plainly that the evidence for raising the threshold was not
+nothing. The independent AI judge disagreed with accepted pairs at sharply
+different rates by score:
+
+| Score band | AI disagrees |
+| --- | ---: |
+| 6–8 bits | 72.6% |
+| 10–12 | 41.3% |
+| 16+ | **11.2%** |
+
+Projected over the population, `S = 12, M = 4` would have cut disagreement from
+**31.0% to 8.8%**. Taken alone that is a strong case, and it is why the change
+was proposed.
+
+### Why it was rejected anyway
+
+**The planted probes measure the opposite.** Usurpation — a fabricated near-miss
+outscoring the true partner — runs at **15.7%** across all accepts and **16.3%**
+among those scoring 12 bits or more. Restricting to high-scoring pairs does not
+reduce it at all.
+
+The two results are not in conflict; they measure different failures. The AI's
+disagreement includes **ranking** errors, which score predicts and a higher
+threshold removes. The probe isolates **product discrimination**, which score
+does not predict, because the mutated token joins the evidence set rather than
+displacing anything. Raising the threshold fixes the first and leaves the second
+untouched.
+
+**The cost is half the system.** `S = 12, M = 4` reduces auto-acceptance from
+1,072 records to 536. The value of an automated matcher is the automation.
+
+**And it would not change any decision.** A system at 8.8% projected disagreement
+is not production-ready either. Paying half the automation to move from *clearly
+unreliable* to *still unreliable* buys a better-looking number without changing
+what anyone should do with the system. That is the decisive point: the change is
+cosmetic **relative to the size of the real gap**.
+
+**Leaving it also preserves what has been measured.** The thresholds are load
+bearing for the risk-coverage analysis, the review queue, D34, D35 and D36.
+Moving them for a cosmetic gain would invalidate that record and buy nothing.
+
+### What did change
+
+[D37](#d37--a-quantity-veto-its-honest-reach-and-where-the-classical-approach-stops)'s
+quantity veto, which is orthogonal to the threshold: it withholds 16 accepts on
+evidence the score cannot represent, without altering a single score. That is the
+shape a real fix takes here — **new evidence, not a moved line.**
+
+### What this decision is not
+
+It is **not** a finding that the system is adequate. The record stands: roughly
+31% of auto-accepted pairs are rejected by an independent judge, and a fabricated
+near-miss ties or beats the true partner in 49.0% of cases. **The auto-accept set
+should not be relied on unattended**, and no threshold available in this model
+changes that.
+
+The rule stays put because moving it would misrepresent a structural problem as a
+calibration problem.
+
+### What would reopen this
+
+* A comparison able to represent conflicting identity-bearing attributes — which
+  D37 records as beyond a rule over token sets.
+* Replacing the matcher with the AI-based system, whose thresholds would be
+  derived from its own score distribution and pre-registered separately.
+* Evidence that the AI judge and the planted probes are both wrong, which would
+  need a third independent method rather than a reinterpretation of these two.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
