@@ -1,0 +1,72 @@
+import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { PREDICTIONS } from "../data/facts";
+import { Eyebrow, Reveal } from "./ui";
+
+const TONE = {
+  held: { bar: "bg-signal", txt: "text-signal", label: "held" },
+  failed: { bar: "bg-alarm", txt: "text-alarm", label: "failed" },
+  open: { bar: "bg-faint", txt: "text-faint", label: "no prediction" },
+};
+
+export default function Ledger() {
+  const [open, setOpen] = useState(null);
+  return (
+    <>
+      <Reveal>
+        <Eyebrow>The ledger</Eyebrow>
+        <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
+          Predicted blind, then measured
+        </h2>
+        <p className="mt-5 max-w-[62ch] text-dim">
+          Every substantive claim made before the labels were read, against what the answer key
+          said. The misses are here because a table showing only successes would be worth nothing.
+          Select any row for the detail.
+        </p>
+      </Reveal>
+
+      <Reveal delay={0.08}>
+        <ul className="mt-10 divide-y divide-line rounded-xl bg-panel/60 ring-1 ring-line overflow-hidden">
+          {PREDICTIONS.map((p, i) => {
+            const t = TONE[p.v];
+            const isOpen = open === i;
+            return (
+              <li key={i}>
+                <button
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  className="group grid w-full grid-cols-[3px_1fr_auto] items-center gap-4 px-4 py-4 text-left transition hover:bg-raised sm:grid-cols-[3px_1fr_auto_18px] sm:gap-5 sm:px-5"
+                >
+                  <span className={`h-full min-h-[34px] rounded-full ${t.bar} opacity-70`} />
+                  <span className="text-[0.95rem] leading-snug">{p.claim}</span>
+                  <span className={`font-mono tnum text-sm ${t.txt} text-right`}>{p.real}</span>
+                  <span className="hidden text-faint transition group-hover:text-dim sm:block">
+                    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"
+                      style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+                      <path d="M2 4.5 6 8.5 10 4.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    </svg>
+                  </span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden bg-void/40"
+                    >
+                      <p className="max-w-[72ch] px-5 pb-5 pt-1 text-sm leading-relaxed text-dim sm:pl-[2.1rem]">
+                        {p.detail}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </li>
+            );
+          })}
+        </ul>
+      </Reveal>
+    </>
+  );
+}
