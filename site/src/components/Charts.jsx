@@ -1,7 +1,5 @@
-import {
-  Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine,
-} from "recharts";
-import { ERRORS, F1_BARS, HEADLINE } from "../data/facts";
+import F1Chart from "./F1Chart";
+import { ERRORS, HEADLINE } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B",
@@ -10,16 +8,6 @@ const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B
 function Box({ children }) {
   return (
     <div className="rounded-xl bg-panel px-5 py-5 ring-1 ring-line sm:px-6 sm:py-6">{children}</div>
-  );
-}
-
-function Tip({ active, payload, suffix = "" }) {
-  if (!active || !payload?.length) return null;
-  const p = payload[0].payload;
-  return (
-    <div className="rounded-lg bg-raised px-3 py-2 font-mono text-xs text-ink ring-1 ring-line2">
-      {p.name}: <span className="tnum">{payload[0].value}{suffix}</span>
-    </div>
   );
 }
 
@@ -41,31 +29,7 @@ export default function Charts() {
       <div className="mt-10 grid gap-4 lg:grid-cols-5">
         <Reveal className="lg:col-span-3">
           <Box>
-            <div className="mb-5 flex items-baseline justify-between gap-4">
-              <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">F1 score</span>
-              <span className="font-mono text-[11px] text-faint">higher is better</span>
-            </div>
-            <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={F1_BARS} layout="vertical" margin={{ left: 0, right: 44, top: 0, bottom: 0 }}>
-                  <XAxis type="number" domain={[0, 100]} tick={{ fill: C.faint, fontSize: 11, fontFamily: "JetBrains Mono" }}
-                    axisLine={{ stroke: C.line }} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={168} tick={{ fill: C.dim, fontSize: 12 }}
-                    axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: "#ffffff08" }} content={<Tip />} />
-                  <ReferenceLine x={HEADLINE.baselineBest} stroke={C.faint} strokeDasharray="3 3" />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={26}
-                    label={{ position: "right", fill: C.ink, fontSize: 12, fontFamily: "JetBrains Mono" }}>
-                    {F1_BARS.map((d, i) => (
-                      <Cell key={i} fill={d.lead ? C.signal : "#2B333C"} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="mt-4 text-sm text-dim">
-              The dashed line marks the baseline&rsquo;s best achievable score, at any threshold.
-            </p>
+            <F1Chart />
           </Box>
         </Reveal>
 
