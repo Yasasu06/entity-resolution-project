@@ -2727,6 +2727,111 @@ it. The queue itself, and the "none of these" outcome required by D31, follow.
 
 ---
 
+## D34 — The AI arm passes its stability gate, and what the control revealed
+
+**Finding.** The AI escalation arm was run over the 346 tied records and
+**passed** the stability gate fixed in
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md) section 6.3. The same-ordering
+control, added to that section before the run, showed that **most of the
+instability the gate measures is sampling noise rather than position bias** —
+so the gate does not measure what section 6.3 assumed it did.
+
+No labelled data was read. This entry reports stability, not accuracy.
+
+### The run
+
+1,384 calls to `gpt-5.4-mini-2026-03-17` at temperature 0 — 346 records, three
+orderings plus the control — costing 1,045,752 input and 108,200 output tokens.
+
+| | |
+| --- | ---: |
+| Unanimous across the three orderings | **240 of 346 (69.4%)** |
+| Floor required | 60% — met |
+| Agreement expected by chance | 1.1% — beaten decisively |
+| **Gate** | **PASSED** |
+
+### What the control found
+
+**42 records (12.1%) returned a different answer to an identical prompt.** Same
+model, same temperature 0, same candidate ordering, byte-identical input. The
+only thing that could have changed the answer is the model's own sampling.
+
+| | Control stable | Control flipped |
+| --- | ---: | ---: |
+| Unanimous across orderings | 232 | 8 |
+| Not unanimous | 72 | **34** |
+
+Of the 106 records that disagreed across orderings, **34 had already disagreed
+with themselves**. Those cannot be attributed to ordering: the same input was
+enough to produce a different answer.
+
+### The decomposition, and the corrected reading of section 6.3
+
+If two identical prompts disagree 12.1% of the time, sampling alone predicts
+roughly **22.8%** non-unanimity across three runs. **30.6%** was observed. That
+leaves about **7.8 percentage points** genuinely attributable to candidate
+ordering.
+
+**Section 6.3 is written as though a flip means position bias.** It does not.
+It means *either* position bias *or* sampling noise, and on this evidence noise
+is roughly three times the larger contributor. The 60% floor — set on the
+reasoning that "two decisions in five turning on display order" would
+misrepresent the result — was therefore calibrated against a quantity that is
+mostly not display order.
+
+The gate result stands: the arm passed, and 69.4% agreement against a 1.1%
+chance rate is a real signal. But any write-up quoting that number must carry
+this decomposition with it. Reported alone it would imply a degree of
+order-sensitivity that the control shows is not there.
+
+**The firmest subset is 232 records (67.1%)**, stable under both a change of
+ordering and a plain repetition. That is the population whose judgements are
+reproducible in the ordinary sense.
+
+### A prediction of this project's own that was wrong
+
+A six-record smoke test run before the full slice produced **zero** control
+flips, and was reported at the time as confirming that temperature 0 held on
+real prompts. At 346 records the rate is 12.1%.
+
+The caveat recorded alongside that smoke test — that determinism verified on a
+short prompt might not hold at roughly 644 tokens, because large-batch inference
+can vary even at temperature 0 — was correct, and the sample was far too small
+to test it. The lesson is the ordinary one: six records cannot measure a 12%
+rate.
+
+### Why the pre-registration is not being amended
+
+Section 6.3 now describes its own measurement inaccurately, and the temptation
+is to correct it. **It is deliberately left alone.**
+
+Results now exist. A pre-registration edited after results are in is no longer a
+pre-registration, whatever the edit says, and the value of every other section
+rests on that being true without exception. The document records what was
+committed to; this entry records what was learned. Anyone comparing them sees
+the correction and its date, which is the outcome the arrangement is for.
+
+### What was decided
+
+| Decision | Value |
+| --- | ---: |
+| `match` | 203 (58.7%) |
+| `none_of_these` | 143 (41.3%) |
+| `cannot_tell` | 0 |
+
+The model never abstained. Whether 41.3% rejection is right is exactly what the
+sealed labels will settle;
+[D31](#d31--tied-partners-when-the-model-cannot-choose-between-candidates)
+predicted that many tied groups contain no correct partner at all.
+
+### Scope
+
+This entry records the validation slice only. Whether to extend the arm to all
+1,113 reviewed records — which section 6.1 requires before either arm's result
+is reported as a headline — is **not decided here**.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
