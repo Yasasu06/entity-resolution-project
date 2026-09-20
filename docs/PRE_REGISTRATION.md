@@ -370,6 +370,16 @@ does not by itself disqualify the arm, but it caps how much of the measured
 instability can honestly be attributed to presentation, and the gate result must
 be read against it.
 
+> **Cross-reference added 19 September 2026, after the arm was run on the
+> validation slice.** Nothing above is altered. The same-ordering control found
+> that a flip indicates *either* position bias *or* sampling noise, and that
+> noise is roughly three times the larger contributor — so this section
+> describes its own measurement more narrowly than the measurement turned out to
+> be. The correction, with the decomposition, is recorded in
+> [D34](DECISIONS.md#d34--the-ai-arm-passes-its-stability-gate-and-what-the-control-revealed).
+> It is recorded there rather than here because a pre-registration edited after
+> results exist is no longer one.
+
 ### 6.4 The human-only arm
 
 > ⚠️ **ASSUMPTION — a model, not an observation.** No human reviews these
