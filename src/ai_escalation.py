@@ -38,8 +38,51 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Callable
 
-from src.interfaces import PROCESSED_DIR
+from src.interfaces import PROJECT_ROOT, PROCESSED_DIR
 from src.review_queue import QUEUE_PATH, REVIEW_OUTCOMES, REVIEW_TIED, _shuffled
+
+ENV_FILE = PROJECT_ROOT / ".env"
+
+
+def load_env_file(path: "Path | None" = None) -> dict[str, str]:
+    """Read KEY=VALUE pairs from the local .env, without overriding the shell.
+
+    Credentials live in a gitignored file rather than in the repository, and are
+    never written to a committed file or printed. A value already present in the
+    environment wins, so an exported key overrides the file rather than being
+    silently replaced by a stale one.
+    """
+    path = path or ENV_FILE
+    found: dict[str, str] = {}
+    if not path.exists():
+        return found
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        found[key.strip()] = value.strip().strip('"').strip("'")
+    for key, value in found.items():
+        os.environ.setdefault(key, value)
+    return found
+
+
+# What .env ships with. Treated as absent, so a forgotten placeholder fails
+# immediately and clearly rather than as a puzzling authentication error.
+PLACEHOLDER_KEY = "paste-your-key-here"
+
+
+def require_api_key(name: str = "OPENAI_API_KEY") -> str:
+    """Return the key, or raise. Never falls back to anything."""
+    load_env_file()
+    key = os.environ.get(name, "").strip()
+    if not key or key == PLACEHOLDER_KEY:
+        raise RuntimeError(
+            f"{name} is not set. Put it in {ENV_FILE.name} (gitignored) as\n"
+            f"    {name}=<the key>\n"
+            "or export it in the shell. This arm does not run without it."
+        )
+    return key
 
 # --- fixed in PRE_REGISTRATION.md section 6 -----------------------------------
 

@@ -12,6 +12,8 @@ Run with:  pytest
 """
 
 import json
+import os
+from pathlib import Path
 
 import pytest
 
@@ -240,3 +242,37 @@ def test_a_disagreeing_arm_is_recorded_as_not_unanimous():
     results, _ = run([item("A_0", n_tied=3)], responder)
     assert results["A_0"]["unanimous"] is False
     assert results["A_0"]["decision"] == "match"       # two of three
+
+
+# --- credentials --------------------------------------------------------------
+
+def test_the_env_file_is_parsed_without_overriding_the_shell(tmp_path, monkeypatch):
+    """An exported key wins, so a stale file cannot silently replace it."""
+    env = tmp_path / ".env"
+    env.write_text('# a comment\n\nOPENAI_API_KEY="from-file"\nOTHER=plain\n')
+    monkeypatch.setenv("OPENAI_API_KEY", "from-shell")
+    monkeypatch.delenv("OTHER", raising=False)
+
+    found = ai.load_env_file(env)
+
+    assert found == {"OPENAI_API_KEY": "from-file", "OTHER": "plain"}
+    assert os.environ["OPENAI_API_KEY"] == "from-shell"   # shell wins
+    assert os.environ["OTHER"] == "plain"                 # file fills the gap
+
+
+def test_a_missing_env_file_is_not_an_error(tmp_path):
+    assert ai.load_env_file(tmp_path / "absent") == {}
+
+
+def test_the_untouched_placeholder_counts_as_no_key(monkeypatch):
+    """A forgotten placeholder must fail clearly, not as an auth error later."""
+    monkeypatch.setenv("OPENAI_API_KEY", ai.PLACEHOLDER_KEY)
+    monkeypatch.setattr(ai, "ENV_FILE", Path("/nonexistent"))
+    with pytest.raises(RuntimeError, match="not set"):
+        ai.require_api_key()
+
+
+def test_a_real_looking_key_is_accepted(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-value")
+    monkeypatch.setattr(ai, "ENV_FILE", Path("/nonexistent"))
+    assert ai.require_api_key() == "sk-test-value"
