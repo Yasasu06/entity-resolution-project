@@ -2832,6 +2832,99 @@ is reported as a headline — is **not decided here**.
 
 ---
 
+## D35 — The AI arm over the full review population, and a correction to D34
+
+**Finding.** The AI escalation arm now covers all **1,113** reviewed records, as
+[`PRE_REGISTRATION.md`](PRE_REGISTRATION.md) section 6.1 requires before either
+arm's result may be reported as a headline. It **passed** the stability gate.
+
+Splitting the result by population **corrects a conclusion drawn in
+[D34](#d34--the-ai-arm-passes-its-stability-gate-and-what-the-control-revealed)**:
+that sampling noise is roughly three times the larger contributor to
+instability. That holds for the tied records it was measured on. It does not
+hold for the unsure records, and it does not hold overall.
+
+No labelled data was read. This entry reports stability, not accuracy.
+
+### The combined result
+
+| | |
+| --- | ---: |
+| Records | **1,113** |
+| Unanimous across three orderings | **851 (76.5%)** |
+| Floor required | 60% — met |
+| Agreement expected by chance | 2.8% — beaten decisively |
+| **Gate** | **PASSED** |
+| Control flips (identical prompt) | 79 (7.1%) |
+| Stable under both order change and repetition | 836 (75.1%) |
+
+Total cost across both runs: 4,452 calls, **2,771,184 input** and 347,572 output
+tokens.
+
+### The two populations behave differently
+
+| | Tied (346) | Unsure (767) |
+| --- | ---: | ---: |
+| Unanimous | 69.4% | **79.7%** |
+| Control flips | **12.1%** | 4.8% |
+| Non-unanimity | 30.6% | 20.3% |
+| — predicted by noise alone | 22.8% | 9.4% |
+| — residual, attributable to ordering | **+7.8%** | **+10.9%** |
+
+**The noise rate differs by a factor of 2.5.** Tied records show 12.1% sampling
+variation against 4.8% for unsure ones. The plausible reason is that a tied
+record asks the model to choose between candidates the evidence cannot separate,
+across a longer list — median 11 candidates shown against 5 — which is precisely
+the situation in which a marginal judgement is most easily tipped by sampling.
+
+**The decomposition reverses between them.** Among tied records noise dominates,
+as D34 reported. Among unsure records **ordering is the larger contributor**,
+10.9 points against 9.4. Combined, the two are close to even: 13.7 points from
+noise, 9.8 from ordering.
+
+So D34's statement that noise is "roughly three times the larger contributor" is
+true of the slice it was measured on and **false as a general claim about this
+arm**. The correction matters because the slice was chosen as a validation
+sample, and a quantity measured there was being treated as a property of the
+whole.
+
+### What was decided
+
+| Decision | Tied (346) | Unsure (767) | Combined (1,113) |
+| --- | ---: | ---: | ---: |
+| `none_of_these` | 143 (41.3%) | **564 (73.5%)** | **707 (63.5%)** |
+| `match` | 203 (58.7%) | 200 (26.1%) | 403 (36.2%) |
+| `cannot_tell` | 0 | 3 (0.4%) | 3 (0.3%) |
+
+**The arm rejects far more than it accepts**, and almost all of that is in the
+unsure population — records whose best candidate fell below the accept threshold
+in the first place, so a high rejection rate is what the score already implied.
+Whether it is *correct* is what the sealed labels will settle.
+
+`cannot_tell` appeared for the first time, on three records. The option is
+therefore reachable rather than decorative, and is used almost never.
+
+### Provenance
+
+The result is the **union of two runs**: the 346-record slice reported in D34,
+and a later run of the remaining 767. The slice was not regenerated.
+
+With a 12.1% sampling-noise rate on that population, re-running it would have
+changed roughly one answer in eight and invalidated the figures D34 reports. The
+stability artefact records this in a `note` field, and the slice's own results
+are preserved separately. The cost is that the combined figure mixes two runs
+made at different times; the alternative was 1,384 redundant calls and a
+superseded entry.
+
+### Scope
+
+The arm's **accuracy remains unmeasured**. Everything above concerns whether its
+judgements are reproducible, not whether they are right. Both are settled only
+at final evaluation, against the sealed labels, using the measurements fixed in
+section 6.6.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
