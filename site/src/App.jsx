@@ -52,6 +52,13 @@ export default function App() {
             22,074 records, 56,376,996 possible pairs, reduced to 564,450 candidates. Every figure
             on this page is measured, not illustrative.
           </p>
+          <p className="border-t border-line pt-5 text-faint">
+            Built by{" "}
+            <a href="https://github.com/Yasasu06"
+               className="text-dim underline decoration-line2 underline-offset-4 transition hover:text-ink hover:decoration-dim">
+              Yasaswi Dutta
+            </a>
+          </p>
         </div>
       </footer>
     </div>
