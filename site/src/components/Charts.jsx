@@ -35,10 +35,14 @@ export default function Charts() {
 
         <Reveal delay={0.08} className="lg:col-span-2">
           <Box>
-            <div className="mb-5 font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
               What the 994 accepted records are
             </div>
-            <div className="flex h-9 w-full overflow-hidden rounded-md ring-1 ring-line">
+            <div className="mb-5 flex items-baseline gap-2">
+              <span className="font-display text-5xl leading-none text-alarm tnum">413</span>
+              <span className="text-sm text-dim">have no partner at all</span>
+            </div>
+            <div className="flex h-12 w-full overflow-hidden rounded-md ring-1 ring-line">
               {ERRORS.map((e) => (
                 <div key={e.name} style={{ width: `${(e.value / errTotal) * 100}%`, background: C[e.tone] }}
                   title={`${e.name}: ${e.value}`} />

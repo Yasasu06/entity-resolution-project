@@ -1,4 +1,7 @@
 import Hero from "./components/Hero";
+import Problem from "./components/Problem";
+import HowItWasRun from "./components/HowItWasRun";
+import Closing from "./components/Closing";
 import Ledger from "./components/Ledger";
 import Charts from "./components/Charts";
 import ReviewTool from "./components/ReviewTool";
@@ -8,8 +11,8 @@ import { Section } from "./components/ui";
 
 const REPO = "https://github.com/Yasasu06/entity-resolution-project";
 const NAV = [
-  ["result", "Result"], ["ledger", "Predictions"], ["review", "Try it"],
-  ["investigation", "The failure"], ["method", "Method"],
+  ["problem", "The problem"], ["ledger", "Predictions"], ["result", "Result"],
+  ["investigation", "The failure"], ["review", "Try it"],
 ];
 
 export default function App() {
@@ -29,11 +32,14 @@ export default function App() {
       </nav>
 
       <Hero />
-      <Section id="result"><Charts /></Section>
+      <Section id="problem"><Problem /></Section>
+      <Section id="sealed"><HowItWasRun /></Section>
       <Section id="ledger"><Ledger /></Section>
-      <Section id="review"><ReviewTool /></Section>
+      <Section id="result"><Charts /></Section>
       <Section id="investigation"><Investigation /></Section>
+      <Section id="review"><ReviewTool /></Section>
       <Section id="method"><Method /></Section>
+      <Section id="closing" className="bg-base"><Closing /></Section>
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-12 text-sm text-faint">

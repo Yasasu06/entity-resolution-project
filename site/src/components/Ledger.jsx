@@ -25,8 +25,28 @@ export default function Ledger() {
         </p>
       </Reveal>
 
-      <Reveal delay={0.08}>
-        <ul className="mt-10 divide-y divide-line rounded-xl bg-panel/60 ring-1 ring-line overflow-hidden">
+      <Reveal delay={0.06}>
+        <div className="mt-10 flex flex-wrap gap-1.5" aria-hidden="true">
+          {PREDICTIONS.map((p, i) => (
+            <motion.span key={i}
+              initial={{ opacity: 0, scaleY: 0.3 }}
+              whileInView={{ opacity: 1, scaleY: 1 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.45, delay: i * 0.035, ease: [0.16, 1, 0.3, 1] }}
+              onMouseEnter={() => setOpen(i)}
+              className={`h-14 flex-1 min-w-[26px] origin-bottom rounded-sm ${TONE[p.v].bar}
+                ${open === i ? "opacity-100" : "opacity-45"} transition-opacity`} />
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-faint">
+          <span><span className="text-signal">&#9632;</span> 8 held</span>
+          <span><span className="text-alarm">&#9632;</span> 3 failed</span>
+          <span><span className="text-faint">&#9632;</span> 1 registered unknowable</span>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.1}>
+        <ul className="mt-8 divide-y divide-line rounded-xl bg-panel/60 ring-1 ring-line overflow-hidden">
           {PREDICTIONS.map((p, i) => {
             const t = TONE[p.v];
             const isOpen = open === i;
