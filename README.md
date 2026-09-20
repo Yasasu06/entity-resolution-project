@@ -43,8 +43,8 @@ and why.
 | `data/raw/` | Benchmark datasets exactly as downloaded — never edited by hand |
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
-| `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, and a simple token-overlap baseline |
-| `tests/` | Automated tests (168 passing) covering the code in `src/` |
+| `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the AI escalation arm, and a simple token-overlap baseline |
+| `tests/` | Automated tests (193 passing) covering the code in `src/` |
 | `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
 
 ## Data

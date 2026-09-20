@@ -126,8 +126,13 @@ def tie_groups(bits: list[float]) -> list[int]:
     return groups
 
 
-def _shuffled(items: list, record_id: str) -> list:
+def _shuffled(items: list, record_id: str, salt: str = "") -> list:
     """Shuffle deterministically, seeded by the record id.
+
+    ``salt`` varies the order for the same record. The queue itself always uses
+    the default, so a rebuilt queue is identical; the AI escalation arm varies
+    it deliberately, to measure whether a judgement changes when the candidates
+    are presented in a different order.
 
     Tied candidates carry no real order, so any order shown is arbitrary. Left
     in score order it would track Amazon table position, and position bias would
@@ -137,7 +142,7 @@ def _shuffled(items: list, record_id: str) -> list:
     reproducible while decorrelating it from the table (D32).
     """
     shuffled = list(items)
-    random.Random(zlib.crc32(record_id.encode())).shuffle(shuffled)
+    random.Random(zlib.crc32((record_id + salt).encode())).shuffle(shuffled)
     return shuffled
 
 

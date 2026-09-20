@@ -19,6 +19,13 @@ duckdb==1.5.5       # in-process SQL database; Splink runs its SQL through this
 jupyterlab==4.6.3   # environment for exploratory notebooks in notebooks/
 nbstripout==0.9.1   # strips notebook outputs before commit (see docs/DECISIONS.md)
 
+# --- AI escalation arm ------------------------------------------------------
+anthropic==1.7.0     # the AI-only review arm (docs/PRE_REGISTRATION.md section 6)
+
+# NOTE: unlike the pins above, this one is verified only as far as importing the
+# package and constructing a client. No API call has been made, because the arm
+# has not been run. Re-verify when credentials are first used.
+
 # --- Testing ----------------------------------------------------------------
 pytest==9.1.1       # test runner for the code in src/
 
