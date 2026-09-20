@@ -64,6 +64,9 @@ REVIEW_TIED = "review_tied"
 REVIEW_UNSURE = "review_unsure"
 # Refused auto-acceptance by the quantity veto rather than by its score (D37).
 REVIEW_QUANTITY = "review_quantity_conflict"
+# Refused because the match is not mutual: the chosen Amazon record prefers a
+# different Walmart record (D41).
+REVIEW_NOT_RECIPROCAL = "review_not_reciprocal"
 DIFFERENT = "confidently_different"
 
 # What a reviewer may answer. "none of these" is not a fallback: some records
@@ -138,6 +141,43 @@ def apply_quantity_veto(
     return out
 
 
+def reciprocal_best(ranked: pd.DataFrame) -> pd.Series:
+    """For each Walmart record: is its best candidate's own best candidate itself?
+
+    The rule only ever asked one of the two questions a match poses. It took each
+    Walmart record's highest-scoring candidate and never checked whether that
+    Amazon record would have chosen the same partner back. Where the preference
+    is not mutual, the Amazon record is usually somebody else's match and this
+    record probably has none.
+    """
+    best_left = ranked[ranked["rank"] == 0].set_index(LEFT_ID)[RIGHT_ID]
+    best_right = (ranked.sort_values([RIGHT_ID, "bits"], ascending=[True, False])
+                        .groupby(RIGHT_ID).first()[LEFT_ID])
+    return pd.Series(
+        [best_right.get(best_left[w]) == w for w in best_left.index],
+        index=best_left.index,
+    )
+
+
+def apply_reciprocity_veto(outcomes: pd.DataFrame, ranked: pd.DataFrame) -> pd.DataFrame:
+    """Refuse auto-acceptance where the best match is not mutual.
+
+    Measured against the answer key, accepted pairs whose preference is not
+    mutual are right 6.5% of the time against 60.0% for mutual ones, and only
+    19.4% of those records have any true partner at all (D41).
+
+    The check itself needs no labels - it is computed from scores alone, and
+    could have been applied before the answer key was opened. What the labels
+    supplied was the evidence that it was worth applying.
+    """
+    mutual = reciprocal_best(ranked)
+    out = outcomes.copy()
+    accepted = out["outcome"] == ACCEPT
+    refuse = accepted & ~mutual.reindex(out.index).fillna(True).astype(bool)
+    out.loc[refuse, "outcome"] = REVIEW_NOT_RECIPROCAL
+    return out
+
+
 def tie_groups(bits: list[float]) -> list[int]:
     """Group a record's candidates into tied sets, best first.
 
@@ -195,7 +235,7 @@ def build_review_items(
     left = table_a.set_index("unique_id")
     right = table_b.set_index("unique_id")
     needs_review = outcomes[outcomes["outcome"].isin(
-        [REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY])]
+        [REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY, REVIEW_NOT_RECIPROCAL])]
 
     # Only candidates above the floor are worth a reviewer's attention at all.
     shown_pool = ranked[ranked["bits"] >= FLOOR_BITS]
@@ -262,11 +302,15 @@ def main() -> None:
     before = int((outcomes["outcome"] == ACCEPT).sum())
     outcomes = apply_quantity_veto(outcomes, table_a, table_b)
     vetoed = before - int((outcomes["outcome"] == ACCEPT).sum())
+    before_recip = int((outcomes["outcome"] == ACCEPT).sum())
+    outcomes = apply_reciprocity_veto(outcomes, ranked)
+    not_mutual = before_recip - int((outcomes["outcome"] == ACCEPT).sum())
 
     counts = outcomes["outcome"].value_counts()
     total = len(outcomes)
     print(f"{len(scores):,} scored pairs over {total:,} Walmart records\n")
-    for name in (ACCEPT, REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY, DIFFERENT):
+    for name in (ACCEPT, REVIEW_TIED, REVIEW_UNSURE, REVIEW_QUANTITY,
+                 REVIEW_NOT_RECIPROCAL, DIFFERENT):
         n = int(counts.get(name, 0))
         print(f"  {name:<24} {n:>6,} records  ({n / total:6.1%})")
 
@@ -284,6 +328,8 @@ def main() -> None:
 
     print(f"  refused by the quantity veto {vetoed:>6,} records  "
           f"({vetoed / total:.1%}) - routed to review")
+    print(f"  refused as not mutual        {not_mutual:>6,} records  "
+          f"({not_mutual / total:.1%}) - routed to review")
     shown = sum(b["shown"] for i in items for b in i["candidate_blocks"])
     truncated = sum(1 for i in items for b in i["candidate_blocks"] if b["truncated"])
     per_item = [sum(b["shown"] for b in i["candidate_blocks"]) for i in items]

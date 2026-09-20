@@ -17,8 +17,11 @@ import pytest
 from src.interfaces import LEFT_ID, RIGHT_ID
 from src.review_queue import (
     ACCEPT,
+    REVIEW_NOT_RECIPROCAL,
     REVIEW_QUANTITY,
     apply_quantity_veto,
+    apply_reciprocity_veto,
+    reciprocal_best,
     ACCEPT_BITS,
     DIFFERENT,
     DISPLAY_TIE_BITS,
@@ -268,3 +271,49 @@ def test_a_silent_record_is_not_a_conflict():
     s = scores_from_bits([("A_0", "B_0", 12.0)])
     out = apply_quantity_veto(assign_outcomes(rank_candidates(s)), a, b)
     assert out.loc["A_0", "outcome"] == ACCEPT
+
+
+# --- the reciprocity veto -----------------------------------------------------
+
+def _recip_setup(pairs):
+    return rank_candidates(scores_from_bits(pairs))
+
+
+def test_a_mutual_best_match_is_accepted():
+    """A_0 prefers B_0, and B_0 prefers A_0 back."""
+    ranked = _recip_setup([("A_0", "B_0", 12.0), ("A_0", "B_1", 1.0)])
+    out = apply_reciprocity_veto(assign_outcomes(ranked), ranked)
+    assert out.loc["A_0", "outcome"] == ACCEPT
+
+
+def test_a_one_sided_preference_is_refused():
+    """A_1 picks B_0 as its best, but B_0 prefers A_0 - so A_1 probably has
+    no partner at all (D41)."""
+    ranked = _recip_setup([
+        ("A_0", "B_0", 20.0), ("A_0", "B_9", 1.0),     # B_0's best is A_0
+        ("A_1", "B_0", 12.0), ("A_1", "B_8", 1.0),     # A_1 also wants B_0
+    ])
+    out = apply_reciprocity_veto(assign_outcomes(ranked), ranked)
+    assert out.loc["A_0", "outcome"] == ACCEPT
+    assert out.loc["A_1", "outcome"] == REVIEW_NOT_RECIPROCAL
+
+
+def test_reciprocal_best_reports_both_directions():
+    ranked = _recip_setup([("A_0", "B_0", 20.0), ("A_1", "B_0", 12.0), ("A_1", "B_1", 2.0)])
+    mutual = reciprocal_best(ranked)
+    assert mutual["A_0"] and not mutual["A_1"]
+
+
+def test_the_veto_only_touches_accepted_records():
+    """It refuses acceptance; it cannot reclassify anything else."""
+    ranked = _recip_setup([
+        ("A_0", "B_0", 20.0),
+        ("A_1", "B_0", 2.0), ("A_1", "B_1", 1.0),      # below the accept bar
+    ])
+    out = apply_reciprocity_veto(assign_outcomes(ranked), ranked)
+    assert out.loc["A_1", "outcome"] == REVIEW_UNSURE
+
+
+def test_a_record_with_one_candidate_nobody_else_wants_is_mutual():
+    ranked = _recip_setup([("A_0", "B_0", 15.0)])
+    assert reciprocal_best(ranked)["A_0"]

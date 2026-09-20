@@ -3421,6 +3421,109 @@ instrument, and this project never built one.
 
 ---
 
+## D41 — Requiring the match to be mutual
+
+**Decision.** A pair is refused auto-acceptance unless the preference is
+**mutual**: the Walmart record's best candidate must have that same Walmart
+record as *its* best candidate. 62 records move into review. Precision rises
+**56.82% → 59.96%**, F1 **59.46% → 60.94%**.
+
+**This is the first change made with knowledge of the answer key**, and it is not
+label-free work. The distinction is set out below.
+
+### What the evaluation revealed
+
+[D39](#d39--the-final-evaluation)'s errors decompose very unevenly:
+
+| Error | Count |
+| --- | ---: |
+| Accepted, the record has **no partner at all** | **413** |
+| Accepted, a partner exists but the **wrong one** was chosen | 43 |
+| Accepted and correct | 600 |
+
+**The wrong-partner failure is 9% of the errors.** D36, D37 and D38 spent the
+entire investigation on it. [D40](#d40--correcting-d38-the-decision-holds-the-reasoning-did-not)
+explains why: the planted probes were built by mutating partners of
+already-accepted pairs, so every probe had a partner by construction and the
+method was blind to records that have none.
+
+### The signal that was never used
+
+The rule asked only one of the two questions a match poses. It took each Walmart
+record's highest-scoring candidate and never checked whether that Amazon record
+would have chosen the same partner back.
+
+Among accepted pairs:
+
+| | n | Precision | Record has any partner |
+| --- | ---: | ---: | ---: |
+| Preference is mutual | 994 | **60.0%** | 63.5% |
+| Preference is **one-sided** | 62 | **6.5%** | 19.4% |
+
+A one-sided preference is wrong **93.5%** of the time, and four times in five the
+record has no true partner at all. The Amazon record is usually somebody else's
+match.
+
+### Validated on a held-out half
+
+The benchmark's splits partition *pairs*, and this system decides *records* —
+746 of the 900 records in `test` also appear in `train`, so those splits cannot
+give a clean record-level holdout ([D39](#d39--the-final-evaluation)). The 2,554
+records were therefore split 50/50 at random, seeded, with the rule chosen on one
+half and measured on the other.
+
+| Rule, measured on the untouched half | n | P | R | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Current: 6 bits, margin 1 | 533 | 57.4% | 70.5% | 63.3% |
+| **+ mutual best match** | 507 | 60.0% | 70.0% | **64.6%** |
+| Threshold raised to 10 bits instead | 395 | 67.1% | 61.1% | 63.9% |
+
+On the full dataset: **precision +3.14 points, recall −0.42, F1 +1.48**, and 50
+fewer accepts of records that have no partner.
+
+### Why this is adopted and the alternatives are not
+
+**Raising the threshold is rejected again.** Tuned with full label access it gains
+**+0.6 F1** on the holdout — a precision-for-recall trade, not an improvement.
+D38's decision survives its own correction in D40.
+
+**A supervised per-record classifier reached 65.6% F1** on the same holdout,
+against 64.6% for this rule. It is **not adopted**: +1.0 F1 does not justify
+converting an unsupervised system into a supervised one, and every claim made in
+[`PREDICTIONS_VS_REALITY.md`](PREDICTIONS_VS_REALITY.md) about label-free
+reasoning would stop applying to it. Held for separate discussion.
+
+### The honest status of this change
+
+**The mechanism needs no labels.** Reciprocity is computed from scores alone. It
+could have been implemented before the answer key was opened, and in hindsight
+should have been — mutual best match is standard practice in record linkage, and
+its absence was an oversight rather than a considered choice.
+
+**The decision to adopt it did use labels.** It is included because the answer
+key showed it works. That is a weaker claim than anything at or before the
+boundary commit `9819d63`, and the difference is real: a reader may take the
+pre-boundary work as evidence that label-free reasoning was sound, and must not
+take this entry the same way.
+
+Nothing at or before the boundary has been edited. This is a new entry, as
+[`PRE_UNSEAL.md`](PRE_UNSEAL.md) requires.
+
+### Effect on the pipeline
+
+| | Before | After |
+| --- | ---: | ---: |
+| Auto-accepted | 1,056 | **994** |
+| Review queue | 1,129 | **1,191** |
+| Precision | 56.82% | **59.96%** |
+| F1 | 59.46% | **60.94%** |
+
+Vetoed records carry the outcome `review_not_reciprocal`, so a reviewer sees that
+the pair was withheld because the match was one-sided rather than because it
+scored poorly.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

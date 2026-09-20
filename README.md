@@ -51,10 +51,11 @@ found, measured and published *before* the answer key was opened.
 | **Human review** of the queued records | 🔜 Not started — 1,113 records queued and unreviewed; the interactive interface is deferred ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
 | Second system (embedding-based), for comparison | 📋 Planned |
 | **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; system F1 59.46% against the baseline's 57.66%; see [D39](docs/DECISIONS.md) and [D40](docs/DECISIONS.md) |
+| Post-evaluation improvement | ✅ Mutual-best-match check added — F1 **60.94%**, precision 59.96% ([D41](docs/DECISIONS.md)). Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (40 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (41 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
@@ -66,7 +67,7 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines |
-| `tests/` | Automated tests (249 passing) covering the code in `src/` |
+| `tests/` | Automated tests (254 passing) covering the code in `src/` |
 | `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
 
 ## Data
