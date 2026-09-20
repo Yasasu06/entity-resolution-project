@@ -2230,7 +2230,13 @@ information.
 being treated exactly like one 5% apart.
 
 Those two levels could be merged into a single "within 20%" band without losing
-anything the model is using. That is **not** done here, because the levels were
+anything the model is using.
+
+> **Note added 19 September 2026.** This collapse has a practical consequence
+> recorded later in [D32](#d32--tied-candidates-are-shown-as-an-unordered-set-not-a-ranked-list):
+> the 0.0106-bit difference between these two levels is one of the recurring
+> gaps that would otherwise rank review candidates against each other on a
+> distinction the model did not make. That is **not** done here, because the levels were
 approved as specified and the collapse is a finding to report rather than a
 licence to change the design unilaterally. Recorded as an open simplification.
 
@@ -2516,9 +2522,55 @@ argument used to place every other threshold on this project. A display-tie
 epsilon in that valley would separate the effectively identical from the
 genuinely distinguishable without cutting through a dense cluster.
 
-**The exact epsilon is not fixed here.** Strict score equality and a small
-valley-placed epsilon are both defensible; the choice is recorded as open rather
-than settled in passing.
+### The epsilon, and what the small gaps turned out to be
+
+**The display-tie epsilon is 0.05 bits.** Two candidates whose scores differ by
+0.05 bits or less are treated as tied for presentation.
+
+The number follows from what the small gaps actually are. Below 0.30 bits there
+are only 24 distinct gap values across the reviewed records, and **397 of the
+411 candidates under 0.10 bits sit on just two of them**:
+
+| Gap | Candidates | Traced to |
+| ---: | ---: | --- |
+| **0.0389 bits** | 374 | `rare_identifier_tokens`: absent versus present-and-non-overlapping |
+| 0.0106 bits | 23 | `price`: "Within 10%" against "Within 20%" |
+
+Both were traced to specific levels in the saved model rather than inferred.
+
+The 0.0106 quantum is the collapsed price pair already recorded in
+[D30](#d30--comparing-prices-by-relative-difference) at +1.3264 and +1.3158
+bits — a boundary D30 found was carrying no information.
+
+The 0.0389 quantum is **not** a second collapsed pair, and the distinction
+matters. `rare_identifier_tokens` assigns **−0.0389 bits** to "All other
+comparisons", from m = 0.97334 against u = 0.99997 — nearly identical, because
+almost every pair, matching or not, lacks rare-identifier overlap. A null level
+contributes nothing. So the gap separates a candidate whose column is **absent**
+from one where it is **present and fails to overlap**: having the evidence and
+missing on it is fractionally worse than not having it. Verified on 400 sampled
+candidates, consistent in all 400.
+
+That is defensible Fellegi-Sunter behaviour and follows directly from
+[D28](#d28--absence-of-evidence-is-not-evidence-of-disagreement). The point here
+is only that the resulting weight is **indistinguishable from zero**, so
+ordering two candidates on it presents a distinction the model did not really
+make.
+
+An epsilon of 0.05 bits sits immediately above the dominant 0.0389 quantum, in a
+sparse region holding roughly 14 candidates across six values, and below the
+scattered differences from 0.10 bits upward — 21 candidates across 11 values,
+with no dominant quantum, which read as genuine if small evidence differences
+and keep their order.
+
+The choice is insensitive: **any epsilon from 0.05 to 0.25 bits changes only 19
+records** (117 against 136 differing from strict equality), the same robustness
+property used to place every other threshold on this project.
+
+**Strict score equality was considered and rejected.** It needs no number
+defended, but it would leave 374 candidates ranked on a distinction where the
+runner-up is 97.3% as likely — the largest single group of false-precision cases,
+and precisely what this entry exists to prevent.
 
 ### A list cannot be displayed without a spatial order
 
@@ -2548,9 +2600,9 @@ correct judgement is worth more than a fast anchored one.
 
 ### Scope
 
-This entry settles presentation only. It does **not** set the display cap — how
-many candidates a reviewer sees per record — which remains open, and it does not
-fix the display-tie epsilon. Both are recorded as outstanding.
+This entry settles presentation and the display-tie epsilon. It does **not** set
+the display cap — how many candidates a reviewer sees per record — which remains
+open.
 
 ---
 
