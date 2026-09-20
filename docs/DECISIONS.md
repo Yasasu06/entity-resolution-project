@@ -2444,6 +2444,116 @@ the reasoning; the code follows once the boundary is fixed.
 
 ---
 
+## D32 — Tied candidates are shown as an unordered set, not a ranked list
+
+**Decision.** In the review queue, candidates whose scores are tied are
+presented as an **unordered set with no rank numerals**, rendered in a
+**deterministic shuffle seeded by the Walmart record id**. The tied scores are
+displayed and the group is labelled as tied, so the presentation explains
+itself. Candidates that are **not** tied keep their ranking, because there the
+order reflects evidence.
+
+The threshold defining a display tie is **deliberately tighter than the one-bit
+rule in [D31](#d31--tied-partners-when-the-model-cannot-choose-between-candidates)**
+and is recorded below as still open.
+
+### Why a ranked list would be misleading
+
+Among candidates holding the same score, the order is decided by row position
+in the Amazon table. It is an artefact of how the data was loaded and carries no
+information about which candidate is the better match. Numbering such a list
+1, 2, 3 asserts a fact that does not exist.
+
+Measured across the 1,113 records routed to review, **59 records (5.3%) have
+more than five candidates sharing their exact top score**, and one has 36. For
+those records any ranked presentation is fiction over its whole visible length.
+
+### The harm is systematic, not random
+
+Position bias in ranked lists is well established: the first item is selected
+disproportionately often. Where the order is arbitrary, a ranked display does
+not merely fail to help — it **converts an arbitrary artefact into a systematic
+bias**, correlated with Amazon table position, in exactly the judgements being
+collected to evaluate the system.
+
+This is the distinction that decides the question. Random error across 1,113
+reviews largely averages out. Bias correlated with an external ordering does
+not: it accumulates in one direction and contaminates the evaluation set. The
+concern is the same one behind the cognitive-forcing-function literature cited
+in [D24](#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai),
+and it is the reason the reviewer's independence is worth protecting at some
+cost to speed.
+
+It is also the same failure D31 guards against one layer up. D31 refuses to let
+the system pick the argmax of a tie, on the grounds that the choice is decided
+by row order. A ranked display would reintroduce that identical coin flip inside
+the interface, with a human pulling the lever.
+
+### Why D31's one-bit threshold does not transfer
+
+D31's margin answers *"is the model confident enough to accept without review?"*
+Display answers a different question: *"can the reviewer use this difference?"*
+Reusing one number for both would be a silent error.
+
+Of the 1,191 candidates that sit within one bit of their record's best without
+being exactly tied:
+
+| Gap below best | Candidates | The runner-up is |
+| --- | ---: | --- |
+| 0.00–0.10 bits | 411 | 93–100% as likely |
+| **0.10–0.25 bits** | **21** | 84–93% as likely |
+| 0.25–0.50 bits | 464 | 71–84% as likely |
+| 0.50–1.00 bits | 295 | 50–71% as likely |
+
+Treating all of these as tied would flatten real evidence. A candidate half as
+likely as the leader is a meaningfully weaker candidate and the reviewer can act
+on that. **390 of the 1,113 reviewed records differ between the two
+definitions.**
+
+The distribution also shows a **sparse region between 0.10 and 0.25 bits** — 21
+candidates, between clusters of 411 and 464 — which is the same structural
+argument used to place every other threshold on this project. A display-tie
+epsilon in that valley would separate the effectively identical from the
+genuinely distinguishable without cutting through a dense cluster.
+
+**The exact epsilon is not fixed here.** Strict score equality and a small
+valley-placed epsilon are both defensible; the choice is recorded as open rather
+than settled in passing.
+
+### A list cannot be displayed without a spatial order
+
+Removing the numerals stops the interface *claiming* a ranking. It does not
+remove position bias, because whatever appears first is still seen first. The
+labelling is necessary and not sufficient, and the load-bearing decision is what
+order the tied group is actually rendered in.
+
+**A deterministic shuffle seeded by the record id** is adopted. Seeding keeps
+the queue reproducible — the same artefact regenerates identically, which
+matters for an evaluation input — while decorrelating the order from the Amazon
+table, so any residual position bias becomes noise rather than a systematic
+lean in one direction.
+
+**Alphabetical ordering was considered and rejected.** It is easier to work
+through, but it reintroduces a systematic order that may correlate with brand —
+and brand is frequently the only signal these tied candidates share, which is
+why they are tied in the first place. Trading an arbitrary bias for a bias
+aligned with the confounder would be worse than doing nothing.
+
+### The cost, accepted deliberately
+
+An unordered set has no natural entry point and reviewers may work more slowly
+through one. That cost is accepted. These records are routed to a human
+precisely because the machine's ordering of them is worthless, and a slower
+correct judgement is worth more than a fast anchored one.
+
+### Scope
+
+This entry settles presentation only. It does **not** set the display cap — how
+many candidates a reviewer sees per record — which remains open, and it does not
+fix the display-tie epsilon. Both are recorded as outstanding.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
