@@ -205,3 +205,151 @@ on the model's ordering of pairs and on the shape of the score distribution, and
 **it has never been checked against a real label.** Until the measurements in
 section 3 are taken, every number in this document describes what the system
 believes, not what is true.
+
+---
+
+## 6. The two review arms
+
+**Added 19 September 2026, still before any labelled data has been read.** The
+sections above were written first and are unchanged. This section fixes the two
+arms described in [D24](DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)
+before either is run.
+
+### 6.1 Population
+
+Both arms run over **the same records**, or their results cannot be compared.
+
+The full population is the **1,113 records routed to review** by the rule in
+section 1. The **346 tied records** are run first as a validation slice — to
+check stability and calibrate cost — and the arm is then extended to all 1,113.
+Any result reported for one arm is reported over the same population as the
+other, and the slice is never presented as the headline.
+
+### 6.2 The AI arm
+
+**Model:** `claude-opus-5`, temperature 0. The exact model identifier, the
+prompt, and every raw response are stored with the results.
+
+**Evidence shown.** The AI receives exactly what a human reviewer would see: the
+same queue artefact, the same candidates under the display rule of
+[D33](DECISIONS.md#d33--how-many-candidates-a-reviewer-sees-and-how-truncation-is-disclosed),
+the same seeded shuffle and the same truncation labels.
+
+**Evidence withheld: the match scores.** The purpose of escalation is to resolve
+cases the classical system cannot — *512MB against 32GB*, *smoke grey against
+hot pink*. Supplying the classical system's scores would anchor the AI to the
+tie and destroy the independence the comparison depends on. The AI sees record
+text only.
+
+**The prompt, fixed here verbatim:**
+
+```
+You are matching product listings between two retailers. Decide whether the
+Walmart listing below refers to the same real-world product as any one of the
+Amazon listings.
+
+WALMART LISTING
+<title, brand, modelno, price, category>
+
+CANDIDATE AMAZON LISTINGS
+<for each: id, title, brand, modelno, price, category>
+
+Exactly one candidate may refer to the same product, or none may. Attributes
+such as storage capacity, physical dimensions, colour, model number and product
+variant distinguish otherwise similar products: two listings differing on any of
+these are different products even when their descriptions are otherwise nearly
+identical.
+
+Respond with JSON only:
+{"decision": "match" | "none_of_these" | "cannot_tell",
+ "amazon_id": "<id, or null>",
+ "reasoning": "<one or two sentences>"}
+
+Choose "cannot_tell" only where the listings lack the information needed to
+decide, not where the decision is merely difficult.
+```
+
+**Decision schema.** The three outcomes match the reviewer options in
+[D31](DECISIONS.md#d31--tied-partners-when-the-model-cannot-choose-between-candidates)
+exactly, so the arms are scored identically. The `reasoning` field is stored for
+audit and is **not** scored.
+
+**Cost.** Input and output tokens are recorded per record and priced, because
+[D7](DECISIONS.md#d7--ai-escalation-allowed-real-world-knowledge-judged-on-cost)
+judges escalation on cost reduction rather than accuracy alone.
+
+### 6.3 The stability gate, and what disqualifies the arm
+
+A language model is exposed to position bias in the same way a human reviewer
+is. Each record is therefore judged **three times under three different shuffle
+seeds**, and the agreement between those runs is measured.
+
+This is a genuine validity check that requires **no labels** and is therefore
+run **before** unsealing.
+
+Two criteria, both fixed now:
+
+1. **Against chance.** Unanimous agreement must be clearly above the agreement
+   expected from choosing uniformly at random among the same displayed
+   candidates, computed per record from its own candidate count.
+2. **An absolute floor: unanimous agreement across the three runs on at least
+   60% of records.**
+
+> The 60% figure is a **judgement, not a measurement.** Below it, two in five
+> decisions depend on the order candidates happened to be displayed in, and
+> reporting such decisions as a measured headline result would misrepresent
+> them. No evidence fixes the number precisely; it is recorded in advance so it
+> cannot be chosen after seeing which side of it the result falls.
+
+If the arm fails either criterion, that is **reported as the finding**, and its
+accuracy is not presented as a headline result.
+
+### 6.4 The human-only arm
+
+> ⚠️ **ASSUMPTION — a model, not an observation.** No human reviews these
+> records. Accuracy is a supplied input, per D24.
+
+Run at accuracies of **0.80, 0.90, 0.95 and 1.00**, seeded for reproducibility.
+
+**The error model, fixed here.** With probability *a* the simulated reviewer
+returns the correct outcome. With probability *1 − a* it chooses **uniformly at
+random among the displayed candidates and the "none of these" option**.
+
+Uniform choice is deliberate. Weighting the error by match score would smuggle
+the classical system's opinion into the arm that is supposed to be independent
+of it, and would flatter the comparison in a way that could not be detected from
+the result.
+
+**This arm cannot run before unsealing**, because simulating a reviewer who is
+correct 90% of the time requires knowing what correct is. It is written and
+fixed now, and executed once, at final evaluation.
+
+### 6.5 The display ceiling
+
+A reviewer can only choose among the candidates D33 displays. Where the true
+match was truncated away, a reviewer of **any** accuracy — including 1.00 —
+answers wrongly: they would correctly report "none of these" given what they
+saw, and be scored incorrect.
+
+The human-only arm therefore has a ceiling **below 1.00 that is set by this
+project's display rule, not by human fallibility.**
+
+That ceiling is **reported as a metric in its own right**, not folded into the
+accuracy figures. It is also the honest measurement of what D33's choice of ten
+extra candidates cost, which was recorded there as a judgement the label-free
+data could not settle.
+
+### 6.6 What is measured, for both arms
+
+For each arm, over the agreed population:
+
+1. Precision, recall and F1 of its decisions against the answer key.
+2. How often "none of these" was the correct answer, and how often each arm gave
+   it — the outcome D31 argued the interface must allow.
+3. For the AI arm: cost per record, and cost per correct decision.
+4. For the AI arm: the pre-unsealing stability result, reported whether or not
+   it passed.
+5. For the human arm: results at all four accuracies, with the display ceiling
+   stated alongside.
+6. The share of the review queue the AI could clear at precision equal to or
+   better than the modelled human — the question D7 asked.
