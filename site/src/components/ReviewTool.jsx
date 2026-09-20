@@ -41,13 +41,13 @@ export default function ReviewTool() {
       ok = c.truth.includes(picked);
       verdict = ok ? "Correct." : "Not a match.";
       why = ok ? "That pair is in the answer key."
-        : hasTruth ? "This record does have a partner — but not that one."
+        : hasTruth ? "This record does have a partner, but not that one."
         : "This record has no partner in the answer key at all.";
     } else if (kind === "none") {
       if (!hasTruth) { ok = true; verdict = "Correct."; why = "No partner exists. Two thirds of records have none."; }
-      else if (!shownTruth) { ok = true; verdict = "Correct, given what you were shown."; why = "A partner exists, but the display cap cut it from the list. The answer key still scores this wrong — that gap belongs to the interface, not to you."; }
+      else if (!shownTruth) { ok = true; verdict = "Correct, given what you were shown."; why = "A partner exists, but the display cap cut it from the list. The answer key still scores this wrong, and that gap belongs to the interface rather than to you."; }
       else { verdict = "There was a match."; why = "The correct partner was on the list."; }
-    } else { verdict = "Held."; why = "Recorded as undecided — not counted either way."; }
+    } else { verdict = "Held."; why = "Recorded as undecided, not counted either way."; }
     setRes({ kind, ok, verdict, why });
     setTally((t) => kind === "cant"
       ? { ...t, held: t.held + 1 }
@@ -66,7 +66,7 @@ export default function ReviewTool() {
         <p className="mt-5 max-w-[62ch] text-dim">
           Real records from the live pipeline, shown through the same interface rules the project
           argued its way to. Decide, then see what the answer key, the AI reviewer and the system
-          each said. Tied candidates appear unordered and unnumbered — among them the model
+          each said. Tied candidates appear unordered and unnumbered, because among them the model
           genuinely cannot tell, and ranking them would invent a preference from row order.
         </p>
       </Reveal>
@@ -78,8 +78,8 @@ export default function ReviewTool() {
           {c && (
             <>
               <div className="flex flex-wrap items-center gap-3 border-b border-line bg-void/40 px-5 py-3.5">
-                <span className="rounded-md px-2 py-1 font-mono text-[11px] text-dim ring-1 ring-line2">{c.id}</span>
-                <span className={`rounded-md px-2 py-1 font-mono text-[11px] uppercase tracking-wider ring-1 ${REASON[c.outcome][1]}`}>
+                <span className="rounded-md px-2 py-1 font-mono text-xs text-dim ring-1 ring-line2">{c.id}</span>
+                <span className={`rounded-md px-2 py-1 font-mono text-xs uppercase tracking-wider ring-1 ${REASON[c.outcome][1]}`}>
                   {REASON[c.outcome][0]}
                 </span>
                 <span className="ml-auto font-mono tnum text-xs text-faint">
@@ -89,8 +89,8 @@ export default function ReviewTool() {
               </div>
 
               <div className="border-b border-line px-5 py-5">
-                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">Walmart record</div>
-                <p className="mt-2.5 max-w-[64ch] text-[1.02rem] leading-snug">{c.walmart.title}</p>
+                <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">Walmart record</div>
+                <p className="mt-2.5 max-w-[64ch] text-base leading-snug">{c.walmart.title}</p>
                 <dl className="mt-3 flex flex-wrap gap-x-7 gap-y-1 font-mono text-xs text-dim">
                   {FIELDS.filter((f) => c.walmart[f]).map((f) => (
                     <div key={f} className="flex gap-2">
@@ -104,8 +104,8 @@ export default function ReviewTool() {
                 {c.blocks.map((b, bi) => (
                   <div key={bi} className={b.tied ? "rounded-lg border border-dashed border-hold/35 bg-hold/[0.04] p-3" : ""}>
                     {b.tied && (
-                      <div className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-hold">
-                        {b.members.length} candidates the evidence cannot separate — no order implied
+                      <div className="mb-2.5 font-mono text-xs uppercase tracking-[0.12em] text-hold">
+                        {b.members.length} candidates the evidence cannot separate, no order implied
                         {b.truncated && ` · showing ${b.shown} of ${b.true_size}`}
                       </div>
                     )}
@@ -121,13 +121,13 @@ export default function ReviewTool() {
                                 : isWrong ? "bg-alarm/10 ring-alarm/50"
                                 : picked === m.amazon_id ? "bg-cool/10 ring-cool/50"
                                 : "bg-raised ring-line hover:ring-line2"}`}>
-                            <span className="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] text-faint ring-1 ring-line">
+                            <span className="shrink-0 rounded px-1.5 py-0.5 font-mono text-xs text-faint ring-1 ring-line">
                               {m.amazon_id}
                             </span>
                             <span className="min-w-0">
                               <span className="block text-sm leading-snug">{m.title}</span>
                               {FIELDS.some((f) => m[f]) && (
-                                <span className="mt-1 block font-mono text-[11px] text-faint">
+                                <span className="mt-1 block font-mono text-xs text-faint">
                                   {FIELDS.filter((f) => m[f]).map((f) => `${f} ${m[f]}`).join("  ·  ")}
                                 </span>
                               )}
@@ -174,17 +174,17 @@ export default function ReviewTool() {
                       <dl className="mt-4 divide-y divide-line overflow-hidden rounded-lg ring-1 ring-line">
                         {[
                           ["Answer key", c.truth.length
-                            ? (c.truthShown.length ? `${c.truthShown.join(", ")} — highlighted above` : `${c.truth.join(", ")} — not among the candidates shown`)
+                            ? (c.truthShown.length ? `${c.truthShown.join(", ")} (highlighted above)` : `${c.truth.join(", ")} (not among the candidates shown)`)
                             : "no partner exists for this record"],
                           ["AI reviewer", c.ai
                             ? (c.ai.decision === "match" ? `chose ${c.ai.amazon_id}` : c.ai.decision === "none_of_these" ? "none of these" : "couldn’t tell")
-                            : "not reviewed — the system accepted this one"],
+                            : "not reviewed, the system accepted this one"],
                           ["The system", c.outcome === "accept"
                             ? `accepted ${c.systemPick} with no human review`
-                            : `withheld it — ${REASON[c.outcome][0]}`],
+                            : `withheld it, ${REASON[c.outcome][0]}`],
                         ].map(([k, v]) => (
                           <div key={k} className="grid gap-1 bg-panel px-4 py-3 sm:grid-cols-[130px_1fr] sm:gap-4">
-                            <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-faint">{k}</dt>
+                            <dt className="font-mono text-xs uppercase tracking-[0.14em] text-faint">{k}</dt>
                             <dd className="text-sm">{v}</dd>
                           </div>
                         ))}
@@ -197,8 +197,8 @@ export default function ReviewTool() {
           )}
         </div>
         <p className="mt-4 max-w-[70ch] text-sm text-faint">
-          120 records sampled with a fixed seed across every outcome — 50 the system auto-accepted,
-          70 it sent to review — so the mix reflects the real pipeline rather than a flattering selection.
+          120 records sampled with a fixed seed across every outcome. 50 the system auto-accepted,
+          70 it sent to review, so the mix reflects the real pipeline rather than a flattering selection.
         </p>
       </Reveal>
     </>

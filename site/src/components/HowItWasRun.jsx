@@ -2,9 +2,9 @@ import { Eyebrow, Reveal } from "./ui";
 
 const STAGES = [
   { n: "01", h: "Sealed", tone: "text-cool", ring: "ring-cool/25",
-    p: "The loader refuses to open a labelled split without an explicit override, and the refusal has its own test. Not a promise — a mechanism." },
+    p: "The loader refuses to open a labelled split without an explicit override, and the refusal has its own test. Not a promise. A mechanism." },
   { n: "02", h: "Predicted", tone: "text-hold", ring: "ring-hold/25",
-    p: "Every threshold, the review interface's display rules, the AI reviewer's exact prompt, and the full list of measurements — fixed in writing, committed, and timestamped into the Bitcoin blockchain." },
+    p: "Every threshold, the review interface's display rules, the AI reviewer's exact prompt, and the full list of measurements, all fixed in writing, committed, and timestamped into the Bitcoin blockchain." },
   { n: "03", h: "Opened once", tone: "text-signal", ring: "ring-signal/25",
     p: "One pass over all three splits at the end. Nothing was adjusted afterwards. Corrections are added as new entries, never as edits to old ones." },
 ];

@@ -27,7 +27,7 @@ export default function Hero() {
           className="mt-8 max-w-[58ch] text-lg leading-relaxed text-dim"
         >
           A record-linkage system built without ever reading a label. Every threshold fixed,
-          every design decision argued, and the expected failures documented — all committed
+          every design decision argued, and the expected failures documented, all committed
           and independently timestamped before the answer key was opened once, at the end.
         </motion.p>
 
@@ -53,7 +53,7 @@ function Scorecard() {
       {cells.map((c) => (
         <div key={c.l} className={`flex-1 min-w-[150px] rounded-xl bg-panel px-5 py-4 ring-1 ${c.ring}`}>
           <div className={`font-display tnum text-5xl leading-none ${c.tone}`}>{c.n}</div>
-          <div className="mt-2 font-mono text-[10px] tracking-[0.14em] uppercase text-faint">{c.l}</div>
+          <div className="mt-2 font-mono text-xs tracking-[0.14em] uppercase text-faint">{c.l}</div>
         </div>
       ))}
       <div className="flex-[1.6] min-w-[240px] rounded-xl bg-panel px-5 py-4 ring-1 ring-line2">
@@ -61,7 +61,7 @@ function Scorecard() {
           <span className="font-display tnum text-5xl leading-none">{HEADLINE.f1}%</span>
           <span className="font-mono text-xs text-dim">F1</span>
         </div>
-        <div className="mt-2 font-mono text-[10px] tracking-[0.14em] uppercase text-faint">
+        <div className="mt-2 font-mono text-xs tracking-[0.14em] uppercase text-faint">
           against a five-line heuristic&rsquo;s {HEADLINE.baselineBest}%
         </div>
       </div>

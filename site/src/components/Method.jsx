@@ -2,7 +2,7 @@ import { Eyebrow, Reveal } from "./ui";
 
 const ROWS = [
   ["Boundary", "commit 9819d63 · 20 September 2026"],
-  ["Proof", "OpenTimestamps, anchored in the Bitcoin blockchain — controlled by neither the author nor the host"],
+  ["Proof", "OpenTimestamps, anchored in the Bitcoin blockchain, controlled by neither the author nor the host"],
   ["Record", "41 decision entries · 10 pre-registration sections · 254 tests"],
   ["Evaluation", "One pass over all three splits, nothing adjusted afterwards"],
 ];
@@ -33,7 +33,7 @@ export default function Method() {
             </p>
             <p className="text-ink">
               The strongest evidence is not the timestamp. It is that the record documents its own
-              system failing — and that the pre-unseal analysis turned out to be conservative about
+              system failing, and that the pre-unseal analysis turned out to be conservative about
               that failure rather than defensive of it.
             </p>
           </div>
@@ -43,7 +43,7 @@ export default function Method() {
           <dl className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-line">
             {ROWS.map(([k, v]) => (
               <div key={k} className="grid gap-1.5 bg-panel px-5 py-4 sm:grid-cols-[110px_1fr] sm:gap-5">
-                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-faint">{k}</dt>
+                <dt className="font-mono text-xs uppercase tracking-[0.14em] text-faint">{k}</dt>
                 <dd className="text-sm leading-relaxed">{v}</dd>
               </div>
             ))}

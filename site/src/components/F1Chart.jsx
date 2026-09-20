@@ -13,8 +13,8 @@ export default function F1Chart() {
   return (
     <figure className="m-0">
       <figcaption className="mb-5 flex items-baseline justify-between gap-4">
-        <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-faint">F1 score</span>
-        <span className="font-mono text-[11px] text-faint">higher is better</span>
+        <span className="font-mono text-xs uppercase tracking-[0.14em] text-faint">F1 score</span>
+        <span className="font-mono text-xs text-faint">higher is better</span>
       </figcaption>
 
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"

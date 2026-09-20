@@ -1,15 +1,23 @@
 # Entity Resolution
 
-A system for **entity resolution**: deciding when two
-records that came from different sources actually refer to the same real-world
-company, when there is no shared ID to join on.
+**[Read the project site →](https://yasasu06.github.io/entity-resolution-project/)**
+
+A system for **entity resolution**: deciding when two product listings from
+different retailers refer to the same real-world item, when there is no shared
+ID to join on.
+
+Built without reading a single label. Every threshold, every design decision and
+every expected failure was written down, committed and independently timestamped
+*before* the answer key was opened once, at the end. Eight of those predictions
+held, three failed, and the record of both is the point.
 
 ## The problem
 
-Suppose one system lists `Acme Corp., 100 Main St, Springfield` and another
-lists `ACME Corporation — 100 Main Street, Springfield IL`. A human sees one
-company. A database sees two unrelated rows. There is no shared key, so the
-records have to be matched on the messy, inconsistent content itself.
+One retailer lists `maxell couleur series ear buds purple maxell 190238`. The
+other lists `new-purple couleur series ear buds de6235 headphones`. Same
+earbuds. Four words in common out of thirteen, catalogue numbers that disagree
+completely because each shop keeps its own, and a 30% price gap. A person sees
+one product. A database sees two unrelated rows.
 
 That is the problem this project explores: comparing records across sources and
 deciding *same entity* or *different entity* — and, where the evidence genuinely
@@ -47,9 +55,10 @@ found, measured and published *before* the answer key was opened.
 | Blocking diagnostics (what was discarded, and why) | ✅ Done |
 | Blocking ↔ matching interface contract | ✅ Done |
 | **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
-| **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 1,072 records auto-accepted, 1,113 queued for review |
-| **Human review** of the queued records | 🔜 Not started — 1,113 records queued and unreviewed; the interactive interface is deferred ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
-| Second system (embedding-based), for comparison | 📋 Planned |
+| **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 994 records auto-accepted, 1,191 queued for review |
+| **Review interface** | ✅ Built — working demo over 120 real records on the [project site](https://yasasu06.github.io/entity-resolution-project/); the full 1,191-record queue is generated but unreviewed |
+| **Human review** of the queued records | 🔜 Not started — no human has worked the queue; the human-only arm is modelled, not observed ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
+| Second system (embedding-based), for comparison | 📋 Next — D37 and D41 established what it has to beat: the classical approach reaches 1.5% of the identity problem, and the rest needs semantics |
 | **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; system F1 59.46% against the baseline's 57.66%; see [D39](docs/DECISIONS.md) and [D40](docs/DECISIONS.md) |
 | Post-evaluation improvement | ✅ Mutual-best-match check added — F1 **60.94%**, precision 59.96% ([D41](docs/DECISIONS.md)). Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
 
@@ -68,7 +77,8 @@ and why.
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines |
 | `tests/` | Automated tests (254 passing) covering the code in `src/` |
-| `docs/` | Decision log, the pre-registered decision rule, dataset provenance, and generated diagnostics |
+| `docs/` | Decision log, the pre-registered decision rule, the label-free boundary and its timestamp proof, dataset provenance |
+| `site/` | The project site: Vite, React, Tailwind and Motion, built and deployed by GitHub Actions |
 
 ## Data
 

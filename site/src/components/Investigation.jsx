@@ -11,7 +11,7 @@ export default function Investigation() {
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
           The system&rsquo;s central weakness was found, measured and published while the labels
-          were still sealed — by two methods that needed no ground truth, and a third finding
+          were still sealed, by two methods that needed no ground truth, and a third finding
           that neither could see.
         </p>
       </Reveal>
@@ -22,7 +22,7 @@ export default function Investigation() {
             <Reveal key={s.h} delay={i * 0.06}>
               <li className="relative">
                 <span className="absolute -left-[2.05rem] top-1.5 h-2.5 w-2.5 rounded-full bg-cool ring-4 ring-void" />
-                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-cool">{s.k}</div>
+                <div className="font-mono text-xs uppercase tracking-[0.16em] text-cool">{s.k}</div>
                 <h3 className="mt-1.5 text-lg font-medium">{s.h}</h3>
                 <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-dim">{s.p}</p>
               </li>
@@ -33,10 +33,10 @@ export default function Investigation() {
         <div className="space-y-4">
           <Reveal delay={0.1}>
             <div className="rounded-xl bg-panel p-5 ring-1 ring-line">
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
+              <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">
                 The clearest single error
               </div>
-              <div className="mt-4 space-y-2.5 font-mono text-[13px] leading-relaxed">
+              <div className="mt-4 space-y-2.5 font-mono text-sm leading-relaxed">
                 <Row k="Walmart" v={<>pny geforce <em className="not-italic text-signal">gt 520</em> 1024mb pcie</>} n="" />
                 <Row k="Chosen" v={<>pny <em className="not-italic text-alarm">gt 430</em> 1024mb ddr3</>} n="12.7 bits" />
                 <Row k="Correct" v={<>pny nvidia geforce <em className="not-italic text-signal">gt520</em> 1gb</>} n="8.0 bits" />
@@ -60,11 +60,11 @@ export default function Investigation() {
 
           <Reveal delay={0.22}>
             <div className="rounded-xl bg-panel p-5 ring-1 ring-line">
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">What followed</div>
+              <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">What followed</div>
               <ul className="mt-3 space-y-2.5 text-sm text-dim">
-                <li><span className="text-ink">A quantity veto</span> — refusing pairs whose stated capacities contradict. Reaches 1.5% of accepts; that honest figure is reported rather than the 9.6% the probes implied.</li>
-                <li><span className="text-ink">A mutual-best-match rule</span> — removed 62 accepts that were wrong 93.5% of the time.</li>
-                <li><span className="text-ink">Not a threshold change</span> — tuned with full label access it gained 0.6 F1, a precision-for-recall trade rather than an improvement.</li>
+                <li><span className="text-ink">A quantity veto</span>. Refusing pairs whose stated capacities contradict. Reaches 1.5% of accepts; that honest figure is reported rather than the 9.6% the probes implied.</li>
+                <li><span className="text-ink">A mutual-best-match rule</span>. Removed 62 accepts that were wrong 93.5% of the time.</li>
+                <li><span className="text-ink">Not a threshold change</span>. Tuned with full label access it gained 0.6 F1, a precision-for-recall trade rather than an improvement.</li>
               </ul>
             </div>
           </Reveal>
@@ -77,9 +77,9 @@ export default function Investigation() {
 function Row({ k, v, n }) {
   return (
     <div className="grid grid-cols-[62px_1fr_auto] items-baseline gap-3">
-      <span className="text-faint text-[11px] uppercase tracking-wider">{k}</span>
+      <span className="text-faint text-xs uppercase tracking-wider">{k}</span>
       <span className="text-ink">{v}</span>
-      <span className="tnum text-faint text-[11px]">{n}</span>
+      <span className="tnum text-faint text-xs">{n}</span>
     </div>
   );
 }

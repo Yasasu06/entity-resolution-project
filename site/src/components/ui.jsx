@@ -16,7 +16,7 @@ export function Reveal({ children, delay = 0, className = "" }) {
 
 export function Eyebrow({ children }) {
   return (
-    <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-faint">
+    <div className="font-mono text-xs tracking-[0.18em] uppercase text-faint">
       {children}
     </div>
   );
@@ -36,7 +36,7 @@ export function Stat({ value, label, tone = "ink", size = "lg" }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className={`font-display tnum leading-none ${sizes[size]} ${tones[tone]}`}>{value}</div>
-      <div className="font-mono text-[11px] tracking-[0.14em] uppercase text-faint">{label}</div>
+      <div className="font-mono text-xs tracking-[0.14em] uppercase text-faint">{label}</div>
     </div>
   );
 }

@@ -48,7 +48,7 @@ export default function App() {
             <a className="text-signal hover:underline" href={`${REPO}/blob/main/docs/PREDICTIONS_VS_REALITY.md`}>The full predictions ledger</a>
           </div>
           <p className="max-w-[72ch]">
-            Dataset: the dirty Walmart–Amazon benchmark from the Magellan collection — 2,554 and
+            Dataset: the dirty Walmart/Amazon benchmark from the Magellan collection. 2,554 and
             22,074 records, 56,376,996 possible pairs, reduced to 564,450 candidates. Every figure
             on this page is measured, not illustrative.
           </p>

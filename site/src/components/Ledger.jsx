@@ -38,7 +38,7 @@ export default function Ledger() {
                 ${open === i ? "opacity-100" : "opacity-45"} transition-opacity`} />
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[10px] uppercase tracking-[0.14em] text-faint">
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs uppercase tracking-[0.14em] text-faint">
           <span><span className="text-signal">&#9632;</span> 8 held</span>
           <span><span className="text-alarm">&#9632;</span> 3 failed</span>
           <span><span className="text-faint">&#9632;</span> 1 registered unknowable</span>
@@ -58,7 +58,7 @@ export default function Ledger() {
                   className="group grid w-full grid-cols-[3px_1fr_auto] items-center gap-4 px-4 py-4 text-left transition hover:bg-raised sm:grid-cols-[3px_1fr_auto_18px] sm:gap-5 sm:px-5"
                 >
                   <span className={`h-full min-h-[34px] rounded-full ${t.bar} opacity-70`} />
-                  <span className="text-[0.95rem] leading-snug">{p.claim}</span>
+                  <span className="text-base leading-snug">{p.claim}</span>
                   <span className={`font-mono tnum text-sm ${t.txt} text-right`}>{p.real}</span>
                   <span className="hidden text-faint transition group-hover:text-dim sm:block">
                     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"

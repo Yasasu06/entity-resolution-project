@@ -35,7 +35,7 @@ export default function Charts() {
 
         <Reveal delay={0.08} className="lg:col-span-2">
           <Box>
-            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.14em] text-faint">
+            <div className="mb-1 font-mono text-xs uppercase tracking-[0.14em] text-faint">
               What the 994 accepted records are
             </div>
             <div className="mb-5 flex items-baseline gap-2">
@@ -59,7 +59,7 @@ export default function Charts() {
             </ul>
             <p className="mt-5 text-sm leading-relaxed text-dim">
               <span className="text-ink">The dominant error is absence, not confusion.</span> Only
-              852 of 2,554 records have any partner in the answer key — and 994 were accepted.
+              852 of 2,554 records have any partner in the answer key, and 994 were accepted.
             </p>
           </Box>
         </Reveal>
@@ -75,7 +75,7 @@ export default function Charts() {
           ].map((k) => (
             <div key={k.l} className="rounded-xl bg-panel px-5 py-4 ring-1 ring-line">
               <div className="font-display tnum text-3xl leading-none">{k.v}</div>
-              <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-faint">{k.l}</div>
+              <div className="mt-2 font-mono text-xs uppercase tracking-[0.14em] text-faint">{k.l}</div>
               <div className="mt-1 text-xs text-dim">{k.s}</div>
             </div>
           ))}
