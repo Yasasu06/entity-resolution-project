@@ -621,3 +621,102 @@ flatters the system.
 * Benign clones test tolerance of terser text only. They say nothing about other
   kinds of listing variation.
 * Blocking is untested, per 8.2.
+
+---
+
+## 9. The quantity veto, and its held-out validation
+
+**Added 20 September 2026, before the veto was written, and before any labelled
+data has been read.**
+
+[D36](DECISIONS.md#d36--the-accepted-set-does-not-reliably-identify-products-and-a-threshold-will-not-fix-it)
+established that the matcher cannot separate a real partner from a near-miss
+differing in one identity-bearing attribute. This section fixes a narrow,
+targeted response and — more importantly — the test that could show it does not
+work.
+
+### 9.1 What is being built, and why it is a veto
+
+A pair is refused auto-acceptance if both records state a quantity of the same
+family and the stated values **share no value in common**. Scoring is unchanged;
+the pair is routed to review instead.
+
+**It is a veto, not a comparison, deliberately.** Adding a comparison to the
+model requires retraining, which changes every score and invalidates the
+thresholds in section 1, the analysis in sections 3 and 6, and the measurements
+in D34 to D36. A high-precision, low-recall signal is also poorly served by being
+one weighted term among six, where expectation-maximisation can dilute it. As a
+veto it cannot be outvoted, costs nothing to the rest of the pipeline, and can be
+switched off independently.
+
+Quantity families covered: **storage** (kb, mb, gb, tb), **length** (inch, in,
+`"`), **power** (w, watt, watts). Values are normalised within a family before
+comparison.
+
+### 9.2 The expected gain, stated honestly in advance
+
+| Measurement | Value |
+| --- | ---: |
+| Clean catches on the section 8 probes | 85 of 889 (**9.6%**) |
+| Quantity conflicts among the 1,072 real accepts | **16 (1.5%)** |
+| Of those judged by the independent AI, share it also rejected | **10 of 10 (100%)** |
+
+**The real-world gain is 1.5%, not 9.6%.** The probe figure is inflated roughly
+sixfold because the section 8 recipe *manufactured* capacity and dimension
+conflicts at a rate far above their natural occurrence. The lower number is the
+one that will be reported. Overall disagreement on the accepted set is expected
+to move from about 31.0% to about 29.9%.
+
+This is recorded before building so that the modest size of the gain cannot later
+be restated more favourably.
+
+### 9.3 The held-out validation
+
+The veto is built against the families in 9.1. It is then tested on a mutation
+family **fixed here, before the veto exists**, which it was not designed around.
+
+**H1 — quantity stated outside the title.** The mutation is applied to a
+quantity appearing in an attribute other than `title`. Passing requires the veto
+to read every attribute, not just the title.
+
+**H2 — unit swap.** The number is left alone and the unit is changed, for example
+`16gb` to `16tb`. Passing requires genuine unit normalisation rather than string
+comparison.
+
+**H3 — negative control: colour swap.** A colour word is replaced. The veto must
+**not** fire. This measures over-firing.
+
+**Predictions recorded in advance:** H2 is expected to be caught. H1 is expected
+to be caught **only if** the implementation reads all attributes — an outcome
+that is genuinely uncertain at the time of writing. H3 is expected to produce no
+firings at all.
+
+**If the veto is modified after seeing H1, H2 or H3 results, the validation is
+void and the modification is reported as such.** A test whose subject can be
+adjusted after the result measures nothing.
+
+### 9.4 Metrics
+
+| Metric | Definition |
+| --- | ---: |
+| Catch rate | Share of held-out near-misses the veto refuses |
+| False-fire rate | Share of **true** accepted pairs the veto refuses |
+| Control firings | Any firing on H3, which should be zero |
+
+### 9.5 The limitation this does not address
+
+The veto covers quantities. It does **not** address conflicting **model
+numbers**, which were 648 of the 889 probes in section 8.
+
+That exclusion is deliberate and evidence-based. `rare_identifier_tokens`
+non-overlap carries −0.0389 bits, from m ≈ 0.97: roughly 97% of pairs the model
+treats as matches already share no rare identifier, because retailers legitimately
+carry different catalogue numbers for the same product. **A conflicting
+identifier is therefore not reliable evidence of a different product**, and a rule
+penalising it would damage true matches.
+
+Separating "a different catalogue number for the same product" from "a different
+product" requires knowing what the number denotes. That is semantic knowledge the
+classical system does not have and cannot be given by a rule over token sets.
+**This is a structural boundary of the classical approach, not an omission**, and
+it is the clearest case yet for what the AI-based system exists to provide.
