@@ -15,7 +15,29 @@ That is the problem this project explores: comparing records across sources and
 deciding *same entity* or *different entity* — and, where the evidence genuinely
 doesn't support a confident answer, saying so rather than guessing.
 
-## Status: in progress
+## What we predicted blind, and what was true
+
+Every design decision was made, and every threshold fixed, **before any labelled
+data was read** — committed to git and independently timestamped first. Then the
+labels were opened once.
+
+| Claim made blind | Reality | |
+| --- | --- | :-: |
+| Blocking retains essentially every true match | **99.90%** recall (961 of 962) | ✅ |
+| The prior implies about **1,128** matches exist | **962** actual | ✅ |
+| "Confidently different" is our most exposed claim | **0.5%** wrong (2 of 369) | ✅ |
+| Picking the top tied candidate is near a coin flip | **66.3%** vs **53.4%** chance | ✅ |
+| An independent AI judge put ~**31%** of accepts wrong | **43%** were — it was too generous | ❌ |
+
+Eight predictions held, three failed, one was registered in advance as
+unknowable. **[The full table, misses included →](docs/PREDICTIONS_VS_REALITY.md)**
+
+The headline result is mixed and the record says so: the system reaches 59.46% F1
+against a five-line heuristic's 57.66%, and its unattended output is **not**
+deployable. What the project demonstrates is that every material weakness was
+found, measured and published *before* the answer key was opened.
+
+## Status
 
 | Stage | Status |
 | --- | --- |
@@ -28,11 +50,11 @@ doesn't support a confident answer, saying so rather than guessing.
 | **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 1,072 records auto-accepted, 1,113 queued for review |
 | **Human review** of the queued records | 🔜 Not started — 1,113 records queued and unreviewed; the interactive interface is deferred ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
 | Second system (embedding-based), for comparison | 📋 Planned |
-| Final evaluation against sealed labels | 🔒 Not started — labels stay sealed until everything above is finished |
+| **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; system F1 59.46% against the baseline's 57.66%; see [D39](docs/DECISIONS.md) and [D40](docs/DECISIONS.md) |
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (31 entries and growing). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (40 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 

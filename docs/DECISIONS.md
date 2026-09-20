@@ -3349,6 +3349,78 @@ as failing, with evidence, weeks before this measurement existed.
 
 ---
 
+## D40 — Correcting D38: the decision holds, the reasoning did not
+
+**Finding.** [D38](#d38--the-accept-threshold-stays-at-60-bits-and-why-that-is-not-complacency)
+kept the accept threshold at 6.0 bits and argued that *"a threshold will not fix
+it."* The answer key shows that **claim was too strong.** Raising the threshold
+improves precision substantially.
+
+**The decision D38 made still stands.** Its reasoning does not, and this entry
+records the difference. Per the convention in
+[`PRE_UNSEAL.md`](PRE_UNSEAL.md), D38 is not edited.
+
+### What the labels show
+
+| Rule | Accepted | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| **6.0 / 1.0 — chosen** | 1,056 | 56.82% | 62.37% | **59.46%** |
+| 8.0 / 1.0 | 972 | 60.19% | 60.81% | 60.50% |
+| 10.0 / 1.0 | 790 | 67.59% | 55.51% | 60.96% |
+| 12.0 / 4.0 — rejected by D38 | 528 | **75.00%** | 41.16% | 53.15% |
+| 16.0 / 8.0 | 451 | 77.61% | 36.38% | 49.54% |
+
+Precision rises by **18 points** between the chosen rule and the rejected one.
+D38 predicted it would not move.
+
+### Why the reasoning was wrong
+
+D38 rested on the planted probes, which showed usurpation flat at 15.7% overall
+and 16.3% above 12 bits. That measurement was correct and remains correct: **the
+near-miss failure really is threshold-invariant**, because a mutated token joins
+the evidence set rather than displacing anything, at any score.
+
+The error was **generalising from one failure mode to precision as a whole.**
+Most wrong accepts are not near-miss confusions. They are records that have **no
+true partner at all** — only 852 of 2,554 Walmart records appear as a match in
+the answer key. Those pairs tend to score lower, so a higher threshold removes
+them, and precision improves for a reason the probe was never measuring.
+
+D36 and D38 both reasoned from the probe and inherited its blind spot. The probe
+was constructed by mutating the partners of **already-accepted** pairs, so by
+construction every probe had a true partner. It could not see the dominant
+failure, because the dominant failure is the absence of one.
+
+### Why the decision nonetheless stands
+
+On **F1, 6.0 bits wins**: 59.46% against 53.15%. The precision gain is bought
+with a larger recall loss, 62.37% down to 41.16%.
+
+D38's other arguments also survive. Halving automation for a system that is not
+deployable at either precision changes no decision anyone would make. And the two
+intermediate rules — 8.0 and 10.0 bits, at 60.50% and 60.96% F1 — are marginally
+better than the chosen rule, by around one point, which is well inside the
+uncertainty of a single evaluation and is not grounds for having preferred them
+in advance.
+
+**The right conclusion is narrower than D38's**: a threshold cannot fix the
+near-miss failure, and no threshold in this model makes the system deployable.
+Neither of those is the same as "a threshold will not improve precision", which
+is what D38 said and the labels refute.
+
+### What this says about the method
+
+This is the clearest case in the project of a **correct decision reached partly
+by wrong reasoning**, and it is worth recording as such rather than being quietly
+absorbed into a favourable summary.
+
+It also shows the limit of the probe method introduced in section 8: a probe
+built from cases the system already accepted can only measure failures *within*
+that population. Measuring what a system misses entirely needs a different
+instrument, and this project never built one.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as
