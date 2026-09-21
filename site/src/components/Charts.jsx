@@ -39,7 +39,7 @@ export default function Charts() {
               What the 994 accepted records are
             </div>
             <div className="mb-5 flex items-baseline gap-2">
-              <span className="font-display text-5xl leading-none text-alarm tnum">413</span>
+              <span className="font-display text-5xl leading-none text-alarm tnum">363</span>
               <span className="text-sm text-dim">have no partner at all</span>
             </div>
             <div className="flex h-12 w-full overflow-hidden rounded-md ring-1 ring-line">

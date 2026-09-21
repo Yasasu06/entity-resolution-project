@@ -40,10 +40,11 @@ labels were opened once.
 Eight predictions held, three failed, one was registered in advance as
 unknowable. **[The full table, misses included →](docs/PREDICTIONS_VS_REALITY.md)**
 
-The headline result is mixed and the record says so: the system reaches 59.46% F1
-against a five-line heuristic's 57.66%, and its unattended output is **not**
-deployable. What the project demonstrates is that every material weakness was
-found, measured and published *before* the answer key was opened.
+The headline result is mixed and the record says so: the system reaches **60.94% F1**
+(59.96% precision, 61.95% recall, over 994 auto-accepted records) against a five-line
+heuristic's 57.66%, and its unattended output is **not** deployable. What the project
+demonstrates is that every material weakness was found, measured and published
+*before* the answer key was opened.
 
 ## Status
 
@@ -59,8 +60,8 @@ found, measured and published *before* the answer key was opened.
 | **Review interface** | ✅ Built — working demo over 120 real records on the [project site](https://yasasu06.github.io/entity-resolution-project/); the full 1,191-record queue is generated but unreviewed |
 | **Human review** of the queued records | 🔜 Not started — no human has worked the queue; the human-only arm is modelled, not observed ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
 | Second system (embedding-based), for comparison | 📋 Next — D37 and D41 established what it has to beat: the classical approach reaches 1.5% of the identity problem, and the rest needs semantics |
-| **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; system F1 59.46% against the baseline's 57.66%; see [D39](docs/DECISIONS.md) and [D40](docs/DECISIONS.md) |
-| Post-evaluation improvement | ✅ Mutual-best-match check added — F1 **60.94%**, precision 59.96% ([D41](docs/DECISIONS.md)). Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
+| **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; F1 was 59.46% at that point ([D39](docs/DECISIONS.md), [D40](docs/DECISIONS.md)) |
+| Post-evaluation improvement | ✅ Mutual-best-match check added ([D41](docs/DECISIONS.md)), superseding the figure above. **Current: F1 60.94%, precision 59.96%, recall 61.95%, 994 accepted.** Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in

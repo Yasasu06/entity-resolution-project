@@ -50,10 +50,11 @@ export default function Investigation() {
           <Reveal delay={0.16}>
             <div className="rounded-xl border-l-2 border-cool bg-panel/60 p-5">
               <p className="text-sm leading-relaxed text-dim">
-                The error decomposition inverted the project&rsquo;s priorities. Of 456 wrong
-                accepts, <span className="text-ink">413</span> were records with no partner and
-                only <span className="text-ink">43</span> were cases where a partner existed and
-                the wrong one was chosen. Three separate investigations had gone after the 9%.
+                The error decomposition inverted the project&rsquo;s priorities. At the final
+                evaluation, of 456 wrong accepts, <span className="text-ink">413</span> were
+                records with no partner and only <span className="text-ink">43</span> were cases
+                where a partner existed and the wrong one was chosen. Three separate
+                investigations had gone after the 9%.
               </p>
             </div>
           </Reveal>

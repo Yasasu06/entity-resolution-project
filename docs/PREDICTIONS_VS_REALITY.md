@@ -65,9 +65,9 @@ not settle. It cost **11 records of 1,129**.
 
 **7 — The central failure, found blind.** [D36](DECISIONS.md) concluded from two
 independent label-free methods that the auto-accepted set was unreliable at the
-level of product identity. **It was: 456 of 1,056 accepts are wrong.** The
-finding, the diagnosis and the evidence were published weeks before the answer
-key was opened.
+level of product identity. **It was: 456 of the 1,056 accepts at that point were
+wrong.** The finding, the diagnosis and the evidence were published weeks before
+the answer key was opened. The system now accepts 994, of which 398 are wrong.
 
 **8 — Overconfidence.** The tension between λ's implied 1,128 and the posteriors'
 13,000 was recorded as unresolved from D25 onward. It resolves against the model:
@@ -120,8 +120,10 @@ partner.
 
 ## What this is and is not evidence of
 
-**It is not evidence that the system works.** It does not: 56.82% precision on
-unattended output is not deployable, and [D39](DECISIONS.md) says so.
+**It is not evidence that the system works.** It does not: 59.96% precision on
+unattended output is not deployable, and [D39](DECISIONS.md) says so. (That figure
+was 56.82% when D39 was written; [D41](DECISIONS.md)'s mutual-best-match rule
+raised it, and F1 with it, from 59.46% to 60.94%.)
 
 **It is evidence that the reasoning was sound more often than not, and that the
 failures were found before the answers were available.** The project's largest

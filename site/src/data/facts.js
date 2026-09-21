@@ -52,9 +52,9 @@ export const F1_BARS = [
 ];
 
 export const ERRORS = [
-  { name: "Correct", value: 600, tone: "signal" },
-  { name: "Record has no partner", value: 413, tone: "alarm" },
-  { name: "Wrong partner chosen", value: 43, tone: "hold" },
+  { name: "Correct", value: 596, tone: "signal" },
+  { name: "Record has no partner", value: 363, tone: "alarm" },
+  { name: "Wrong partner chosen", value: 35, tone: "hold" },
 ];
 
 export const STEPS = [
