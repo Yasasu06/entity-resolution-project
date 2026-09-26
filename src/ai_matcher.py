@@ -135,9 +135,14 @@ def openai_responder() -> Responder:
     client = OpenAI()
 
     def respond(prompt: str) -> Response:
-        r = client.chat.completions.create(
-            model=MODEL, messages=[{"role": "user", "content": prompt}],
-            temperature=TEMPERATURE, max_completion_tokens=MAX_TOKENS)
+        try:
+            r = client.chat.completions.create(
+                model=MODEL, messages=[{"role": "user", "content": prompt}],
+                temperature=TEMPERATURE, max_completion_tokens=MAX_TOKENS)
+        except Exception as exc:
+            if "no credits remaining" in str(exc) or "insufficient_quota" in str(exc):
+                raise CreditsExhausted(str(exc)[:160]) from exc
+            raise
         return Response(text=r.choices[0].message.content or "",
                         input_tokens=r.usage.prompt_tokens,
                         output_tokens=r.usage.completion_tokens)
@@ -153,3 +158,45 @@ def load_inputs():
 
 def shortlist_frame(table_b, ids: list[str]) -> pd.DataFrame:
     return table_b.loc[ids].reset_index()
+
+class CreditsExhausted(RuntimeError):
+    """The account ran out of credit mid-run.
+
+    Worth its own type because the first stability run did not stop: it kept
+    calling, recorded 225 identical failures, and those failures then counted as
+    agreement in the gate. A run that cannot continue should end, not fill its
+    results with errors that look like data.
+    """
+
+
+def stability(runs: dict[str, list[Judgement | None]], floor: float = 0.60) -> dict:
+    """Score the gate over records whose calls all returned.
+
+    Calls that never reached the model are excluded rather than treated as
+    answers. Counting a failed call as a decision makes identical failures look
+    like unanimous agreement, which is how the first run reported 72% when the
+    figure over completed records was 61.1%.
+    """
+    complete = {w: v for w, v in runs.items()
+                if all(j is not None for j in v[:len(ORDERINGS)])}
+    n = len(complete)
+    unanimous = sum(1 for v in complete.values()
+                    if len({j.key() for j in v[:len(ORDERINGS)]}) == 1)
+    with_control = {w: v for w, v in runs.items() if all(j is not None for j in v)}
+    flips = sum(1 for v in with_control.values() if v[-1].key() != v[0].key())
+    rate = unanimous / n if n else 0.0
+    # a wide interval at this sample size is itself a result; report it
+    half = 1.96 * ((rate * (1 - rate) / n) ** 0.5) if n else 0.0
+    return {
+        "records_attempted": len(runs),
+        "records_complete": n,
+        "records_dropped": len(runs) - n,
+        "unanimous": unanimous,
+        "unanimous_rate": rate,
+        "ci95": [max(0.0, rate - half), min(1.0, rate + half)],
+        "control_flips": flips,
+        "control_flip_rate": flips / len(with_control) if with_control else 0.0,
+        "floor": floor,
+        "passes": rate - half >= floor,
+        "inconclusive": rate >= floor > rate - half,
+    }

@@ -80,3 +80,54 @@ def test_all_three_outcomes_are_offered():
 def test_the_judgement_key_ignores_the_id_unless_it_matched():
     assert Judgement("none_of_these", "B_9", "").key() == ("none_of_these", None)
     assert Judgement("match", "B_9", "").key() == ("match", "B_9")
+
+
+# --- the gate must not count a failed call as agreement -----------------------
+
+def _j(decision, aid=None):
+    from src.ai_matcher import Judgement
+    return Judgement(decision, aid, "")
+
+
+def test_records_whose_calls_failed_are_dropped_not_counted():
+    """Identical API failures once read as unanimous agreement, which turned a
+    61.1% result into a reported 72%."""
+    from src.ai_matcher import stability
+    runs = {f"ok_{i}": [_j("match", "B_1")] * 4 for i in range(10)}
+    runs.update({f"dead_{i}": [None, None, None, None] for i in range(10)})
+    g = stability(runs)
+    assert g["records_attempted"] == 20
+    assert g["records_complete"] == 10
+    assert g["records_dropped"] == 10
+    assert g["unanimous_rate"] == 1.0
+
+
+def test_a_partially_failed_record_is_dropped():
+    from src.ai_matcher import stability
+    runs = {"a": [_j("match", "B_1"), None, _j("match", "B_1"), _j("match", "B_1")]}
+    assert stability(runs)["records_complete"] == 0
+
+
+def test_disagreement_is_not_unanimous():
+    from src.ai_matcher import stability
+    runs = {"a": [_j("match", "B_1"), _j("match", "B_2"), _j("match", "B_1"), _j("match", "B_1")]}
+    assert stability(runs)["unanimous"] == 0
+
+
+def test_a_result_straddling_the_floor_is_inconclusive_not_a_pass():
+    """61.1% on 144 records has the 60% floor inside its interval."""
+    from src.ai_matcher import stability
+    runs = {}
+    for i in range(144):
+        runs[f"r{i}"] = ([_j("match", "B_1")] * 4 if i < 88
+                         else [_j("match", "B_1"), _j("match", "B_2"),
+                               _j("match", "B_1"), _j("match", "B_1")])
+    g = stability(runs)
+    assert round(g["unanimous_rate"], 3) == 0.611
+    assert g["inconclusive"] and not g["passes"]
+
+
+def test_a_clear_result_passes():
+    from src.ai_matcher import stability
+    runs = {f"r{i}": [_j("match", "B_1")] * 4 for i in range(200)}
+    assert stability(runs)["passes"]
