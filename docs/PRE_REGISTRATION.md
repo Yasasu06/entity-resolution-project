@@ -787,3 +787,119 @@ the key cannot be counted in either direction, and no claim is made about them.
    in particular section 3.2.7, which commits to reporting that D31 was wrong if
    selecting the highest-scoring partner among tied candidates would have beaten
    chance.
+
+---
+
+## 11. The component swap: an AI matcher over the classical candidate set
+
+**Added 26 September 2026, before the experiment was built or run.**
+
+### 11.1 What this is, and the claim it cannot make
+
+[D22](DECISIONS.md#d22--how-the-two-systems-will-be-compared) built an interface
+contract so that the stages of the two systems could be **swapped**, on the
+grounds that comparing two whole systems leaves "two black boxes and one number
+each". This is that swap: **classical blocking, AI matching.**
+
+It replaces a proposal to build a second complete system. That proposal was
+rejected because roughly 90% of what it would teach is available from two far
+cheaper experiments, and because building two monoliths is the outcome D22 was
+written to prevent.
+
+> ⚠️ **This is not label-free work, and must never be presented as such.** The
+> seal was opened on 20 September. This experiment exists *because* the answer
+> key showed that 363 of 398 wrong accepts are records with no partner at all.
+> The design is informed by labels. What is still available, and is what this
+> document provides, is that the design, thresholds, prompt and metrics are
+> **fixed before the experiment runs**, which prevents tuning after the result.
+>
+> System one: designed blind, validated blind. System two: designed knowing
+> system one's failure modes, then frozen before measurement. The second claim
+> is weaker and is stated as such wherever results are reported.
+
+### 11.2 The contamination this design has to avoid
+
+The obvious implementation is to show the model each record's top candidates
+**ranked by the classical match weight**. That would not be a matcher swap: the
+AI would inherit the classical matcher's ranking and be tested on how well it
+re-ranks a shortlist the classical system already chose. Any agreement would be
+partly an artefact of that shortlist.
+
+**Candidates are therefore ranked by embedding similarity, not by match weight.**
+The classical system supplies the candidate *set*; the AI supplies the ranking
+and the decision. No Splink score reaches the model, exactly as in section 6.2.
+
+### 11.3 The design, fixed here
+
+| | |
+| --- | --- |
+| Population | All **2,554** Walmart records with candidates |
+| Candidate set | The classical **564,450** pairs, unchanged |
+| Ranking | Cosine similarity over embeddings of the full record text |
+| Shown per record | **Top 30** by that similarity |
+| Decision unit | One call per record, its whole shortlist at once (D31) |
+| Calls | **2,554**, plus 24,628 embeddings |
+| Temperature | 0 |
+
+**Why 30.** The median record has 187 candidates and 99% have more than 30, so a
+cap is unavoidable. Thirty fits comfortably in context at roughly 2,500 tokens,
+and is triple the classical interface's own display cap of ten. It is chosen on
+cost and context grounds **before** measuring what recall it forfeits; that
+forfeit is then reported as a measured consequence rather than tuned away.
+
+**Outcomes map directly to the three buckets**, with no threshold to set:
+
+| Model output | Bucket |
+| --- | --- |
+| `match` with a candidate id | accept |
+| `none_of_these` | confidently different |
+| `cannot_tell` | review |
+
+**The prompt** is the one fixed in section 6.2, with one change: the instruction
+to name the attribute that distinguishes the products, before deciding. That
+addresses the failure D37 identified as beyond a rule over token sets, and is a
+design commitment rather than an assumption that semantics solves it.
+
+### 11.4 Stability
+
+[D34](DECISIONS.md#d34--the-ai-arm-passes-its-stability-gate-and-what-the-control-revealed)
+found 12.1% of tied records returned a different answer to a byte-identical
+prompt. A **200-record subsample** is therefore judged three times under
+different shortlist orderings, plus once more at the first ordering as the
+same-ordering control. The floor and the reading are those of section 6.3, with
+the correction in D34 applied: a flip means position bias **or** sampling noise,
+and the control separates them.
+
+### 11.5 What is measured
+
+1. Precision, recall and F1 of the accepted set, against **60.94%** for the
+   classical system over the same candidates.
+2. The error decomposition: correct, record has no partner, wrong partner chosen.
+   Against the classical **596 / 363 / 35**.
+3. Recall forfeited by the top-30 cap, stated plainly.
+4. Cost per record and per correct decision.
+5. Agreement with the classical system, and the precision of each where they
+   disagree. Two systems over one candidate set make this directly computable.
+6. The stability result, reported whether or not it passes.
+
+### 11.6 Predictions recorded in advance
+
+These are falsifiable and several may be wrong.
+
+* **F1 will not beat 60.94%.** Stated at roughly 55% confidence. The most likely
+  outcome is higher precision and lower recall at comparable F1.
+* **Precision will exceed 59.96%.** Higher confidence. Rejection is the one
+  capability the AI arm demonstrably has.
+* **The no-partner error class will shrink by at least a third**, from 363. This
+  is the mechanism the whole experiment rests on; if it fails, the approach is
+  wrong rather than merely underperforming.
+* **The top-30 cap will forfeit under 5% of true matches.** Genuinely uncertain.
+* **No prediction is recorded** for whether the two systems' disagreements favour
+  one side. Registered so neither answer can later be presented as expected.
+
+### 11.7 What follows from the result
+
+If precision rises and the no-partner class shrinks, the embedding-blocking half
+becomes worth building, justified by evidence. If the no-partner class does not
+shrink, that is a finding about the limits of semantic matching on this data, and
+no second system should be built on the assumption it would.
