@@ -3609,6 +3609,153 @@ evidence that would cost precision.
 * Whether to relax one-to-one is left open. It should be decided against measured
   precision loss, not adopted or kept by default.
 
+
+## D43 — The component swap: a better F1, a failed mechanism, and no second system
+
+**Finding.** Replacing the classical ranker and threshold with an embedding
+shortlist and a model judgement raised F1 from **60.94%** to **66.86%** over the
+same candidate set. **Three of the four predictions registered in advance were
+wrong, including the one the experiment was built to test.** The no-partner error
+class was predicted to shrink by at least a third and instead **grew by 62.5%**.
+[Section 11.7](PRE_REGISTRATION.md#117-what-follows-from-the-result) fixed the
+consequence before the result existed: the embedding-blocking half is not built.
+
+The experiment ran once, over all 2,554 Walmart records with candidates, at a
+cost of **$4.41**.
+
+### The result
+
+| | Classical | Component swap | |
+| --- | ---: | ---: | --- |
+| Accepted pairs | 994 | 1,416 | |
+| True positives | 596 | 795 | |
+| False positives | 398 | 621 | |
+| Precision | 59.96% | 56.14% | −3.82 pts |
+| Recall | 61.95% | **82.64%** | **+20.69 pts** |
+| **F1** | **60.94%** | **66.86%** | **+5.92 pts** |
+
+Scored against 962 true matches over 852 Walmart records, under the closed-world
+assumption declared in
+[section 10.2](PRE_REGISTRATION.md#102-the-closed-world-assumption). The
+classical figures were recomputed from scratch by the same scoring path and
+reproduced [D39](#d39--the-final-evaluation) exactly before the new results were
+scored at all.
+
+### The four predictions, and what happened
+
+| Registered in [11.6](PRE_REGISTRATION.md#116-predictions-recorded-in-advance) | Outcome |
+| --- | --- |
+| F1 will **not** beat 60.94%, at ~55% confidence | **Wrong.** 66.86% |
+| Precision **will** exceed 59.96%, at higher confidence | **Wrong.** 56.14% |
+| No-partner errors shrink by **at least a third** from 363 | **Wrong.** Grew to 590 |
+| The top-30 cap forfeits **under 5%** of true matches | **Correct.** 1 of 962, 0.10% |
+
+The registered expectation was *higher precision and lower recall at comparable
+F1*. Every axis moved the other way. The one correct prediction concerns
+retrieval, which [D42](#d42--what-the-one-to-one-rule-costs-a-recall-ceiling-nobody-measured)
+had already shown was not the bottleneck.
+
+### The mechanism failed
+
+| Error class | Classical | Component swap | |
+| --- | ---: | ---: | --- |
+| Correct | 596 | 795 | +199 |
+| **Record has no partner** | **363** | **590** | **+227** |
+| Wrong partner chosen | 35 | 31 | −4 |
+
+Section 11.6 stated that the no-partner class was "the mechanism the whole
+experiment rests on; if it fails, the approach is wrong rather than merely
+underperforming." It failed. The premise was that a model reading the text could
+recognise the *absence* of a partner where a rule over token sets could not
+(D37). The opposite occurred: given a shortlist of thirty plausible candidates,
+the model finds something to accept.
+
+**The F1 gain is permissiveness, not discrimination.** The swap accepts 42% more
+pairs, capturing 199 more true matches and 223 more false ones. A system that
+accepts more will gain recall and lose precision at any level of skill; that is a
+threshold effect, and this experiment was specifically designed to have no
+threshold to move. The improvement is real and it is not evidence of better
+judgement.
+
+**The third bucket went unused.** Of 2,554 decisions, 1,416 were `match`, 1,138
+`none_of_these`, and **none** `cannot_tell`. The abstention route that
+[section 11.3](PRE_REGISTRATION.md#113-the-design-fixed-here) maps to the review
+bucket was never taken, so this configuration produces no review queue at all.
+
+### Where the two systems disagree
+
+No prediction was registered here, deliberately, so that neither answer could
+later be presented as expected.
+
+| | |
+| --- | ---: |
+| Records where both accepted a partner | 852 |
+| Same partner chosen | 741 (87.0%) |
+| Disagreements | 111 |
+| — component swap correct | 41 |
+| — classical correct | 23 |
+| — both wrong | 47 |
+| Accepted only by the classical system | 142 |
+| Accepted only by the component swap | 564 |
+
+Where the two disagree on a record they both accept, the swap is right more
+often, by 41 to 23. That is the one place its judgement looks better rather than
+merely looser, and it covers 111 of 2,554 records.
+
+### Two limits that travel with the number
+
+**There is no stability guarantee.** The gate was withdrawn as unresolvable
+before this ran, for the reasons in the
+[26 September amendment](PRE_REGISTRATION.md#amendment-26-september-2026--the-stability-gate-is-withdrawn-as-unresolvable).
+**66.86% is an aggregate over 2,554 single judgements, and nothing is known about
+the reliability of any one of them.** The last measurement available put
+unanimity across three shortlist orderings at 61.1%. The figure may not be
+described as stable, robust, or validated against position bias.
+
+**The comparison is not symmetric.** The classical system emits one match per
+Walmart record and never reuses an Amazon record: 994 accepts, 994 distinct ids.
+The component swap judges each record independently and reused 53 Amazon ids
+across **63 surplus accepts**, so it was never bound by the constraint D42
+measured at 11.33 points of reachable recall. The asymmetry is bounded rather
+than left open: if every surplus accept were correct and removed, the swap scores
+**precision 54.10%, recall 76.09%, F1 63.24%** — still above the classical 60.94%.
+The asymmetry is real and does not explain the result.
+
+### What follows
+
+**The embedding-blocking half is not built.** Section 11.7 committed to this
+before the result was known, on the condition that the no-partner class did not
+shrink. It did not shrink; it grew. Building a full second system now would mean
+treating a pre-registered stopping condition as advisory once the headline number
+came out favourable, which is the failure mode pre-registration exists to
+prevent.
+
+**The finding is about semantics, not about this model.** A shortlist of thirty
+candidates that survived classical blocking contains thirty plausible products.
+Asking any judge to name the match among them, having also been told that none
+may match, is a question weighted toward acceptance. That is a property of the
+task framing, and no result here separates it from the model's own limits.
+
+**What would be worth measuring next**, recorded so it is not mistaken for a
+plan: whether the same model asked only to *reject* — given the classical
+system's accepted pair and asked whether the two products differ — reduces the
+no-partner class. That inverts the framing this entry found to be the problem,
+and it is a cheaper experiment than the one not being built. It is not approved
+and not scheduled.
+
+### Cost
+
+| | |
+| --- | ---: |
+| Records judged | 2,554 |
+| Total | **$4.4061** |
+| Per record | $0.00173 |
+| Per correct accept | $0.0055 |
+
+Run under a hard ceiling of $4.60 against a fixed $5.00 balance, checkpointed per
+record so that an interruption would not have required repeating paid work.
+Neither safeguard was triggered.
+
 ---
 
 ## Working conventions
@@ -3621,3 +3768,5 @@ evidence that would cost precision.
 - **Nothing is silently substituted.** If data cannot be obtained or verified,
   that is reported plainly rather than filled with a placeholder or a
   stand-in source.
+
+---
