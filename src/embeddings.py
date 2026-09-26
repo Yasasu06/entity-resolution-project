@@ -40,13 +40,20 @@ def record_text(row: pd.Series, columns: list[str]) -> str:
 
 
 def embed_all(texts: list[str], client) -> np.ndarray:
-    """Embed in batches, L2-normalised so a dot product is the cosine."""
+    """Embed in batches, L2-normalised so a dot product is the cosine.
+
+    **Each batch is reordered by the index the API returns.** Response order is
+    not promised to match request order, and trusting it would attach every
+    embedding in a batch to the wrong record: no error, no exception, just a
+    shortlist built from another product's meaning. Sorting costs nothing and
+    removes a failure that would be silent and total.
+    """
     out = []
     for i in range(0, len(texts), BATCH):
         chunk = texts[i:i + BATCH]
         resp = client.embeddings.create(model=EMBED_MODEL, input=chunk,
                                         dimensions=EMBED_DIMS)
-        out.extend(d.embedding for d in resp.data)
+        out.extend(d.embedding for d in sorted(resp.data, key=lambda d: d.index))
         print(f"    embedded {min(i + BATCH, len(texts)):>6,} / {len(texts):,}", flush=True)
     m = np.asarray(out, dtype=np.float32)
     return m / np.linalg.norm(m, axis=1, keepdims=True)

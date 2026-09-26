@@ -122,3 +122,20 @@ def test_recall_counts_true_pairs_not_records():
     assert r["true_positives"] == 1
     assert r["recall"] == 0.5, "one of two true pairs found"
     assert r["false_negatives"] == 1
+
+
+def test_the_chosen_candidate_does_not_depend_on_row_order():
+    """Jaccard ties often; without a final sort key the winner was whoever
+    arrived first, which moved the measured F1 by 0.59 points (D47)."""
+    c = pd.DataFrame({LEFT_ID: ["A_0", "A_0", "A_0"],
+                      RIGHT_ID: ["B_2", "B_0", "B_1"]})
+    s = pd.Series([0.9, 0.9, 0.9])                 # a three-way tie
+    forward = decide(c, s, 0.5)
+    backward = decide(c.iloc[::-1].reset_index(drop=True),
+                      s.iloc[::-1].reset_index(drop=True), 0.5)
+    assert forward[RIGHT_ID].tolist() == backward[RIGHT_ID].tolist() == ["B_0"]
+
+
+def test_a_higher_score_still_wins_over_the_tie_break():
+    c = pd.DataFrame({LEFT_ID: ["A_0", "A_0"], RIGHT_ID: ["B_0", "B_1"]})
+    assert decide(c, pd.Series([0.5, 0.9]), 0.4)[RIGHT_ID].tolist() == ["B_1"]

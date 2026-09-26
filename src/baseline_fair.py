@@ -60,7 +60,13 @@ def decide(candidates: pd.DataFrame, scores: pd.Series,
     produce different shapes of output and could not be compared at all.
     """
     scored = candidates.assign(similarity=scores.to_numpy())
-    best = (scored.sort_values([LEFT_ID, "similarity"], ascending=[True, False])
+    # Jaccard over token sets ties far more often than a match weight does: 88
+    # of the accepted records have a tied top score. Without the final key the
+    # winner is whichever row happens to arrive first, which moved the measured
+    # F1 by 0.59 points across input orderings (D47). Breaking on the candidate
+    # id is still arbitrary, but it is arbitrary the same way every run.
+    best = (scored.sort_values([LEFT_ID, "similarity", RIGHT_ID],
+                               ascending=[True, False, True])
                   .groupby(LEFT_ID, as_index=False).first())
     return best[best["similarity"] >= threshold].reset_index(drop=True)
 

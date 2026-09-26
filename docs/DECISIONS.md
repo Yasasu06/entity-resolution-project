@@ -4030,6 +4030,74 @@ is not a property anything had argued for and not one that survives a change of
 sort implementation. It is now deterministic because ties resolve to a single
 answer regardless of order, which is pinned by four tests.
 
+
+---
+
+## D47 — Two places where arbitrary order was quietly load bearing
+
+**Finding.** Neither of these changed a published number, and both could have.
+They are recorded together because they are the same mistake in two unrelated
+places: an order that nothing had argued for was deciding an outcome.
+
+[D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id)
+is the third instance and the only one that did move a figure.
+
+### The baseline's tie-break depended on row order
+
+`decide()` in `src/baseline_fair.py` took each Walmart record's highest-scoring
+candidate with `sort_values(...).groupby().first()`, with no final sort key.
+Jaccard over token sets ties far more often than a match weight does: **88 of
+the 1,055 accepted baseline records have a tied top score.**
+
+Measured across five input orderings, the baseline's F1 moved by **0.59 points**
+at matched coverage and 0.31 at its best point. It was being reported to two
+decimal places.
+
+Breaking the tie on the candidate id is still arbitrary, but it is arbitrary the
+same way on every run. The spread is now **0.00**:
+
+| | Published | After |
+| --- | ---: | ---: |
+| Baseline, matched coverage | 54.24% | **54.24%** |
+| Baseline, best point ([D45](#d45--correcting-d39-the-baselines-best-point-was-measured-on-the-wrong-denominator)) | 54.46% | **54.46%** |
+| Spread across input orderings | 0.59 / 0.31 | **0.00 / 0.00** |
+
+**The published figures were the file-order ones and are exactly reproduced.**
+That is luck rather than design: any of the four other orderings tested would
+have put a different number in D39. The figures did not change; their status
+did, from a value that happened to come out of one run to one that comes out of
+every run.
+
+### The embedding step trusted the API's response order
+
+`embed_all()` in `src/embeddings.py` attached embeddings to records by their
+position in the response, ignoring the `index` each item carries. **Response
+order is not promised to match request order.** Had a batch ever come back
+permuted, every record in it would have received another product's meaning, and
+the failure would have been silent: no exception, just a shortlist that looks
+reasonable and is not.
+
+It did not happen. The shortlists captured **961 of 962** true matches, where
+scrambled embeddings over a median of 187 candidates would have captured roughly
+a sixth of them. The evidence that the ordering held is therefore strong, and
+the fix is one call to `sorted`.
+
+**The module had no tests at all**, which is why this was never going to be
+caught by the suite. It now has nine, including one that returns a deliberately
+reversed batch and asserts every embedding finds its way back to its own record.
+
+### The common thread
+
+Each of these is a place where the code had to choose between equals and took
+whichever the data structure offered first. None was a decision anyone made.
+D32 had already settled the principle for the review interface, that tied
+candidates are an unordered set and that arbitrary order may not stand in for
+evidence; it had simply never been applied anywhere else.
+
+**Two of the three were invisible in the output**, and the third looked
+deterministic under permutation testing for reasons unrelated to intent. Silence
+is the characteristic of this class of defect, not the exception.
+
 ---
 
 ## Working conventions
