@@ -46,6 +46,20 @@ heuristic's 54.46%, and its unattended output is **not** deployable. What the pr
 demonstrates is that every material weakness was found, measured and published
 *before* the answer key was opened.
 
+Every figure here carries a 95% bootstrap interval, because the project
+withdrew an entire experiment over one and then reported its own headline bare
+([D48](docs/DECISIONS.md#d48--every-reported-figure-gets-an-interval-and-one-claim-does-not-survive-it)).
+The headline is **61.46 [58.95, 64.07]**; the margin over the heuristic, paired
+on the same records, is **+7.22 [+4.34, +10.17]**.
+
+Scored instead under the benchmark's own protocol — its candidate pairs, the
+test split alone, no one-to-one constraint — the same matcher reaches **51.38
+[46.61, 56.20]**, against published figures of 37.40 for Magellan, 53.80 for
+DeepMatcher and 85.69 for Ditto, each of which trains on 60% of the labels
+where this trains on none. That is **clearly above Magellan, clearly below
+Ditto, and statistically indistinguishable from DeepMatcher**
+([D44](docs/DECISIONS.md#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer)).
+
 ## Status
 
 | Stage | Status |
@@ -65,7 +79,7 @@ demonstrates is that every material weakness was found, measured and published
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (47 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (49 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
@@ -76,8 +90,8 @@ and why.
 | `data/raw/` | Benchmark datasets exactly as downloaded — never edited by hand |
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
-| `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines |
-| `tests/` | Automated tests (295 passing) covering the code in `src/`, run on every push by CI |
+| `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines, and bootstrap confidence intervals |
+| `tests/` | Automated tests (307 passing) covering the code in `src/`, run on every push by CI |
 | `docs/` | Decision log, the pre-registered decision rule, the label-free boundary and its timestamp proof, dataset provenance |
 | `site/` | The project site: Vite, React, Tailwind and Motion, built and deployed by GitHub Actions |
 

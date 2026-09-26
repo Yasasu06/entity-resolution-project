@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { BENCHMARK, ERRORS, HEADLINE } from "../data/facts";
+import { BENCHMARK, CI, ERRORS, HEADLINE } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B",
@@ -42,18 +42,27 @@ function Benchmark() {
             <div className={`w-14 shrink-0 text-right font-display tnum text-base ${r.ours ? "text-signal" : "text-dim"}`}>
               {r.f1.toFixed(2)}
             </div>
-            <div className={`w-28 shrink-0 text-right font-mono text-[0.68rem] ${r.ours ? "text-ink" : "text-faint"}`}>
-              {r.labels}
+            <div className={`w-32 shrink-0 text-right font-mono text-[0.68rem] ${r.ours ? "text-ink" : "text-faint"}`}>
+              <div>{r.labels}</div>
+              {r.verdict && (
+                <div className={r.verdict === "tied, within noise" ? "text-hold" : "text-faint/70"}>
+                  {r.verdict}
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
 
       <p className="mt-6 max-w-[62ch] text-sm leading-relaxed text-dim">
-        It places between Magellan and DeepMatcher, and{" "}
-        <span className="text-ink">2.42 points below DeepMatcher</span>. The three published
-        systems each train on 60% of the labels. This one has never read one except to
-        measure. That narrows the gap. It does not turn it into a win.
+        On 2,049 pairs holding 193 matches, that figure carries a 95% interval of{" "}
+        <span className="tnum text-ink">[{CI.benchmark[0]}, {CI.benchmark[1]}]</span>, which
+        contains DeepMatcher&rsquo;s 53.80. The honest reading is{" "}
+        <span className="text-ink">clearly above Magellan, clearly below Ditto, and
+        statistically indistinguishable from DeepMatcher</span>. An earlier version of this
+        page ranked it 2.42 points below DeepMatcher, which the data does not support.
+        The three published systems each train on 60% of the labels. This one has never
+        read one except to measure. That narrows the gap. It does not turn it into a win.
       </p>
       <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-faint">
         Recall holds at {BENCHMARK.recall}% while precision falls to {BENCHMARK.precision}%,
@@ -85,6 +94,19 @@ export default function Charts() {
         <Reveal className="lg:col-span-3">
           <Box>
             <F1Chart />
+            <div className="mt-4 border-t border-line pt-3 font-mono text-[0.7rem] text-faint">
+              95% interval, bootstrapped over {HEADLINE.records.toLocaleString()} records:{" "}
+              <span className="tnum text-dim">
+                {HEADLINE.f1} [{CI.system[0]}, {CI.system[1]}]
+              </span>
+              {" "}against the baseline&rsquo;s{" "}
+              <span className="tnum text-dim">
+                {HEADLINE.baselineMatched} [{CI.baseline[0]}, {CI.baseline[1]}]
+              </span>. The gap, paired on the same records, is{" "}
+              <span className="tnum text-dim">
+                +{CI.gap.point} [+{CI.gap.lo}, +{CI.gap.hi}]
+              </span>.
+            </div>
           </Box>
         </Reveal>
 

@@ -4098,6 +4098,153 @@ evidence; it had simply never been applied anywhere else.
 deterministic under permutation testing for reasons unrelated to intent. Silence
 is the characteristic of this class of defect, not the exception.
 
+
+---
+
+## D48 — Every reported figure gets an interval, and one claim does not survive it
+
+**Finding.** This project computed a 95% interval for a 144-record stability
+rate, and **withdrew an entire experiment** because that interval straddled the
+floor it was meant to clear. It then reported its headline as `60.94%`, and
+later `61.46%`, to two decimal places with no interval anywhere. The standard
+was never turned on the project's own numbers.
+
+Applied, it **corrects a claim in
+[D44](#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer)**
+and confirms two others.
+
+### The intervals
+
+Percentile bootstrap, 2,000 resamples, seeded. **The resampling unit is the
+Walmart record**, because a record's candidates, its accept decision and its
+true partners are one dependent bundle; resampling pairs would count them as
+independent evidence and give intervals that are too narrow. For the benchmark
+protocol the unit is the pair, because there each pair is judged alone.
+
+| | Point | 95% CI |
+| --- | ---: | --- |
+| System F1 | 61.46 | **[58.95, 64.07]** |
+| Baseline F1 | 54.24 | [51.50, 56.80] |
+| **Gap over the baseline** | **+7.22** | **[+4.34, +10.17]** |
+| Benchmark protocol (D44) | 51.38 | **[46.61, 56.20]** |
+
+**The headline carries about ±2.5 points**, which is the single most useful
+number in this table and had never been stated.
+
+### The claim that does not survive
+
+D44 states the system sits **"below DeepMatcher by 2.42 points"**, and the
+project site repeated it. On a split of 2,049 pairs holding 193 matches, that
+ordering is not resolvable:
+
+| Published figure | Inside the interval? | |
+| --- | --- | --- |
+| Magellan 37.40 | No | Clearly above it |
+| **DeepMatcher 53.80** | **Yes** | **Not distinguishable** |
+| Ditto 85.69 | No | Clearly below it |
+
+**The defensible statement is: clearly above Magellan, clearly below Ditto,
+statistically indistinguishable from DeepMatcher.** D44's ranking against
+DeepMatcher is withdrawn. Its surrounding reasoning is unaffected: the
+protocol differences, the prior-mismatch diagnosis and the transferability
+finding all stand, and the point estimate of 51.38 is unchanged.
+
+**The inconsistency is worth naming.** D44 contains the amendment withdrawing
+the stability gate *because a confidence interval straddled a threshold*, and
+in the same entry ranks the system against a published figure without computing
+one. The reasoning was already in the document. It was applied to the part of
+the work that came out badly and not to the part that came out as expected.
+
+### What the intervals confirm
+
+**The margin over the baseline is real.** +7.22 points, interval [+4.34,
++10.17], nowhere near zero. A Fellegi-Sunter model does beat a five-line
+heuristic on this data, and now that is established rather than asserted.
+
+**[D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id)'s
+gain is real despite being small.** Paired on the same resampled records, the
+reciprocity fix is worth **+0.52 points, interval [+0.18, +0.87]**, favourable
+in 99.8% of resamples. The intervals for the two systems separately overlap
+almost entirely; only the pairing makes the difference visible, because both
+arms share every quirk of the sample. This is recorded to complete the argument
+in D46, which rested on D32 and deliberately did not rely on this number.
+
+### What this does not do
+
+**No threshold moves and no decision changes.** An interval is a statement
+about how much the evidence carries, not a new result. The system is exactly
+what it was; what changes is the set of sentences that may honestly be written
+about it.
+
+**A published figure is a point estimate too.** Magellan, DeepMatcher and Ditto
+are quoted from Table 5 of Li et al. without intervals of their own, and those
+systems were not re-run here. "Distinguishable from Magellan" therefore means
+this measurement's interval excludes their reported number, not that the two
+have been compared with uncertainty on both sides.
+
+
+---
+
+## D49 — Closing D42: relaxing one match per record costs far more than it gains
+
+**Finding.**
+[D42](#d42--what-the-one-to-one-rule-costs-a-recall-ceiling-nobody-measured)
+left the one-to-one constraint open, and required that it "be decided against
+measured precision loss, not adopted or kept by default". It was never
+measured. Measured now, **relaxing it costs 23 F1 points**, and the constraint
+is kept on evidence rather than by inertia.
+
+### What was measured
+
+The answer key holds **209 matches across the 99 Walmart records that have more
+than one partner** — 110 more than a one-match-per-record rule can emit, which
+is the 11.33-point ceiling D42 computed. Two relaxations were scored against the
+current rule, over the same candidate set and the same threshold:
+
+| Rule | Accepted | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| **One match per record** (current, D46) | 971 | **61.17%** | 61.75% | **61.46** |
+| Plus every Amazon record's own unique best | 3,202 | 25.11% | **83.58%** | 38.62 |
+| Every pair above 6.0 bits, no constraint | 4,486 | 18.46% | 86.07% | 30.40 |
+
+**The recall D42 predicted is really there.** The symmetric rule reaches 83.58%
+against the 88.57% ceiling, so the constraint was indeed what held recall down.
+Precision falls from 61.17% to 25.11% to buy it.
+
+**The added pairs are overwhelmingly wrong.** The symmetric rule adds **2,231
+pairs, of which 210 are correct — 9.4%**. Only **123** of those are the
+multi-partner matches the relaxation was meant to recover. The rule does not
+find the missing partners so much as admit everything the threshold alone would
+have admitted.
+
+### Why this was the right shape of test
+
+The symmetric rule is the strongest reasonable version, not a straw man. It
+accepts a second pair only where the Amazon record's own best candidate is that
+Walmart record and that preference is **unique**, which is the same standard
+[D41](#d41--requiring-the-match-to-be-mutual) applies in the other direction and
+[D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id)
+tightened. If a principled relaxation were going to work, it would be this one.
+The unconstrained rule is included to show the floor.
+
+### What this settles, and what it does not
+
+**D42's open item is closed.** One match per record is kept, now with the cost
+on both sides recorded: 11.33 points of reachable recall forfeited, against 23
+points of F1 that relaxing it would destroy. D42's framing stands — the tension
+is real — but the trade is no longer unexamined.
+
+**It does not say multi-partner matching is impossible**, only that it cannot
+be had from this scorer by loosening the acceptance rule. The 110 unreachable
+matches remain unreachable, and D42's other finding is where the headroom
+actually sits: **14.25 points belong to ranking quality**, recoverable without
+touching this constraint at all.
+
+**The component swap already tested the obvious route to better ranking** and
+[D43](#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)
+declined it. Between that entry and this one, both directions out of the
+current operating point have now been measured and both are closed.
+
 ---
 
 ## Working conventions

@@ -13,16 +13,24 @@ export const SWAP = {
   acceptGrowth: 46, headline: 61.46,
 };
 
+// D48: every reported figure carries a 95% bootstrap interval. The headline
+// was never stated with one, and the DeepMatcher ranking did not survive it.
+export const CI = {
+  system: [58.95, 64.07], baseline: [51.50, 56.80],
+  gap: { point: 7.22, lo: 4.34, hi: 10.17 },
+  benchmark: [46.61, 56.20],
+};
+
 // D44: the same matcher scored under the benchmark's own protocol, so the
 // number can be set beside published results without comparing unlike things.
 export const BENCHMARK = {
   pairs: 2049, matches: 193, density: 9.42,
   precision: 36.44, recall: 87.05,
   rows: [
-    { name: "Ditto", f1: 85.69, labels: "60% of labels" },
-    { name: "DeepMatcher", f1: 53.80, labels: "60% of labels" },
+    { name: "Ditto", f1: 85.69, labels: "60% of labels", verdict: "clearly ahead" },
+    { name: "DeepMatcher", f1: 53.80, labels: "60% of labels", verdict: "tied, within noise" },
     { name: "This project", f1: 51.38, labels: "no labels", ours: true },
-    { name: "Magellan", f1: 37.40, labels: "60% of labels" },
+    { name: "Magellan", f1: 37.40, labels: "60% of labels", verdict: "clearly behind" },
   ],
 };
 
