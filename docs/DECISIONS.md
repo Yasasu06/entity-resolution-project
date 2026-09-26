@@ -3766,6 +3766,18 @@ the benchmark's own candidate pairs and without the one-to-one constraint, the
 system reaches **51.38% F1**. That places it between Magellan's published 37.4
 and DeepMatcher's 53.8, and **below DeepMatcher by 2.42 points**.
 
+> **Note added 26 September 2026.** The ranking against DeepMatcher in the
+> paragraph above is **withdrawn**. On a split of 2,049 pairs holding 193
+> matches, the 95% interval around 51.38% is **[46.61, 56.20]**, which contains
+> DeepMatcher's published 53.80: the ordering was never established by this
+> measurement. The defensible statement is **clearly above Magellan, clearly
+> below Ditto, and statistically indistinguishable from DeepMatcher**. See
+> [D48](#d48--every-reported-figure-gets-an-interval-and-one-claim-does-not-survive-it).
+>
+> Everything else in this entry stands: the point estimate of 51.38%, the three
+> protocol differences, the prior-mismatch diagnosis, and the transferability
+> finding. The withdrawal is of a comparison, not of the measurement.
+
 The measurement was proposed on the expectation that it would show the opposite:
 that a system using no labels at all, sitting at 60.94% under its own protocol,
 would be found competitive with or above supervised DeepMatcher once the
