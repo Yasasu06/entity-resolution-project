@@ -836,6 +836,7 @@ and the decision. No Splink score reaches the model, exactly as in section 6.2.
 | Population | All **2,554** Walmart records with candidates |
 | Candidate set | The classical **564,450** pairs, unchanged |
 | Ranking | Cosine similarity over embeddings of the full record text |
+| Embedding model | `text-embedding-3-large` at 1,024 dimensions |
 | Shown per record | **Top 30** by that similarity |
 | Decision unit | One call per record, its whole shortlist at once (D31) |
 | Calls | **2,554**, plus 24,628 embeddings |
