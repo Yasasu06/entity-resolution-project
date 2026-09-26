@@ -89,7 +89,7 @@ function Scorecard() {
       <div className="flex-[1.6] min-w-[240px] rounded-xl bg-panel px-5 py-4 ring-1 ring-line2">
         <div className="flex items-baseline gap-3">
           <span className="font-display tnum text-5xl leading-none">{HEADLINE.f1}%</span>
-          <span className="font-mono text-xs text-dim">F1</span>
+          <span className="font-mono text-xs text-dim">F1, own protocol</span>
         </div>
         <div className="mt-2 font-mono text-xs tracking-[0.14em] uppercase text-faint">
           against a five-line heuristic&rsquo;s {HEADLINE.baselineBest}%

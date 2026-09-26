@@ -13,6 +13,19 @@ export const SWAP = {
   acceptGrowth: 42, headline: 60.94,
 };
 
+// D44: the same matcher scored under the benchmark's own protocol, so the
+// number can be set beside published results without comparing unlike things.
+export const BENCHMARK = {
+  pairs: 2049, matches: 193, density: 9.42,
+  precision: 36.44, recall: 87.05,
+  rows: [
+    { name: "Ditto", f1: 85.69, labels: "60% of labels" },
+    { name: "DeepMatcher", f1: 53.80, labels: "60% of labels" },
+    { name: "This project", f1: 51.38, labels: "no labels", ours: true },
+    { name: "Magellan", f1: 37.40, labels: "60% of labels" },
+  ],
+};
+
 export const PREDICTIONS = [
   { v: "held", claim: "Blocking keeps essentially every true match",
     real: "99.90% recall", detail:

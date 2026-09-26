@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { ERRORS, HEADLINE } from "../data/facts";
+import { BENCHMARK, ERRORS, HEADLINE } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B",
@@ -8,6 +8,61 @@ const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B
 function Box({ children }) {
   return (
     <div className="rounded-xl bg-panel px-5 py-5 ring-1 ring-line sm:px-6 sm:py-6">{children}</div>
+  );
+}
+
+function Benchmark() {
+  const max = Math.max(...BENCHMARK.rows.map((r) => r.f1));
+  return (
+    <Box>
+      <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
+        The same matcher, scored the way the literature scores
+      </div>
+      <p className="mt-4 max-w-[62ch] text-sm leading-relaxed text-dim">
+        The {HEADLINE.f1}% above is measured under this project&rsquo;s own protocol: its own
+        blocking, all three splits, and one match per record. Published results use the
+        benchmark&rsquo;s candidate pairs, the test split alone, and judge each pair
+        independently. Those numbers cannot be set side by side, so the matcher was rerun
+        under the benchmark&rsquo;s rules instead. It scores{" "}
+        <span className="tnum font-medium text-ink">{BENCHMARK.rows.find((r) => r.ours).f1}%</span>.
+      </p>
+
+      <div className="mt-7 flex flex-col gap-3">
+        {BENCHMARK.rows.map((r) => (
+          <div key={r.name} className="flex items-center gap-3">
+            <div className={`w-28 shrink-0 text-sm ${r.ours ? "text-ink" : "text-dim"}`}>
+              {r.name}
+            </div>
+            <div className="h-7 flex-1 overflow-hidden rounded-[3px] bg-void/60 ring-1 ring-line">
+              <div
+                className={`h-full ${r.ours ? "bg-signal/70" : "bg-line2"}`}
+                style={{ width: `${(r.f1 / max) * 100}%` }}
+              />
+            </div>
+            <div className={`w-14 shrink-0 text-right font-display tnum text-base ${r.ours ? "text-signal" : "text-dim"}`}>
+              {r.f1.toFixed(2)}
+            </div>
+            <div className={`w-28 shrink-0 text-right font-mono text-[0.68rem] ${r.ours ? "text-ink" : "text-faint"}`}>
+              {r.labels}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-6 max-w-[62ch] text-sm leading-relaxed text-dim">
+        It places between Magellan and DeepMatcher, and{" "}
+        <span className="text-ink">2.42 points below DeepMatcher</span>. The three published
+        systems each train on 60% of the labels. This one has never read one except to
+        measure. That narrows the gap. It does not turn it into a win.
+      </p>
+      <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-faint">
+        Recall holds at {BENCHMARK.recall}% while precision falls to {BENCHMARK.precision}%,
+        which is a threshold in the wrong place rather than a model that cannot rank. The
+        benchmark&rsquo;s candidate set is roughly 4,700 times denser than the one the
+        threshold was chosen against. Correcting for that analytically recovers most of the
+        gap, but the correction needs the answer key to compute, so it is not claimed here.
+      </p>
+    </Box>
   );
 }
 
@@ -64,6 +119,10 @@ export default function Charts() {
           </Box>
         </Reveal>
       </div>
+
+      <Reveal delay={0.05}>
+        <div className="mt-4"><Benchmark /></div>
+      </Reveal>
 
       <Reveal delay={0.12}>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
