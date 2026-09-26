@@ -10,6 +10,8 @@ import Method from "./components/Method";
 import { Section } from "./components/ui";
 
 const REPO = "https://github.com/Yasasu06/entity-resolution-project";
+const GITHUB = "https://github.com/Yasasu06";
+const LINKEDIN = "https://www.linkedin.com/in/yasaswidutta/";
 const NAV = [
   ["problem", "The problem"], ["ledger", "Predictions"], ["result", "Result"],
   ["investigation", "The failure"], ["review", "Try it"],
@@ -53,10 +55,16 @@ export default function App() {
             on this page is measured, not illustrative.
           </p>
           <p className="border-t border-line pt-5 text-faint">
-            Built by{" "}
-            <a href="https://github.com/Yasasu06"
+            Built by <span className="text-dim">Yasaswi Dutta</span>
+            <span className="mx-2 text-line2" aria-hidden="true">&middot;</span>
+            <a href={GITHUB}
                className="text-dim underline decoration-line2 underline-offset-4 transition hover:text-ink hover:decoration-dim">
-              Yasaswi Dutta
+              GitHub
+            </a>
+            <span className="mx-2 text-line2" aria-hidden="true">&middot;</span>
+            <a href={LINKEDIN}
+               className="text-dim underline decoration-line2 underline-offset-4 transition hover:text-ink hover:decoration-dim">
+              LinkedIn
             </a>
           </p>
         </div>
