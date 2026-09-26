@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { HEADLINE } from "../data/facts";
+import { HEADLINE, SWAP } from "../data/facts";
 import { Eyebrow } from "./ui";
 
 const fade = {
@@ -37,8 +37,38 @@ export default function Hero() {
         >
           <Scorecard />
         </motion.div>
+
+        <motion.div custom={4} initial="hidden" animate="show" variants={fade}>
+          <DeclinedResult />
+        </motion.div>
       </div>
     </header>
+  );
+}
+
+function DeclinedResult() {
+  return (
+    <div className="mt-6 max-w-[72ch] rounded-xl border-l-2 border-alarm/50 bg-panel/60 px-5 py-4 ring-1 ring-line2">
+      <div className="font-mono text-xs tracking-[0.14em] uppercase text-faint">
+        A higher score we did not take
+      </div>
+      <p className="mt-3 text-[0.95rem] leading-relaxed text-dim">
+        A later experiment swapped the ranker for an embedding shortlist and a model
+        judgement, and scored{" "}
+        <span className="tnum font-medium text-ink">F1 {SWAP.f1}%</span>, nearly six points
+        higher. It is not the headline, because the gain was not better judgement. The
+        system simply accepted {SWAP.acceptGrowth}% more pairs, and the one error class the
+        experiment existed to fix, records with no true partner at all, grew from{" "}
+        {SWAP.noPartnerBefore} to{" "}
+        <span className="tnum font-medium text-alarm">{SWAP.noPartnerAfter}</span>.
+      </p>
+      <p className="mt-3 text-[0.95rem] leading-relaxed text-dim">
+        That outcome had been written down as a stopping condition before the experiment
+        ran, so the result was declined rather than promoted.{" "}
+        <span className="text-ink">{SWAP.headline}% is the number that survives scrutiny</span>,
+        and it is the one reported.
+      </p>
+    </div>
   );
 }
 

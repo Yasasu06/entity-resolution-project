@@ -6,6 +6,13 @@ export const HEADLINE = {
   trueMatches: 962, blockingRecall: 99.9,
 };
 
+// The component swap (D43): a higher F1 that was measured, understood and declined.
+export const SWAP = {
+  f1: 66.86, precision: 56.14, recall: 82.64, accepted: 1416,
+  noPartnerBefore: 363, noPartnerAfter: 590, noPartnerGrowth: 62.5,
+  acceptGrowth: 42, headline: 60.94,
+};
+
 export const PREDICTIONS = [
   { v: "held", claim: "Blocking keeps essentially every true match",
     real: "99.90% recall", detail:
