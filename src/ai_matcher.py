@@ -200,3 +200,147 @@ def stability(runs: dict[str, list[Judgement | None]], floor: float = 0.60) -> d
         "passes": rate - half >= floor,
         "inconclusive": rate >= floor > rate - half,
     }
+
+
+# ---------------------------------------------------------------------------
+# Running the experiment under a fixed budget
+#
+# The first stability run had neither of the safeguards below. It met HTTP 429
+# partway through, kept calling, and recorded 225 failures that a later gate
+# read as agreement. The work already paid for was not recoverable because
+# nothing had been written down. Both problems are addressed here: spend is
+# checked before each call rather than discovered after it, and every record is
+# on disk the moment it completes.
+# ---------------------------------------------------------------------------
+
+PRICE_IN = 0.75 / 1_000_000     # gpt-5.4-mini-2026-03-17, verified 26 Sep 2026
+PRICE_OUT = 4.50 / 1_000_000
+SPEND_CEILING = 4.60            # against $5.00 available and not extensible
+LARGEST_PROMPT = 2_768          # exact local token count over all 2,554 prompts
+
+CHECKPOINT_PATH = PROCESSED_DIR / "ai_matcher_checkpoint.jsonl"
+
+
+class BudgetExhausted(RuntimeError):
+    """The ceiling would be crossed by the next call, so it is not made.
+
+    Distinct from CreditsExhausted: that is the account refusing, discovered
+    after the money is gone. This is the run refusing, before it is.
+    """
+
+
+class Ledger:
+    """Cumulative spend, checked before a call rather than after it."""
+
+    def __init__(self, ceiling: float = SPEND_CEILING):
+        self.ceiling = ceiling
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.calls = 0
+        self.max_call = 0.0
+
+    @property
+    def spent(self) -> float:
+        return self.input_tokens * PRICE_IN + self.output_tokens * PRICE_OUT
+
+    @property
+    def worst_case_next(self) -> float:
+        """The largest a single call can cost: longest prompt, full output.
+
+        The static figure is the exact local token count of the longest prompt
+        in the population, but it is an assumption about the future and the
+        ceiling must not depend on it being right. Any call that costs more
+        than assumed raises the reserve for every call after it, so the
+        guarantee survives an estimate that turns out to be wrong.
+        """
+        return max(LARGEST_PROMPT * PRICE_IN + MAX_TOKENS * PRICE_OUT,
+                   self.max_call)
+
+    def check(self) -> None:
+        if self.spent + self.worst_case_next > self.ceiling:
+            raise BudgetExhausted(
+                f"${self.spent:.2f} spent over {self.calls:,} calls; the next "
+                f"call could cost ${self.worst_case_next:.4f} and the ceiling "
+                f"is ${self.ceiling:.2f}")
+
+    def add(self, judgement: "Judgement") -> None:
+        self.input_tokens += judgement.input_tokens
+        self.output_tokens += judgement.output_tokens
+        self.calls += 1
+        self.max_call = max(self.max_call,
+                            judgement.input_tokens * PRICE_IN
+                            + judgement.output_tokens * PRICE_OUT)
+
+
+def _row(record_id: str, j: "Judgement") -> str:
+    return json.dumps({"unique_id": record_id, "decision": j.decision,
+                       "amazon_id": j.amazon_id, "attribute": j.attribute,
+                       "reasoning": j.reasoning,
+                       "input_tokens": j.input_tokens,
+                       "output_tokens": j.output_tokens}, sort_keys=True)
+
+
+def load_checkpoint(path=CHECKPOINT_PATH, ledger: Ledger | None = None) -> dict:
+    """Re-read completed records, and re-seed the ledger with what they cost.
+
+    Seeding matters: a resumed run that started its ledger at zero would spend
+    the whole ceiling again.
+    """
+    done: dict[str, dict] = {}
+    if not path.exists():
+        return done
+    for line in path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        done[row["unique_id"]] = row          # last write wins
+    if ledger is not None:
+        for row in done.values():
+            ledger.input_tokens += row["input_tokens"]
+            ledger.output_tokens += row["output_tokens"]
+            ledger.calls += 1
+            ledger.max_call = max(ledger.max_call,
+                                  row["input_tokens"] * PRICE_IN
+                                  + row["output_tokens"] * PRICE_OUT)
+    return done
+
+
+def run_experiment(responder: Responder, limit: int | None = None,
+                   ledger: Ledger | None = None, checkpoint=CHECKPOINT_PATH,
+                   inputs=None, progress=None) -> dict:
+    """One call per record, checkpointed, stopping before the ceiling.
+
+    Returns the results gathered plus why the run ended. A budget or credit
+    stop is a normal outcome, not an exception to the caller: the partial
+    result is on disk either way and resuming is the same call again.
+    """
+    table_a, table_b, columns, shortlists = inputs or load_inputs()
+    ledger = ledger if ledger is not None else Ledger()
+    results = load_checkpoint(checkpoint, ledger)
+
+    pending = [r for r in sorted(shortlists) if r not in results]
+    if limit is not None:
+        pending = pending[:limit]
+
+    stopped = None
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    with checkpoint.open("a") as fh:
+        for n, rid in enumerate(pending, 1):
+            try:
+                ledger.check()
+                j = judge(table_a.loc[rid], shortlist_frame(table_b, shortlists[rid]),
+                          columns, responder)
+            except (BudgetExhausted, CreditsExhausted) as exc:
+                stopped = f"{type(exc).__name__}: {exc}"
+                break
+            ledger.add(j)
+            results[rid] = json.loads(_row(rid, j))
+            fh.write(_row(rid, j) + "\n")
+            fh.flush()
+            if progress and n % progress == 0:
+                print(f"  {n:,}/{len(pending):,}  ${ledger.spent:.2f}", flush=True)
+
+    return {"results": results, "completed": len(results),
+            "attempted_this_run": ledger.calls, "spent": round(ledger.spent, 4),
+            "stopped": stopped,
+            "remaining": len([r for r in shortlists if r not in results])}
