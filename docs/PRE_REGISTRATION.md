@@ -861,6 +861,68 @@ to name the attribute that distinguishes the products, before deciding. That
 addresses the failure D37 identified as beyond a rule over token sets, and is a
 design commitment rather than an assumption that semantics solves it.
 
+#### Amendment, 26 September 2026 — the model is fixed, and a cheaper one was rejected
+
+**This records a change that was considered and *not* made.** A switch away from
+`gpt-5.4-mini-2026-03-17` was proposed on cost grounds and abandoned on evidence.
+The entry exists because a rejected change is as much a part of the method as an
+accepted one, and because the reasoning is the only thing that stops the same
+proposal returning without the evidence attached.
+
+| | |
+| --- | --- |
+| Committed model | **`gpt-5.4-mini-2026-03-17`**, unchanged |
+| Considered | `gemini-3.5-flash-lite`, then `gpt-5.4-nano-2026-03-17` |
+| Reason considered | Cost, as a standing project constraint |
+| Reason rejected | Neither is cheaper in practice; nano fails the determinism check |
+| Status | **Final.** No further model change is anticipated |
+
+**Gemini was rejected before it was tested.** Prices verified 26 September 2026
+from Google's own documentation, against the 3,354 calls then outstanding:
+
+| Model | In $/M | Out $/M | Cost | Available? |
+| --- | --- | --- | --- | --- |
+| `gemini-2.5-flash-lite` | 0.10 | 0.40 | $0.72 | **No.** Restricted since 18 September 2026 to accounts with prior use; a new key returns 404 |
+| `gemini-3.1-flash-lite` | 0.25 | 1.50 | $1.95 | Yes, but dearer than nano |
+| `gemini-3.5-flash-lite` | 0.30 | 2.50 | $2.55+ | Yes, but thinking is **on by default and cannot be set to zero** |
+
+The one genuinely cheap Gemini model cannot be reached from a new account. The one
+that can be reached is a reasoning model whose thinking tokens bill at the output
+rate, which would have made spend a quantity this project does not control: 200
+thought tokens per call takes $2.55 to $4.22, and 400 takes it to $5.90 — level
+with the model it was meant to undercut.
+
+**Nano was rejected on measurement.** It was put through the three checks recorded
+in the 19 September amendment above, and one more that those checks were too weak
+to catch:
+
+| Check | mini | nano |
+| --- | --- | --- |
+| Accepts `temperature=0` | Yes | Yes |
+| **Honours it**, short prompt repeated | Yes, identical | **No**, varied on run 3 |
+| Reports reasoning tokens | No, `0` | No, `0` |
+| **Same-ordering control on the real task prompt** | 6/144 = 4.2% flips | **2/25 = 8.0% flips**, and 0/25 replies identical |
+
+The fourth row is the one that decided it, and it is stated with its limits: at
+n=25 the interval is [2.2%, 25.0%] against mini's [1.9%, 8.8%], so **nano is not
+shown to be worse than mini**. What is shown is that nano does not honour
+temperature 0 on this task at all — not one of 25 replies reproduced byte for
+byte. Section 11.4 rests on the premise that variation between runs comes from
+candidate ordering. A model that varies freely against a byte-identical prompt
+does not break that premise loudly; it quietly converts position bias into noise
+and leaves the gate reading something other than what it claims to read.
+
+**The saving did not justify it.** The switch was worth $4.28 across all remaining
+work. That is not a sum for which a validity check is worth degrading.
+
+**A note on how the test was fair, and how it was not.** Nano was held to a
+stricter standard than mini originally was: mini's determinism was established on
+three runs of one short prompt, and mini's own 4.2% control flip rate shows it
+would not have scored 25/25 either. The honest comparison is the same-ordering
+control, which is like for like, and on that comparison the evidence is
+suggestive rather than conclusive. The decision rests on the absolute finding —
+no byte-identical replies — not on the contested one.
+
 ### 11.4 Stability
 
 [D34](DECISIONS.md#d34--the-ai-arm-passes-its-stability-gate-and-what-the-control-revealed)
@@ -870,6 +932,64 @@ different shortlist orderings, plus once more at the first ordering as the
 same-ordering control. The floor and the reading are those of section 6.3, with
 the correction in D34 applied: a flip means position bias **or** sampling noise,
 and the control separates them.
+
+#### Amendment, 26 September 2026 — the stability gate is withdrawn as unresolvable
+
+**The commitment above is left standing and unedited.** The 200-record stability
+re-run it requires will not be performed. The reason is not cost alone: at the
+rate already measured, **the gate cannot return an answer at any sample size this
+project could buy.**
+
+The halted run gave 88 unanimous records of 144 complete, a rate of **61.1%**
+against a floor of **60%**. The floor sits inside the interval, and stays inside
+it as the sample grows:
+
+| Complete records | 95% CI (Wilson) | Resolves against 60%? |
+| --- | --- | --- |
+| 144 — what was obtained | [53.0%, 68.7%] | No |
+| 200 — what was planned | [54.1%, 67.5%] | **No** |
+| 800 | [57.7%, 64.4%] | No |
+| 2,000 | [58.9%, 63.2%] | No |
+| 5,000 | [59.8%, 62.5%] | No |
+| **~7,395** | — | Yes, at **$51.45** |
+
+**A test that cannot fail is not a test.** The planned 200-record re-run was
+guaranteed to return "inconclusive" before it was run, because the true rate lies
+almost exactly on the floor. Buying it would have purchased the appearance of a
+validity check and none of the substance. It is withdrawn rather than performed
+and reported as though the result carried information.
+
+**What this costs the experiment, stated plainly.** Section 11.5 item 6 promised
+the stability result "whether or not it passes". That promise cannot be kept. The
+component-swap result therefore carries **no stability guarantee**, and the
+write-up must say so wherever the figure appears. It may not be described as
+stable, robust, or validated against position bias.
+
+**What is known instead**, and may be reported, since it is already paid for:
+
+| | |
+| --- | --- |
+| Unanimity across three orderings | 61.1%, CI [53.0%, 68.7%], n=144 |
+| Same-ordering control flips | 4.2%, CI [1.9%, 8.8%], n=144 |
+| Reading | Roughly two records in five change answer under reordering; about one in twenty changes against an identical prompt |
+
+That is a real and unflattering measurement, and it is the honest characterisation
+of the arm. What it does not do is clear a pre-registered 60% bar, and the bar is
+not moved to accommodate it. **The floor stays at 60% and the arm does not meet
+it** — an outcome section 11.7 must be read against.
+
+**Why the experiment still runs.** The 2,554-record pass measures precision,
+recall and the error decomposition in section 11.5 items 1 to 5, none of which
+depend on the gate. Those measurements stand on their own. The gate would have
+told us how much to trust a single judgement; without it, the aggregate result is
+reported as an aggregate and no claim is made about any individual decision.
+
+**Budget, recorded for completeness.** Available credit was fixed at $5.00 and is
+not extensible. The full experiment costs **$4.44** by exact local token count
+of all 2,554 prompts, validated against billed usage to within 0.9%. The
+stability re-run would have cost $1.39, and both together $5.84 — beyond the
+limit. Had the gate been capable of resolving, the experiment would have been cut
+down instead of the gate.
 
 ### 11.5 What is measured
 
