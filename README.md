@@ -142,17 +142,45 @@ inherit — so it needs running once after cloning. See
 
 ## Running things
 
+Every stage writes to `data/processed/`, which is not committed and is
+regenerable from `data/raw/`. The order matters: each step below reads what the
+one above it wrote.
+
 ```bash
-python src/inspect_datasets.py          # structural summary of the raw data
-python -m src.baseline_token_overlap    # sealed baseline (final evaluation only)
-python -m src.blocking                  # generate candidate pairs (writes data/processed/)
-python -m src.blocking_diagnostics      # summarise what blocking discarded
-pytest                                  # the test suite (73 tests)
+python src/inspect_datasets.py       # structural summary of the raw tables
+python -m src.blocking               # 56.4M possible pairs -> 564,450 candidates
+python -m src.blocking_diagnostics   # what blocking discarded, and why
+python -m src.matcher                # train by EM and score every candidate (~157s)
+python -m src.review_queue           # accept / review / different, and the queue
+python -m src.baseline_fair          # the token-overlap baseline, same candidates
 ```
 
-## Highlights so far
+Checks that read nothing and write nothing:
 
-Notable engineering outcomes:
+```bash
+python -m src.data_loading           # confirm the tables load and are sealed
+python -m src.features               # confirm derived columns build
+pytest                               # the test suite (307 tests)
+```
+
+These need an OpenAI API key in a gitignored `.env`, and cost money:
+
+```bash
+python -m src.embeddings             # embed records, build the top-30 shortlists
+python -m src.ai_escalation          # the AI review arm (docs/PRE_REGISTRATION.md s6)
+```
+
+These read the answer key and so sit below the
+[boundary](docs/PRE_UNSEAL.md). They are the final evaluation, not development:
+
+```bash
+python -m src.baseline_token_overlap # the sealed baseline
+python -m src.uncertainty            # bootstrap intervals on every reported figure
+```
+
+## What this project demonstrates
+
+The work is finished. These are the outcomes it was built to produce:
 
 - **Blocking reduces 56.4 million possible pairs to 564,450 candidates**
   (98.9988% reduction) while keeping **100% of records on both sides reachable**
@@ -175,6 +203,23 @@ Notable engineering outcomes:
   review) was made only after checking what the human-AI collaboration
   literature actually shows, including a correction to an earlier claim of
   novelty ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)).
+- **A better result was measured and declined.** An embedding-and-model rewrite
+  of the matcher scored **66.86% F1**, over five points above the headline. It
+  was rejected because the gain came from accepting 46% more pairs rather than
+  from better judgement, and the error class it existed to fix grew from 342 to
+  590 — a stopping condition fixed in writing before the experiment ran
+  ([D43](docs/DECISIONS.md#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)).
+- **Claims are withdrawn when the evidence does not carry them.** Every figure
+  now has a 95% bootstrap interval. One published comparison did not survive
+  its own: the system was said to sit 2.42 points below DeepMatcher, and the
+  interval contains DeepMatcher's figure, so the ranking was withdrawn
+  ([D48](docs/DECISIONS.md#d48--every-reported-figure-gets-an-interval-and-one-claim-does-not-survive-it)).
+- **Corrections run in both directions.** A denominator error in the baseline's
+  recall was found and fixed; it had run against this project throughout,
+  and correcting it roughly doubled the measured margin over the baseline
+  ([D45](docs/DECISIONS.md#d45--correcting-d39-the-baselines-best-point-was-measured-on-the-wrong-denominator));
+  49 decision entries record what changed and why, each superseded entry
+  pointing forward to whatever replaced it.
 
 ## No-peek policy
 
