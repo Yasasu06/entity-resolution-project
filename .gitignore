@@ -47,3 +47,6 @@ data/processed/
 # NOTE: dataset CSVs under data/raw/ are deliberately NOT ignored. The
 # benchmark data is part of this project and is committed so the repo is
 # reproducible from a single clone.
+
+# ots upgrade leaves a backup of the superseded proof; git history has it
+*.ots.bak
