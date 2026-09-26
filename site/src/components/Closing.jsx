@@ -9,7 +9,7 @@ export default function Closing() {
       </h2>
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
         <p className="max-w-[56ch] text-lg leading-relaxed text-dim">
-          59.96% precision on unattended output is not something you ship. The page says so in its
+          61.17% precision on unattended output is not something you ship. The page says so in its
           first screen, because pretending otherwise would waste the only thing this project
           actually built: a method that catches its own mistakes.
         </p>

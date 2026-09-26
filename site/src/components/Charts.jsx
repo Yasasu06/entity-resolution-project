@@ -91,10 +91,10 @@ export default function Charts() {
         <Reveal delay={0.08} className="lg:col-span-2">
           <Box>
             <div className="mb-1 font-mono text-xs uppercase tracking-[0.14em] text-faint">
-              What the 994 accepted records are
+              What the 971 accepted records are
             </div>
             <div className="mb-5 flex items-baseline gap-2">
-              <span className="font-display text-5xl leading-none text-alarm tnum">363</span>
+              <span className="font-display text-5xl leading-none text-alarm tnum">342</span>
               <span className="text-sm text-dim">have no partner at all</span>
             </div>
             <div className="flex h-12 w-full overflow-hidden rounded-md ring-1 ring-line">
@@ -114,7 +114,7 @@ export default function Charts() {
             </ul>
             <p className="mt-5 text-sm leading-relaxed text-dim">
               <span className="text-ink">The dominant error is absence, not confusion.</span> Only
-              852 of 2,554 records have any partner in the answer key, and 994 were accepted.
+              852 of 2,554 records have any partner in the answer key, and 971 were accepted.
             </p>
           </Box>
         </Reveal>
@@ -128,7 +128,7 @@ export default function Charts() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { v: `${HEADLINE.blockingRecall}%`, l: "Blocking recall", s: "961 of 962 kept" },
-            { v: `${HEADLINE.precision}%`, l: "Precision", s: "on 994 unattended" },
+            { v: `${HEADLINE.precision}%`, l: "Precision", s: "on 971 unattended" },
             { v: `${HEADLINE.recall}%`, l: "Recall", s: "of 962 true matches" },
             { v: HEADLINE.queued.toLocaleString(), l: "Sent to review", s: "not decided alone" },
           ].map((k) => (

@@ -3953,6 +3953,83 @@ corrects a number it was being compared against. The baseline remains a
 five-line heuristic, and the honest reading is unchanged in direction and
 stronger in degree.
 
+
+---
+
+## D46 — A tie is not a preference: the reciprocity test was settled by record id
+
+**Finding.** [D41](#d41--requiring-the-match-to-be-mutual) accepts a pair only if
+the preference is mutual. Where an Amazon record's top score was **tied** across
+several Walmart records, `reciprocal_best` resolved it with
+`groupby().first()`, which after the upstream sort amounted to **the lowest
+Walmart id wins**. Twenty-three accepted pairs were settled that way and
+**twenty-one of them were wrong**.
+
+A tie means the Amazon record has not preferred anyone. The mutual-best question
+has no answer, and answering it "yes" for whichever id sorts first is not a
+weaker version of the rule but a different rule that D41 never argued for.
+
+### The evidence
+
+| | |
+| --- | ---: |
+| Accepted pairs whose reciprocity was settled by a tie | **23** |
+| Correct | **2** |
+| Precision on them | **8.7%** |
+| Precision of the accepted set as a whole | 59.96% |
+
+D41 measured non-mutual accepts as wrong **93.5%** of the time. These were wrong
+**91.3%** of the time. They are the same population, reaching the accepted set
+through a tie-break instead of through the rule.
+
+### The grounds for changing it
+
+**The argument is [D32](#d32--tied-candidates-are-shown-as-an-unordered-set-not-a-ranked-list), not the F1.** That entry established that tied candidates
+are an unordered set and that no arbitrary ordering may stand in for evidence.
+It was applied to what a reviewer is shown and not to this, which is an
+inconsistency in the codebase rather than a new finding. The fix follows from a
+principle the project already holds, and would be correct if it cost F1.
+
+It does not cost F1, and that is recorded as confirmation rather than as the
+reason. **Tuning a rule below the boundary because the answer key rewards it is
+exactly what the pre-registration exists to prevent**, and the ordering of the
+argument matters even when the conclusion is the same.
+
+### What it changes
+
+| | Before | After |
+| --- | ---: | ---: |
+| Accepted | 994 | **971** |
+| Precision | 59.96% | **61.17%** |
+| Recall | 61.95% | 61.75% |
+| **F1** | **60.94%** | **61.46%** |
+| Correct / no partner / wrong partner | 596 / 363 / 35 | **594 / 342 / 35** |
+| Routed to review | 1,191 | 1,214 |
+
+Twenty-one wrong accepts and two correct ones move to the review queue, which is
+what that queue is for. **These figures supersede D39 and D41**, and the
+comparison baselines quoted in
+[D43](#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)
+shift with them: the component swap's 66.86% now stands 5.40 points above the
+classical system rather than 5.92, and the no-partner class it failed to shrink
+grew from **342** to 590 rather than from 363. **D43's conclusion is unaffected**
+and is if anything strengthened, since the classical system it declined to
+replace is now the stronger of the two on that error class.
+
+[D44](#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer)
+is **unaffected**: that measurement applies no one-to-one constraint and
+therefore never invokes reciprocity. It remains 51.38%.
+
+### The determinism was real but accidental
+
+Permuting the scored pairs five ways never changed the old accepted set, so the
+behaviour looked deterministic. It was, but only because pandas sorts on
+multiple keys stably and `rank_candidates` had already normalised the frame into
+record order. The output was a stable function of the record identifiers, which
+is not a property anything had argued for and not one that survives a change of
+sort implementation. It is now deterministic because ties resolve to a single
+answer regardless of order, which is pinned by four tests.
+
 ---
 
 ## Working conventions

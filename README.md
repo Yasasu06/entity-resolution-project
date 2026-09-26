@@ -40,8 +40,8 @@ labels were opened once.
 Eight predictions held, three failed, one was registered in advance as
 unknowable. **[The full table, misses included →](docs/PREDICTIONS_VS_REALITY.md)**
 
-The headline result is mixed and the record says so: the system reaches **60.94% F1**
-(59.96% precision, 61.95% recall, over 994 auto-accepted records) against a five-line
+The headline result is mixed and the record says so: the system reaches **61.46% F1**
+(61.17% precision, 61.75% recall, over 971 auto-accepted records) against a five-line
 heuristic's 54.46%, and its unattended output is **not** deployable. What the project
 demonstrates is that every material weakness was found, measured and published
 *before* the answer key was opened.
@@ -56,16 +56,16 @@ demonstrates is that every material weakness was found, measured and published
 | Blocking diagnostics (what was discarded, and why) | ✅ Done |
 | Blocking ↔ matching interface contract | ✅ Done |
 | **Matching** (Splink probabilistic scoring) | ✅ Done — all 564,450 pairs scored, unsupervised, in ~157s |
-| **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 994 records auto-accepted, 1,191 queued for review |
-| **Review interface** | ✅ Built — working demo over 120 real records on the [project site](https://yasasu06.github.io/entity-resolution-project/); the full 1,191-record queue is generated but unreviewed |
+| **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 971 records auto-accepted, 1,214 queued for review |
+| **Review interface** | ✅ Built — working demo over 120 real records on the [project site](https://yasasu06.github.io/entity-resolution-project/); the full 1,214-record queue is generated but unreviewed |
 | **Human review** of the queued records | 🔜 Not started — no human has worked the queue; the human-only arm is modelled, not observed ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
-| Second system (embedding-based), for comparison | ✅ Done, and **declined** — the component swap scored **66.86% F1**, nearly six points above the headline, and was rejected because the gain came from accepting 42% more pairs rather than better judgement. The error class it existed to fix grew from 363 to 590, which [section 11.7](docs/PRE_REGISTRATION.md) had fixed in advance as the condition for not building further ([D43](docs/DECISIONS.md#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)) |
+| Second system (embedding-based), for comparison | ✅ Done, and **declined** — the component swap scored **66.86% F1**, over five points above the headline, and was rejected because the gain came from accepting 42% more pairs rather than better judgement. The error class it existed to fix grew from 342 to 590, which [section 11.7](docs/PRE_REGISTRATION.md) had fixed in advance as the condition for not building further ([D43](docs/DECISIONS.md#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)) |
 | **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; F1 was 59.46% at that point ([D39](docs/DECISIONS.md), [D40](docs/DECISIONS.md)) |
-| Post-evaluation improvement | ✅ Mutual-best-match check added ([D41](docs/DECISIONS.md)), superseding the figure above. **Current: F1 60.94%, precision 59.96%, recall 61.95%, 994 accepted.** Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
+| Post-evaluation improvement | ✅ Mutual-best-match check added ([D41](docs/DECISIONS.md)), superseding the figure above. **Current: F1 61.46%, precision 61.17%, recall 61.75%, 971 accepted** ([D46](docs/DECISIONS.md#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id))**.** Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (45 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (46 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 

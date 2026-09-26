@@ -149,12 +149,21 @@ def reciprocal_best(ranked: pd.DataFrame) -> pd.Series:
     Amazon record would have chosen the same partner back. Where the preference
     is not mutual, the Amazon record is usually somebody else's match and this
     record probably has none.
+
+    **A tie on the Amazon side is not a preference.** Where several Walmart
+    records share an Amazon record's top score, that record has not chosen any
+    of them, and no answer to "would it choose you back?" is available. The
+    earlier version resolved this with ``.groupby().first()``, which amounted to
+    letting the lowest Walmart id win: 23 accepted pairs were settled that way
+    and only 2 of them were right (D46). Ties are an unordered set (D32), so
+    the question is answered "no" for every member rather than "yes" for one.
     """
     best_left = ranked[ranked["rank"] == 0].set_index(LEFT_ID)[RIGHT_ID]
-    best_right = (ranked.sort_values([RIGHT_ID, "bits"], ascending=[True, False])
-                        .groupby(RIGHT_ID).first()[LEFT_ID])
+    top = ranked[ranked["bits"] == ranked.groupby(RIGHT_ID)["bits"].transform("max")]
+    contested = top.groupby(RIGHT_ID).size()
+    decided = top[top[RIGHT_ID].map(contested) == 1].set_index(RIGHT_ID)[LEFT_ID]
     return pd.Series(
-        [best_right.get(best_left[w]) == w for w in best_left.index],
+        [decided.get(best_left[w]) == w for w in best_left.index],
         index=best_left.index,
     )
 

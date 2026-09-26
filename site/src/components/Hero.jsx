@@ -55,7 +55,7 @@ function DeclinedResult() {
       <p className="mt-3 text-[0.95rem] leading-relaxed text-dim">
         A later experiment swapped the ranker for an embedding shortlist and a model
         judgement, and scored{" "}
-        <span className="tnum font-medium text-ink">F1 {SWAP.f1}%</span>, nearly six points
+        <span className="tnum font-medium text-ink">F1 {SWAP.f1}%</span>, over five points
         higher. It is not the headline, because the gain was not better judgement. The
         system simply accepted {SWAP.acceptGrowth}% more pairs, and the one error class the
         experiment existed to fix, records with no true partner at all, grew from{" "}

@@ -1,7 +1,7 @@
 export const HEADLINE = {
-  f1: 60.94, precision: 59.96, recall: 61.95,
+  f1: 61.46, precision: 61.17, recall: 61.75,
   baselineBest: 54.46, baselineMatched: 54.24,
-  accepted: 994, queued: 1191, different: 369,
+  accepted: 971, queued: 1214, different: 369,
   records: 2554, withPartner: 852, candidates: 564450, crossProduct: 56376996,
   trueMatches: 962, blockingRecall: 99.9,
 };
@@ -9,8 +9,8 @@ export const HEADLINE = {
 // The component swap (D43): a higher F1 that was measured, understood and declined.
 export const SWAP = {
   f1: 66.86, precision: 56.14, recall: 82.64, accepted: 1416,
-  noPartnerBefore: 363, noPartnerAfter: 590, noPartnerGrowth: 62.5,
-  acceptGrowth: 42, headline: 60.94,
+  noPartnerBefore: 342, noPartnerAfter: 590, noPartnerGrowth: 72.5,
+  acceptGrowth: 46, headline: 61.46,
 };
 
 // D44: the same matcher scored under the benchmark's own protocol, so the
@@ -66,14 +66,14 @@ export const PREDICTIONS = [
 ];
 
 export const F1_BARS = [
-  { name: "This system", value: 60.94, lead: true },
+  { name: "This system", value: 61.46, lead: true },
   { name: "Token-overlap baseline", value: 54.46, lead: false },
   { name: "Baseline, matched coverage", value: 54.24, lead: false },
 ];
 
 export const ERRORS = [
-  { name: "Correct", value: 596, tone: "signal" },
-  { name: "Record has no partner", value: 363, tone: "alarm" },
+  { name: "Correct", value: 594, tone: "signal" },
+  { name: "Record has no partner", value: 342, tone: "alarm" },
   { name: "Wrong partner chosen", value: 35, tone: "hold" },
 ];
 
@@ -85,5 +85,5 @@ export const STEPS = [
   { k: "The mechanism", h: "Overlap cannot see contradiction",
     p: "Every comparison measures token overlap. A mutated token joins the evidence set rather than displacing anything, so the shared evidence is unchanged and the score does not move." },
   { k: "The blind spot", h: "Both methods missed the real failure",
-    p: "The probes were built by mutating partners of already-accepted pairs, so every probe had a true partner by construction. Both methods therefore missed the dominant failure entirely: records with no partner at all. Only 852 of 2,554 records have one, and the system accepted 994." },
+    p: "The probes were built by mutating partners of already-accepted pairs, so every probe had a true partner by construction. Both methods therefore missed the dominant failure entirely: records with no partner at all. Only 852 of 2,554 records have one, and the system accepted 971." },
 ];

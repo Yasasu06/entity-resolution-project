@@ -12,8 +12,8 @@ const SHARED = new Set(["couleur", "series", "ear", "buds"]);
 const FUNNEL = [
   { n: "56,376,996", l: "possible pairs", s: "text-[clamp(1.9rem,5.2vw,3.4rem)]", tone: "text-ink" },
   { n: "564,450", l: "survive blocking", s: "text-[clamp(1.6rem,4.2vw,2.7rem)]", tone: "text-ink", note: "99.0% removed" },
-  { n: "994", l: "accepted unattended", s: "text-[clamp(1.75rem,3.8vw,2.5rem)]", tone: "text-cool" },
-  { n: "596", l: "actually correct", s: "text-[clamp(1.6rem,3.2vw,2.2rem)]", tone: "text-signal" },
+  { n: "971", l: "accepted unattended", s: "text-[clamp(1.75rem,3.8vw,2.5rem)]", tone: "text-cool" },
+  { n: "594", l: "actually correct", s: "text-[clamp(1.6rem,3.2vw,2.2rem)]", tone: "text-signal" },
 ];
 
 export default function Problem() {

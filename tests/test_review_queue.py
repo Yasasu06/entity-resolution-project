@@ -317,3 +317,44 @@ def test_the_veto_only_touches_accepted_records():
 def test_a_record_with_one_candidate_nobody_else_wants_is_mutual():
     ranked = _recip_setup([("A_0", "B_0", 15.0)])
     assert reciprocal_best(ranked)["A_0"]
+
+
+# --- reciprocity when the Amazon side is tied ---------------------------------
+
+def test_a_tied_amazon_record_chooses_nobody():
+    """B_0 tops two Walmart records equally, so it has not preferred either.
+
+    The earlier version broke this with groupby().first(), which let the lowest
+    Walmart id win. 23 accepted pairs were settled that way and 21 were wrong.
+    """
+    rows = [("A_0", "B_0", 9.0), ("A_0", "B_9", 1.0),
+            ("A_1", "B_0", 9.0), ("A_1", "B_8", 1.0)]
+    r = reciprocal_best(rank_candidates(scores_from_bits(rows)))
+    assert not r["A_0"] and not r["A_1"], "a tie is not a preference for either"
+
+
+def test_an_untied_amazon_record_still_chooses(): 
+    rows = [("A_0", "B_0", 9.0), ("A_0", "B_9", 1.0),
+            ("A_1", "B_0", 5.0), ("A_1", "B_8", 1.0)]
+    r = reciprocal_best(rank_candidates(scores_from_bits(rows)))
+    assert r["A_0"], "B_0 prefers A_0 outright"
+    assert not r["A_1"], "A_1 is not B_0's best"
+
+
+def test_the_verdict_does_not_depend_on_record_id_order():
+    """Renaming the records must not change who is judged reciprocal."""
+    rows = [("A_0", "B_0", 9.0), ("A_0", "B_9", 1.0),
+            ("A_1", "B_0", 9.0), ("A_1", "B_8", 1.0)]
+    first = reciprocal_best(rank_candidates(scores_from_bits(rows)))
+    flipped = [(l.replace("A_0", "A_7") if l == "A_0" else l, r, b) for l, r, b in rows]
+    second = reciprocal_best(rank_candidates(scores_from_bits(flipped)))
+    assert set(first.to_numpy()) == set(second.to_numpy()) == {False}
+
+
+def test_the_accepted_set_is_stable_under_row_order():
+    rows = [("A_0", "B_0", 9.0), ("A_0", "B_9", 1.0),
+            ("A_1", "B_0", 9.0), ("A_1", "B_8", 1.0),
+            ("A_2", "B_5", 9.0), ("A_2", "B_6", 1.0)]
+    forward = reciprocal_best(rank_candidates(scores_from_bits(rows)))
+    backward = reciprocal_best(rank_candidates(scores_from_bits(rows[::-1])))
+    assert forward.sort_index().equals(backward.sort_index())
