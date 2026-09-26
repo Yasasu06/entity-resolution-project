@@ -65,7 +65,7 @@ demonstrates is that every material weakness was found, measured and published
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (43 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (44 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 

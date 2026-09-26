@@ -3756,6 +3756,124 @@ Run under a hard ceiling of $4.60 against a fixed $5.00 balance, checkpointed pe
 record so that an interruption would not have required repeating paid work.
 Neither safeguard was triggered.
 
+
+---
+
+## D44 — The system measured under the benchmark's own protocol, and a threshold that does not transfer
+
+**Finding.** Scored as a pair classifier on the benchmark's own test split, over
+the benchmark's own candidate pairs and without the one-to-one constraint, the
+system reaches **51.38% F1**. That places it between Magellan's published 37.4
+and DeepMatcher's 53.8, and **below DeepMatcher by 2.42 points**.
+
+The measurement was proposed on the expectation that it would show the opposite:
+that a system using no labels at all, sitting at 60.94% under its own protocol,
+would be found competitive with or above supervised DeepMatcher once the
+protocols were aligned. **That expectation was wrong**, and it was wrong in the
+direction that flattered the project. It is recorded here because the whole
+argument of this log is that a prediction is worth nothing unless the miss is
+written down beside it.
+
+### Why 60.94% was never comparable
+
+The headline figure in [D39](#d39--the-final-evaluation) and
+[D41](#d41--requiring-the-match-to-be-mutual) is measured under three conditions
+the published figures are not:
+
+| | This project's headline | The benchmark's protocol |
+| --- | --- | --- |
+| Candidate set | This project's blocking, from all 56.4M pairs | The benchmark's own candidate pairs |
+| Population | All three splits combined ([10.1](PRE_REGISTRATION.md#101-the-splits)) | The test split alone |
+| Decision unit | One match per Walmart record, one-to-one | Each pair judged independently |
+
+None of these is reconcilable by inspection, which is why 60.94% could not be set
+beside 85.69% and read as a 24-point gap. Under the benchmark's protocol the
+number is not 60.94%. It is 51.38%.
+
+### The result
+
+Test split: 2,049 candidate pairs, 193 of them matches, **9.42% positive**. The
+model was loaded from disk as already trained. Nothing was retrained and no
+parameter was fitted to this split. All 2,049 pairs scored; none were unscorable.
+
+| Method | F1 | Labels used in training |
+| --- | ---: | --- |
+| Ditto | 85.69 | 60% of the labelled set |
+| DeepMatcher | 53.80 | 60% of the labelled set |
+| **This project, at the pre-registered threshold** | **51.38** | **none** |
+| Magellan | 37.40 | 60% of the labelled set |
+
+| This project, in detail | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: |
+| 6.0-bit threshold alone | 32.63% | 87.56% | 47.54 |
+| 6.0-bit threshold with the quantity veto | 36.44% | 87.05% | **51.38** |
+
+**Using no labels is a real distinction and not an excuse.** The three published
+systems each train on 60% of the labelled set. This one has never read a label
+for any purpose other than final measurement. That makes 51.38 against 53.80 a
+narrower gap than it looks. It does not make it a win.
+
+### The diagnosis: the threshold, not the ranking
+
+Recall holds at 87% while precision falls to 36%. That is the signature of a
+threshold in the wrong place, not of a model that cannot rank.
+
+A match weight is added to a prior. This model's λ was fixed at **2.0×10⁻⁵**, the
+rate for *this project's* candidate set
+([D25](#d25--the-prior-probability-that-two-random-records-match)). The
+benchmark's test split is **9.42%** positive, roughly 4,700 times denser. The
+same weight therefore means something different, and the correction is computable
+without any search:
+
+```
+shift = log2(0.0942 / 0.9058) − log2(2.0e−5 / (1 − 2.0e−5)) = +12.34 bits
+```
+
+| Threshold | Precision | Recall | F1 | How obtained |
+| --- | ---: | ---: | ---: | --- |
+| 6.0 bits | 36.44% | 87.05% | 51.38 | Pre-registered |
+| 18.3 bits | 84.31% | 44.56% | 58.31 | Derived from the density above |
+| 16.5 bits | | | 66.67 | Swept against this split's labels |
+
+**The derived threshold lands 1.8 bits from the swept optimum.** That is the
+evidence for the diagnosis: had the gap been a ranking failure, correcting the
+prior would not have moved the result toward the best available answer.
+
+**Neither 58.31 nor 66.67 is claimed.** Both require the split's positive rate,
+which is label information. **51.38 is the number, and it is the one reported.**
+
+### What this actually establishes
+
+**The accept threshold does not transfer between candidate sets.** 6.0 bits was
+chosen on the score distribution this project's blocking produces, and
+[D38](#d38--the-accept-threshold-stays-at-60-bits-and-why-that-is-not-complacency)
+and [D40](#d40--correcting-d38-the-decision-holds-the-reasoning-did-not) defended
+it on that distribution. Neither entry noticed that the defence was conditional
+on candidate density. Applied to a set 4,700 times denser, the same threshold
+accepts almost everything that scores at all.
+
+This is a limitation of the system that no previous entry recorded, and it is
+more useful than the comparison that exposed it. **A threshold expressed in bits
+is not a portable setting.** Any deployment against a differently-blocked
+candidate set has to re-derive it from that set's density, and the honest way to
+present 6.0 bits is as a value fitted to one blocking design rather than a
+property of the matcher.
+
+### Limits of this comparison
+
+**The published figures were not independently reproduced.** Magellan 37.4,
+DeepMatcher 53.8 and Ditto 85.69 are taken from Table 5 of *Deep Entity Matching
+with Pre-Trained Language Models* (Li et al.). Those systems were not re-run
+here. The comparison assumes their reported numbers and the same test split, and
+is only as sound as that assumption.
+
+**One split, one dataset, one domain.** 2,049 pairs with 193 matches is a small
+evaluation, and nothing here says the result transfers beyond dirty
+Walmart-Amazon.
+
+**This is label-informed work**, below the [boundary](PRE_UNSEAL.md), and carries
+none of the pre-registration guarantees that apply above it.
+
 ---
 
 ## Working conventions
