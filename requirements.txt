@@ -31,6 +31,24 @@ openai==3.16.2      # the AI-only review arm (docs/PRE_REGISTRATION.md section 6
 # path the arm uses, and confirmed to honour temperature=0 rather than merely
 # accept it. No escalation run has been made.
 
+# --- Cost estimation --------------------------------------------------------
+tiktoken==0.14.0    # counts prompt tokens locally, without calling the API
+
+# Used to price a run before paying for it. The component-swap experiment had a
+# fixed $5.00 budget, and the per-call figure available was a mean over 200
+# records; extrapolating it to 2,554 assumed those records were representative
+# in length. Counting every prompt locally tested that assumption instead.
+#
+# The o200k_base encoding is an approximation for gpt-5.4, so it was checked
+# rather than trusted: the local mean of 1,770.7 tokens over the same prompts
+# the API had already billed reproduced the billed 1,787.2 to within 0.94%, the
+# gap being chat message overhead. The full population came out 0.3% below the
+# sample, and the final run cost $4.4061 against the $4.41 this predicted.
+#
+# No module in src/ imports it. It is pinned here because the budget check is
+# part of how this project was run and should be reproducible, not because the
+# pipeline depends on it.
+
 # --- Testing ----------------------------------------------------------------
 pytest==9.1.1       # test runner for the code in src/
 
