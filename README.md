@@ -59,13 +59,13 @@ demonstrates is that every material weakness was found, measured and published
 | **Selective prediction** / review-band design | ✅ Done — rule pre-registered (6.0-bit threshold, 1.0-bit margin, −3.5-bit floor) and implemented; 994 records auto-accepted, 1,191 queued for review |
 | **Review interface** | ✅ Built — working demo over 120 real records on the [project site](https://yasasu06.github.io/entity-resolution-project/); the full 1,191-record queue is generated but unreviewed |
 | **Human review** of the queued records | 🔜 Not started — no human has worked the queue; the human-only arm is modelled, not observed ([D24](docs/DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)) |
-| Second system (embedding-based), for comparison | 📋 Next — D37 and D41 established what it has to beat: the classical approach reaches 1.5% of the identity problem, and the rest needs semantics |
+| Second system (embedding-based), for comparison | ✅ Done, and **declined** — the component swap scored **66.86% F1**, nearly six points above the headline, and was rejected because the gain came from accepting 42% more pairs rather than better judgement. The error class it existed to fix grew from 363 to 590, which [section 11.7](docs/PRE_REGISTRATION.md) had fixed in advance as the condition for not building further ([D43](docs/DECISIONS.md#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)) |
 | **Final evaluation** against sealed labels | ✅ Done — one pass, 20 September 2026; F1 was 59.46% at that point ([D39](docs/DECISIONS.md), [D40](docs/DECISIONS.md)) |
 | Post-evaluation improvement | ✅ Mutual-best-match check added ([D41](docs/DECISIONS.md)), superseding the figure above. **Current: F1 60.94%, precision 59.96%, recall 61.95%, 994 accepted.** Label-informed, unlike everything above the [boundary](docs/PRE_UNSEAL.md) |
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (41 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (43 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
@@ -77,7 +77,7 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines |
-| `tests/` | Automated tests (254 passing) covering the code in `src/` |
+| `tests/` | Automated tests (279 passing) covering the code in `src/`, run on every push by CI |
 | `docs/` | Decision log, the pre-registered decision rule, the label-free boundary and its timestamp proof, dataset provenance |
 | `site/` | The project site: Vite, React, Tailwind and Motion, built and deployed by GitHub Actions |
 

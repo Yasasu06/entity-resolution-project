@@ -1,0 +1,47 @@
+# Runs the test suite on every push and pull request.
+#
+# The suite existed for months before this workflow did, which meant it only
+# ran when someone remembered to run it. A project whose argument is that
+# discipline should be enforced rather than intended ought not to rely on
+# memory for its own checks.
+
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install pinned dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the suite
+        run: pytest -q
+
+      - name: Confirm the labelled splits are still sealed
+        # No test should be able to read labels without asking. If the guard in
+        # src/data_loading.py is ever weakened, this fails loudly rather than
+        # letting the no-peek policy quietly become a comment.
+        run: |
+          python -c "
+          from src.data_loading import load_labelled_pairs
+          for split in ('train', 'valid', 'test'):
+              try:
+                  load_labelled_pairs(split)
+              except ValueError:
+                  continue
+              raise SystemExit(f'{split} loaded without unlock_final_evaluation')
+          print('all three splits still sealed')
+          "
