@@ -3524,6 +3524,93 @@ scored poorly.
 
 ---
 
+## D42 — What the one-to-one rule costs: a recall ceiling nobody measured
+
+**Finding.** Emitting at most one match per Walmart record caps recall at
+**88.57%** in principle and **74.32%** in practice, against a blocking recall of
+99.90%. [D41](#d41--requiring-the-match-to-be-mutual) adopted the constraint
+because it carried most of the measured precision gain. **Its cost in reachable
+recall was never computed**, and it is larger than the gain.
+
+This was found while choosing a recall floor for the component-swap experiment,
+not while looking for it.
+
+### The two ceilings
+
+The answer key holds **962** true matches across **852** Walmart records.
+
+**Ceiling one, from the rule itself: 88.57%.** 110 of the 962 matches sit on
+records that have *more than one* true partner. A system emitting one match per
+record cannot reach them, at any threshold, with any matcher. The rule forfeits
+those 110 by construction.
+
+**Ceiling two, from ranking: 74.32%.** Accept every record's best candidate with
+no threshold at all and the result is 715 correct, **74.32%** recall at 28.00%
+precision. For **137** of the 852 records that have a partner, the scorer ranks a
+wrong candidate above the right one, so no acceptance rule can recover them.
+
+### Where the recall goes
+
+| Stage | Recall | Lost |
+| --- | ---: | ---: |
+| True matches reachable after blocking | **99.90%** | |
+| Ceiling under one match per record | 88.57% | **11.33 pts** to the rule |
+| Ceiling under this scorer's ranking | 74.32% | **14.25 pts** to ranking |
+| Current operating point | 61.95% | 12.37 pts to the accept threshold |
+
+**The decomposition matters more than the total.** Of the 37.95 points between
+blocking and the current system, only 11.33 belong to the one-to-one rule itself.
+**14.25 belong to ranking quality**, which a better matcher could recover without
+touching the rule, and 12.37 to where the accept threshold sits, which is a
+deliberate precision trade.
+
+### Where the true partner actually sits
+
+For the 852 records that have one, measured over the classical candidate set:
+
+| Position in the ranking | Records | |
+| --- | ---: | ---: |
+| Ranked first | 715 | 83.9% |
+| Ranked 2 to 5 | 108 | 12.7% |
+| Ranked 6 to 30 | 24 | 2.8% |
+| Ranked 31 or lower | 5 | 0.6% |
+| Absent from the candidate set | **0** | 0.0% |
+
+**The true partner is present for every record that has one, and within the top
+thirty for 99.4% of them.** The recall the system does not achieve is almost
+entirely a ranking failure, not a retrieval failure. A perfect re-ranker over a
+top-thirty shortlist would reach **88.05%** recall, which is within half a point
+of the rule's own ceiling.
+
+### What this does and does not say about D41
+
+**It does not overturn D41.** The constraint still delivered what that entry
+measured: precision from 56.82% to 59.96%, with non-mutual accepts wrong 93.5% of
+the time. That evidence stands.
+
+**It does say D41 was decided on half the evidence.** The precision gain was
+measured and the recall ceiling was not, so the trade was accepted without its
+cost being known. Recording the gain and not the cost is how a reasonable local
+decision becomes an unexamined global constraint.
+
+**The tension is real and unresolved.** One match per record is what makes this
+system precise, and it is also what holds it 11 points below what its own
+blocking retrieved. Relaxing it is the only route past 74.32%, and on D41's
+evidence that would cost precision.
+
+### What follows
+
+* The recall floor for the component-swap experiment is set at **60%**, with this
+  ceiling as the reason a higher floor was rejected: 75% is not merely difficult,
+  it is above the classical system's absolute maximum.
+* **14.25 points of recall are recoverable by better ranking alone**, with no
+  change to any rule. That is the clearest quantitative case yet for testing a
+  different matcher, and it was not available before this measurement.
+* Whether to relax one-to-one is left open. It should be decided against measured
+  precision loss, not adopted or kept by default.
+
+---
+
 ## Working conventions
 
 - **Raw data is never edited in place.** Files in `data/raw/` stay exactly as

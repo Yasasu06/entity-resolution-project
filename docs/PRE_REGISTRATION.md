@@ -903,3 +903,62 @@ If precision rises and the no-partner class shrinks, the embedding-blocking half
 becomes worth building, justified by evidence. If the no-partner class does not
 shrink, that is a finding about the limits of semantic matching on this data, and
 no second system should be built on the assumption it would.
+
+---
+
+## 12. What is being optimised
+
+**Added 26 September 2026, before the component-swap experiment ran.**
+
+Every comparison in this project so far has used **F1**, and that was never a
+decision. It was inherited from the benchmark literature, and it carries an
+assumption nobody checked: that a wrong match and a missed match cost the same.
+
+For a system whose output is *accept unattended, or send to a human*, they
+plainly do not. A wrong match ships silently. A missed match costs review time
+and can be recovered later. Treating them as equal weights the one that is harder
+to undo too lightly.
+
+### 12.1 The target
+
+**Primary: precision, subject to recall of at least 60%.**
+
+Between two systems, the one with higher precision at or above that floor is
+better. A system below the floor does not qualify, whatever its precision.
+
+**F1 is reported alongside, always**, so the change of target cannot hide a
+result and prior figures stay comparable.
+
+### 12.2 Why 60% and not higher
+
+Set from measured ceilings, recorded in
+[D42](DECISIONS.md#d42--what-the-one-to-one-rule-costs-a-recall-ceiling-nobody-measured),
+not chosen for convenience.
+
+| Floor | Best precision the classical system can reach |
+| ---: | --- |
+| 50% | 71.34% |
+| **60%** | **60.89%** |
+| 65% | 51.07% |
+| 70% | 46.57% |
+| 75% | **not achievable at any threshold** |
+
+A 75% floor was considered and **rejected**: the classical system's absolute
+recall ceiling is 74.32%, so that floor would disqualify it by construction and
+the comparison would measure nothing. 60% sits near the current operating point
+of 61.95%, leaves headroom under the ceiling, and gives a real number to beat.
+
+### 12.3 The declaration that matters
+
+This target is fixed **before the component-swap experiment runs**, and the
+reasoning is recorded in full because the change does not flatter the existing
+work.
+
+Under precision-at-a-floor the classical system looks **worse**, not better:
+59.96% precision is a weak automated tier, and D41's choice to accept 994 records
+becomes questionable rather than settled. The metric was not chosen to suit the
+incumbent, and it was not chosen after seeing whether the challenger would win
+on it.
+
+Any result reported under this target states the floor, the achieved recall, and
+the F1, together.
