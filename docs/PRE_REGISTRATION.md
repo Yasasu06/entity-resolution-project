@@ -1083,3 +1083,141 @@ on it.
 
 Any result reported under this target states the floor, the achieved recall, and
 the F1, together.
+
+---
+
+## 13. What a few dozen labels are worth
+
+**Added 26 September 2026, before the experiment ran.** This section is below
+the [boundary](PRE_UNSEAL.md) and label-informed, like everything since D39. It
+carries none of the guarantees that apply above it. It is pre-registered anyway,
+because a prediction written after the result is not a prediction.
+
+### 13.1 The question, and whose question it is
+
+[D19](DECISIONS.md#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key)
+rejected self-labelling and was explicit that the rejected approach is standard
+practice that works: `dedupe` learns blocking predicates from interactively
+labelled pairs, and Zingg reaches production quality from roughly 30-40 labelled
+pairs via active learning. That entry then deferred an experiment:
+
+> "The self-labelling approach is explicitly worth testing, as a **separate
+> follow-up exercise once this strict build is complete**. Running both and
+> comparing them would be a genuinely interesting result: how much does a few
+> dozen hand-labelled pairs actually buy, against a system designed without
+> any?"
+
+The strict build is complete and the labels are open. **This is that exercise.**
+The project has an argument for its constraint and no measurement of what the
+constraint costs, which is the most obvious question a reader can ask of it.
+
+### 13.2 The one thing that varies
+
+Splink's `estimate_m_from_pairwise_labels` replaces the m-probabilities — the
+rate at which each comparison level fires **among true matches** — with values
+derived from *k* known matches. Everything else is held fixed:
+
+| | |
+| --- | --- |
+| Comparisons | The six fixed in D26 to D30, unchanged |
+| Candidate set | The classical 564,450 pairs, unchanged |
+| `u` probabilities | From random sampling over the whole space, **label-free**, unchanged |
+| `m` probabilities | **The only thing supervision touches** |
+
+`u` is left alone deliberately. It answers how often a kind of agreement happens
+between *non*-matching records, random sampling is already the right population
+for that question, and it needs no labels. Re-estimating it would confound the
+measurement.
+
+### 13.3 Labels are counted as an annotator would spend them
+
+Drawing *k* matches straight from the answer key would understate the cost.
+Matches are 0.17% of the candidate set, so finding forty by random inspection
+means labelling tens of thousands of pairs, which is not what `dedupe` or Zingg
+ask of anyone.
+
+**Acquisition is therefore simulated.** The existing label-free model ranks the
+training pairs, an annotator works down that ranking, and every pair inspected
+is charged to the budget until *k* matches are confirmed. This is active
+learning with the crudest possible query strategy, and it is the honest floor:
+a real tool would do better.
+
+| Confirmed matches | Labels spent | Of which positive |
+| ---: | ---: | ---: |
+| 10 | ~12 | 83% |
+| 20 | ~23 | 87% |
+| **40** | **~45** | 89% |
+| 80 | ~85 | 94% |
+| 160 | ~169 | 95% |
+| 320 | ~407 | 79% |
+
+**Forty confirmed matches costs about forty-five labels**, which is the same
+order as the "30-40 labelled pairs" D19 credits Zingg with, and as the "second
+day labelling a few dozen pairs by hand" it describes.
+
+### 13.4 Splits, threshold, and the sweep
+
+**m is estimated on `train`** (6,144 pairs, 576 matches) and the result is
+measured on **`test`** (2,049 pairs, 193 matches) under the pair-classifier
+protocol of [D44](DECISIONS.md#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer):
+the benchmark's own candidate pairs, no one-to-one constraint. That places the
+curve on the same axis as the published figures rather than on this project's
+private one.
+
+**The threshold is selected on `train` and charged to the budget.** Supervised
+m shifts every match weight, so the pre-registered 6.0 bits is the wrong
+operating point for any *k* > 0; D44 established that a threshold in bits is not
+portable. Choosing it on training data is standard practice, and it consumes
+labels, so it is counted rather than treated as free. Holding 6.0 fixed instead
+would blame miscalibration on supervision and understate what labels buy.
+
+**k ∈ {0, 10, 20, 40, 80, 160, 320, 576}, twenty repetitions each.** At small
+*k* it matters enormously *which* matches are drawn; one draw per point would be
+noise presented as a curve. Each point reports the median and a bootstrap
+interval, following D48.
+
+**k = 0 is the label-free system** at its pre-registered operating point:
+**51.38 [46.61, 56.20]**.
+
+### 13.5 What is measured
+
+1. F1 on `test` against labels spent, as a curve with intervals.
+2. The same curve against the published **37.40** (Magellan), **53.80**
+   (DeepMatcher) and **85.69** (Ditto), each of which trains on 60% of the
+   labelled set.
+3. The value of the first forty labels specifically, as a paired difference
+   against *k* = 0 with an interval.
+4. Where the curve flattens, if it does.
+
+### 13.6 Predictions recorded in advance
+
+* **The curve rises steeply and flattens by roughly k = 80.** Most of whatever
+  supervision buys arrives in the first few dozen labels.
+* **It does not reach Ditto's 85.69**, and plateaus somewhere in the **55 to 70**
+  range. Stated at moderate confidence only: the last comparison against a
+  published figure went the opposite way to the prediction made for it (D44),
+  and the correction is on record.
+* **No prediction is recorded** for whether the supervised curve overtakes
+  DeepMatcher's 53.80, so neither answer can afterwards be presented as
+  expected.
+
+### 13.7 The limitation this design cannot escape
+
+**This measures what labels buy inside a fixed six-comparison Fellegi-Sunter
+model.** Estimating m from labels adjusts how much weight each comparison level
+carries. It cannot invent a comparison the model does not have, and it cannot
+learn a representation. Ditto fine-tunes a pre-trained language model over raw
+text and is doing something categorically different with its labels.
+
+**A flat curve would therefore mean "labels add little to *this model family*",
+not "labels add little."** Those are very different claims and only the first is
+supportable here. Any write-up states this beside the headline, not in a
+footnote, because the misreading is easy and flattering.
+
+### 13.8 What would make this experiment worthless
+
+If the acquisition simulation quietly uses information an annotator could not
+have — for instance ranking training pairs by a model that had already seen
+those labels — the cost column is fiction and the curve is meaningless. The
+ranking model is the label-free one, and that is the property to check first if
+the result looks too good.
