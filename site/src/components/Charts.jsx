@@ -77,7 +77,7 @@ export default function Charts() {
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
           Six probabilistic comparisons trained by expectation&ndash;maximisation, against a
-          five-line token-overlap heuristic tuned to its own optimum. The gap is 3.3&nbsp;points.
+          five-line token-overlap heuristic tuned to its own optimum. The gap is 6.5&nbsp;points.
         </p>
       </Reveal>
 

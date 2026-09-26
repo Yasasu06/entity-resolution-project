@@ -42,7 +42,7 @@ unknowable. **[The full table, misses included →](docs/PREDICTIONS_VS_REALITY.
 
 The headline result is mixed and the record says so: the system reaches **60.94% F1**
 (59.96% precision, 61.95% recall, over 994 auto-accepted records) against a five-line
-heuristic's 57.66%, and its unattended output is **not** deployable. What the project
+heuristic's 54.46%, and its unattended output is **not** deployable. What the project
 demonstrates is that every material weakness was found, measured and published
 *before* the answer key was opened.
 
@@ -65,7 +65,7 @@ demonstrates is that every material weakness was found, measured and published
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (44 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (45 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 

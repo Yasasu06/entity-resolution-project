@@ -1,6 +1,6 @@
 export const HEADLINE = {
   f1: 60.94, precision: 59.96, recall: 61.95,
-  baselineBest: 57.66, baselineMatched: 54.24,
+  baselineBest: 54.46, baselineMatched: 54.24,
   accepted: 994, queued: 1191, different: 369,
   records: 2554, withPartner: 852, candidates: 564450, crossProduct: 56376996,
   trueMatches: 962, blockingRecall: 99.9,
@@ -67,7 +67,7 @@ export const PREDICTIONS = [
 
 export const F1_BARS = [
   { name: "This system", value: 60.94, lead: true },
-  { name: "Token-overlap baseline", value: 57.66, lead: false },
+  { name: "Token-overlap baseline", value: 54.46, lead: false },
   { name: "Baseline, matched coverage", value: 54.24, lead: false },
 ];
 

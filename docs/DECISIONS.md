@@ -3874,6 +3874,85 @@ Walmart-Amazon.
 **This is label-informed work**, below the [boundary](PRE_UNSEAL.md), and carries
 none of the pre-registration guarantees that apply above it.
 
+
+---
+
+## D45 — Correcting D39: the baseline's best point was measured on the wrong denominator
+
+**Finding.** [D39](#d39--the-final-evaluation) reports the baseline's best point
+anywhere on its curve as **57.66% F1**. That figure counts recall over the
+**852 Walmart records that have a partner** rather than the **962 true pairs**,
+which is not the denominator the system's own headline uses. Corrected, it is
+**54.46%**.
+
+**The error ran against this project.** It made the margin over a five-line
+heuristic look less than half its real size. D39 concluded that the system
+"outperforms a five-line token-overlap heuristic tuned to its own optimum by
+under two points". On a matched denominator it outperforms it by **6.48**.
+
+### The defect
+
+`evaluate()` in `src/baseline_fair.py` computed:
+
+```python
+total_true = sum(1 for w in population if truth.get(w))   # counts RECORDS
+```
+
+which is 852. The system's headline divides by 962, the number of true pairs.
+[D42](#d42--what-the-one-to-one-rule-costs-a-recall-ceiling-nobody-measured)
+established that the two differ because **110 matches sit on records with more
+than one partner**. Counting records asks an easier question: find any one
+partner for a record and score full credit for all of them.
+
+The corrected line counts pairs:
+
+```python
+total_true = sum(len(truth.get(w, ())) for w in population)   # counts PAIRS
+```
+
+### What changes, and what does not
+
+| D39 row | Published | Corrected |
+| --- | --- | --- |
+| System, 6.0 bits + margin + veto | 59.46% | **unchanged** |
+| Baseline, matched coverage | 54.24% | **unchanged** |
+| Baseline, best point on the curve | **57.66%** | **54.46%** |
+
+**Only one row moves.** The first two were already computed per pair; the
+matched-coverage row reproduces to the digit from the corrected function, which
+is the strongest available evidence that the correction is right rather than a
+second error. Precision and the accepted count are unaffected, because neither
+depends on the denominator: the best point is still 1,021 accepts at 52.89%
+precision and threshold 0.35. Only its recall changes, from 63.38% to 56.13%.
+
+### The comparison, restated
+
+| | F1 |
+| --- | ---: |
+| System, current ([D41](#d41--requiring-the-match-to-be-mutual)) | **60.94%** |
+| Baseline, best point anywhere on its curve | 54.46% |
+| Baseline, matched coverage | 54.24% |
+| **Margin over the best the baseline can do** | **+6.48 points** |
+
+### Why it survived
+
+Every test of `evaluate()` used records with exactly one partner, where
+counting records and counting pairs give the same answer. The suite did not
+contain a single multi-partner record, so the two denominators were never
+distinguishable. A test for that case has been added.
+
+**This is the second time a defect has hidden in the gap between a fixture and
+the data.** The first was `[]` against `NULL` in
+[D28](#d28--absence-of-evidence-is-not-evidence-of-disagreement). The pattern is
+the same: a fixture simple enough to pass either way.
+
+### What this does not change
+
+The system's own numbers are untouched. Nothing here improves the matcher; it
+corrects a number it was being compared against. The baseline remains a
+five-line heuristic, and the honest reading is unchanged in direction and
+stronger in degree.
+
 ---
 
 ## Working conventions

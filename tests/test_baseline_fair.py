@@ -106,3 +106,19 @@ def test_the_curve_spans_thresholds_and_is_monotone_in_acceptance():
     assert len(curve) == 9
     accepted = [r["accepted"] for r in curve]
     assert accepted == sorted(accepted, reverse=True)
+
+
+def test_recall_counts_true_pairs_not_records():
+    """A record with two partners contributes two chances to recall, not one.
+
+    This is the case the other evaluation tests miss: every one of them uses
+    records with a single partner, where counting records and counting pairs
+    give the same answer. 110 of the benchmark's 962 matches sit on
+    multi-partner records, and counting records divided by 852 instead of 962,
+    which made the baseline's published best point three points too high.
+    """
+    acc = pd.DataFrame({LEFT_ID: ["A_0"], RIGHT_ID: ["B_0"], "similarity": [0.9]})
+    r = evaluate(acc, {"A_0": {"B_0", "B_1"}}, {"A_0"})
+    assert r["true_positives"] == 1
+    assert r["recall"] == 0.5, "one of two true pairs found"
+    assert r["false_negatives"] == 1

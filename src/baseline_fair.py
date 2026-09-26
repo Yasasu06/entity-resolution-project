@@ -71,11 +71,18 @@ def evaluate(accepted: pd.DataFrame, truth: dict[str, set[str]],
 
     ``population`` is every Walmart record the system could have matched, so
     that records the baseline declined still count against recall.
+
+    **Recall is per true pair, not per record.** 110 of the 962 matches sit on
+    records that have more than one partner (D42). Counting records instead
+    would divide by 852, which is a different and easier question than the one
+    the system's own headline answers, and the two cannot be compared. The
+    original version counted records, which is why the baseline's best point on
+    the curve was published three points too high (D45).
     """
     tp = sum(1 for _, r in accepted.iterrows()
              if r[RIGHT_ID] in truth.get(r[LEFT_ID], set()))
     fp = len(accepted) - tp
-    total_true = sum(1 for w in population if truth.get(w))
+    total_true = sum(len(truth.get(w, ())) for w in population)
     fn = total_true - tp
     precision = tp / (tp + fp) if (tp + fp) else 0.0
     recall = tp / total_true if total_true else 0.0
