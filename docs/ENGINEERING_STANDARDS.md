@@ -121,7 +121,8 @@ log wins.*
 D6 and voided the D9 baseline result; D17 and D18 changed settings first stated
 in D16; D23 corrected how R3 had been described throughout; D29 added a fourth
 training round to the three set out in D26. When two entries disagree, the
-higher number wins.
+higher number wins, and the superseded entry carries a dated note pointing
+forward to whatever replaced it, so the correction is visible from either end.
 
 ### Blocking — complete
 

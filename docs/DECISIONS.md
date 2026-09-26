@@ -2736,6 +2736,18 @@ control, added to that section before the run, showed that **most of the
 instability the gate measures is sampling noise rather than position bias** —
 so the gate does not measure what section 6.3 assumed it did.
 
+> **Note added 26 September 2026.** A conclusion in this entry is **corrected by
+> [D35](#d35--the-ai-arm-over-the-full-review-population-and-a-correction-to-d34)**:
+> that sampling noise contributes roughly three times more instability than
+> position bias. That holds for the 346 tied records measured here. It does not
+> hold for the unsure records, and it does not hold over the full population.
+>
+> The gate result itself stands, and the arm's headline figure is D35's **76.5%
+> over 1,113 records**, not the slice figure reported here. The counting defect
+> that later inflated the component-swap gate — failed calls scored as agreement
+> — did not touch this run: all 1,113 records returned three runs and a control,
+> with no failed call among them.
+
 No labelled data was read. This entry reports stability, not accuracy.
 
 ### The run
@@ -3164,6 +3176,18 @@ committed**: accept at **6.0 bits** with a **1.0-bit margin**, confidently
 different below **−3.5 bits**. A change to `S = 12, M = 4` was proposed on the
 strength of the AI cross-check and is **rejected**.
 
+> **Note added 26 September 2026.** The **decision here stands** and the
+> **reasoning does not**. This entry argues that *"a threshold will not fix it"*;
+> the answer key shows that claim was too strong, because raising the threshold
+> does improve precision substantially. See
+> [D40](#d40--correcting-d38-the-decision-holds-the-reasoning-did-not).
+> The threshold remains 6.0 bits, on different grounds than those given below.
+>
+> [D44](#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer)
+> adds a limitation neither entry saw: the defence of 6.0 bits is conditional on
+> this project's candidate density and does not transfer to a differently
+> blocked set.
+
 This closes the investigation opened by
 [D36](#d36--the-accepted-set-does-not-reliably-identify-products-and-a-threshold-will-not-fix-it).
 It does **not** close the weakness that investigation found.
@@ -3248,6 +3272,26 @@ been edited, and nothing was adjusted after these numbers were seen.
 
 The answer key contains **10,242 labelled pairs with 962 matches**, covering
 **852 of the 2,554 Walmart records**.
+
+> **Note added 26 September 2026.** Two figures in the table below have been
+> superseded and one was wrong when published.
+>
+> * The **system row** was superseded twice: by
+>   [D41](#d41--requiring-the-match-to-be-mutual) to 60.94%, then by
+>   [D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id)
+>   to **61.46%** (61.17% precision, 61.75% recall, 971 accepted).
+> * The **baseline's best point** of 57.66% was **measured on the wrong
+>   denominator** and is corrected to **54.46%** by
+>   [D45](#d45--correcting-d39-the-baselines-best-point-was-measured-on-the-wrong-denominator).
+>   The matched-coverage row of 54.24% was always right.
+> * Consequently the conclusion below that the system beats the baseline "by
+>   **1.8 points** against the best the baseline achieves" is wrong in this
+>   project's own disfavour. The margin is about **7 points**, and
+>   [D48](#d48--every-reported-figure-gets-an-interval-and-one-claim-does-not-survive-it)
+>   puts an interval on it: **+7.22 [+4.34, +10.17]**.
+>
+> The rest of this entry — blocking recall, the confidently-different result,
+> and everything the evaluation vindicated or refuted — is unaffected.
 
 ### The headline
 
@@ -3428,6 +3472,17 @@ instrument, and this project never built one.
 record as *its* best candidate. 62 records move into review. Precision rises
 **56.82% → 59.96%**, F1 **59.46% → 60.94%**.
 
+> **Note added 26 September 2026.** The figures here are superseded by
+> [D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id),
+> which found the mutual-best test was being settled by record id wherever the
+> Amazon side was tied. Twenty-three accepted pairs were decided that way and
+> twenty-one were wrong. With ties treated as no preference, precision is
+> **61.17%** and F1 **61.46%** over 971 accepted records.
+>
+> **The decision this entry makes is unaffected and strengthened**: requiring
+> the match to be mutual was right, and was being applied more loosely than the
+> entry describes.
+
 **This is the first change made with knowledge of the answer key**, and it is not
 label-free work. The distinction is set out below.
 
@@ -3531,6 +3586,17 @@ scored poorly.
 99.90%. [D41](#d41--requiring-the-match-to-be-mutual) adopted the constraint
 because it carried most of the measured precision gain. **Its cost in reachable
 recall was never computed**, and it is larger than the gain.
+
+> **Note added 26 September 2026.** The open question this entry leaves — whether
+> to relax the one-to-one constraint, to be decided against measured precision
+> loss — is **closed by
+> [D49](#d49--closing-d42-relaxing-one-match-per-record-costs-far-more-than-it-gains)**.
+> Relaxing it reaches the 83.58% recall the ceiling here predicts and costs **23
+> F1 points** doing so: the symmetric rule adds 2,231 pairs of which 210 are
+> correct. **The constraint is kept, now on evidence.**
+>
+> The ceiling decomposition below is unchanged, including its most useful
+> finding: 14.25 points belong to ranking quality rather than to the constraint.
 
 This was found while choosing a recall floor for the component-swap experiment,
 not while looking for it.
