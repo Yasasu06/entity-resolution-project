@@ -151,3 +151,22 @@ def test_a_product_called_a_label_is_not_a_leak():
     guard scanned for the substring and fired on all of them."""
     from src.human_review import assert_no_answer
     assert_no_answer({"items": [{"walmart": {"title": "avery 5692 laser cd dvd labels"}}]})
+
+
+# --- interrupted timings ------------------------------------------------------
+
+def test_a_long_gap_is_flagged_not_averaged_in():
+    """The trial had one record absorb a 9.9-hour shutdown, which moved the
+    mean from 12.5 seconds to 2,404 without anything looking wrong."""
+    from src.human_review import INTERRUPTED_SECONDS
+    assert INTERRUPTED_SECONDS == 300
+    assert 35815.6 > INTERRUPTED_SECONDS and 80.9 < INTERRUPTED_SECONDS
+
+
+def test_the_judgement_survives_an_interrupted_timing():
+    """Only the clock is unreliable after a gap. The reviewer still answered."""
+    import inspect
+    from src import human_review
+    src = inspect.getsource(human_review.run_session)
+    assert '"interrupted": interrupted' in src
+    assert '"outcome": outcome' in src

@@ -1221,3 +1221,141 @@ have — for instance ranking training pairs by a model that had already seen
 those labels — the cost column is fiction and the curve is meaningless. The
 ranking model is the label-free one, and that is the property to check first if
 the result looks too good.
+
+---
+
+## 14. The human review arm, observed rather than modelled
+
+**Added 27 September 2026, before any scored record.** Below the
+[boundary](PRE_UNSEAL.md) and label-informed. A trial run of 15 records was made
+before this section existed; it is described in 14.6 and **none of it is
+scored**.
+
+### 14.1 The question
+
+[D24](DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)
+modelled the human arm with a uniform error rate and never observed it. The
+queue has existed since, holding **1,214 records**, and no person has worked it.
+This arm replaces the model with a measurement of one reviewer.
+
+### 14.2 Why a single accuracy figure is not the headline
+
+Of the 1,214 queued records, only **210 have their true partner among the
+candidates shown**. For the other **1,004** the correct answer is *none of
+these*.
+
+**A reviewer who answered "none of these" every time would score 82.7%.**
+Accuracy therefore cannot distinguish discrimination from a reflex, and two
+rates are measured instead:
+
+| Rate | Measured on | Question |
+| --- | --- | --- |
+| **Recall** | records where a partner is shown | does review recover what the automated tier missed? |
+| **False-match rate** | records where none is shown | does review invent matches that are not there? |
+
+### 14.3 The sample
+
+**Stratified on recoverability, not on queue bucket.** A random sample of 120
+would hold only about 21 recoverable records, too few to estimate recall at all.
+
+| | |
+| --- | --- |
+| Pool | **1,143** records, after excluding 71 (see 14.7) |
+| Stratum A | 60 drawn from the 198 where a partner is shown |
+| Stratum B | 60 drawn from the 945 where none is |
+| Repeats | 18, re-presented unmarked and late |
+| **Presentations** | **138** |
+
+Within each stratum records are drawn proportionally across the four buckets, by
+largest remainder so the 16-record quantity bucket is not rounded away. Bucket
+rates will be too thin to claim precision on and are reported as observations.
+
+**The stratification uses the answer key for sample construction only.** The
+reviewer is never told which stratum a record is in, and the two are interleaved
+under a fixed seed. **The sample is therefore not representative**, and any
+population figure must be reweighted to the 17.3 / 82.7 split.
+
+### 14.4 The calibration block
+
+**The first 20 presentations are a calibration block**, reviewed deliberately at
+the pace the reviewer judges proper comparison to require. Its timing and its
+false-match rate are compared against the trial before the remaining 118
+proceed.
+
+This exists because the trial ran at a median of **8.9 seconds** on records
+showing a median of 9 candidates and 227 words, which is roughly the time to
+read a fifth of one screen. **If the full session runs at that pace it will
+measure how fast a person can press a key**, and a number that looks like a
+measurement but is not would be worse than the model it replaces.
+
+### 14.5 What is measured
+
+1. Recall on stratum A, with a Wilson interval.
+2. False-match rate on stratum B, with a Wilson interval.
+3. Self-consistency over the 18 repeats, the single-reviewer analogue of
+   [D34](DECISIONS.md#d34--the-ai-arm-passes-its-stability-gate-and-what-the-control-revealed)'s
+   same-ordering control.
+4. Seconds per record, excluding any presentation flagged interrupted.
+5. The calibration block against the remainder, on both pace and false matches.
+
+### 14.6 The trial, and why it is not evidence
+
+Fifteen records were answered before this section was written. **None is
+scored**, and the sample is redrawn.
+
+It is recorded because it shaped the design. Of 13 records answered
+continuously, median 8.9s and mean 12.5s. **All 7 stratum-A records were
+answered "match", and 4 of 8 stratum-B records were also answered "match"** — a
+pattern indistinguishable from answering "match" reflexively. At n=8 the
+false-match interval is [22%, 78%] and establishes nothing, but it points the
+wrong way and agrees with the pace.
+
+One further record absorbed a 9.9-hour overnight shutdown and moved the reported
+mean from 12.5 seconds to 2,404 with nothing appearing wrong. The tool now flags
+any presentation over 300 seconds, keeps the judgement and discards the clock.
+
+### 14.7 Exclusions
+
+The project site's review tool ships `truth` and `truthShown` to the browser for
+120 cards, **71 of which are queued records**. Those are no longer available as
+blind judgements and are removed from the pool before sampling.
+
+### 14.8 Predictions recorded in advance
+
+* **Recall on stratum A between 55% and 75%.** Some partners are genuinely
+  unrecognisable from the attributes shown.
+* **False-match rate between 20% and 40%** at a deliberate pace. This is revised
+  upward from the 10-25% expected before the trial, because the trial observed
+  50% and ignoring that would not be a prediction.
+* **The calibration block shows a lower false-match rate than the trial.** This
+  is the falsifiable form of the claim that pace was the problem. If the rate
+  holds near 50% at 30 to 60 seconds a record, the cause is the task rather than
+  the speed, and that is the more interesting result.
+* **Self-consistency above 85%** across the 18 repeats.
+* **No prediction** on whether recall exceeds the AI arm's, so neither answer
+  can afterwards be presented as expected.
+
+### 14.9 Limitations, stated before the result
+
+**The reviewer is the project owner and is not a naive annotator.** They know
+the dominant failure mode, that most queued records have no partner. That
+knowledge pushes toward the answer that is right 82.7% of the time. **This is an
+upper bound on what review achieves, not an estimate of it**, and a hired
+reviewer should be expected to do worse.
+
+**One reviewer means no inter-annotator agreement.** The repeat set measures
+self-consistency, which is not the same as measuring how hard a record is.
+
+**Post-unseal, unavoidably.** The owner has seen the aggregate error
+decomposition. No version of this experiment undoes that.
+
+**±12 points.** Sixty per stratum gives a recall interval roughly that wide at
+the rates expected. It can separate "recovers most" from "recovers few". It
+cannot separate 60% from 68%.
+
+### 14.10 What would make this worthless
+
+If the session runs at the trial's pace, the result measures reaction time and
+should be reported as such or not at all. The calibration block exists to catch
+that before 118 further records are spent, and **the honest outcome of a failed
+calibration is to abandon the arm rather than publish a fast number.**

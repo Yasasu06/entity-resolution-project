@@ -48,6 +48,13 @@ LOG_PATH = PROCESSED_DIR / "human_review_log.jsonl"
 REVEALED_PATH = "site/public/data.json"
 
 SEED = 20260927
+
+# A record cannot take five minutes of genuine comparison: the largest shows 14
+# candidates. Anything longer means the session was left open, and the trial run
+# proved it silently: one record absorbed a 9.9-hour overnight shutdown and
+# dragged the mean from 12.5 seconds to 2,404. The judgement is kept, because
+# the reviewer did answer it; only the timing is discarded.
+INTERRUPTED_SECONDS = 300
 FIELDS = ("title", "brand", "modelno", "category", "price")
 OUTCOME_NONE = "none_of_these"
 OUTCOME_UNSURE = "cannot_tell"
@@ -276,11 +283,16 @@ def run_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH, limit=None,
             outcome, picked = choice, None
             if choice.startswith("pick:"):
                 outcome, picked = "match", ids[int(choice.split(":")[1]) - 1]
+            interrupted = elapsed > INTERRUPTED_SECONDS
             fh.write(json.dumps({
                 "seq": item["seq"], "walmart_id": item["walmart_id"],
                 "repeat_of": item["repeat_of"], "outcome": outcome,
                 "picked": picked, "seconds": elapsed,
+                "interrupted": interrupted,
                 "n_candidates": len(ids)}) + "\n")
+            if interrupted:
+                writer("  (that record's timing is marked interrupted and will "
+                       "not count toward the pace; the answer is kept)")
             fh.flush()
             recorded += 1
     return {"recorded": recorded, "stopped": stopped,
@@ -350,7 +362,9 @@ def score_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH) -> dict:
             repeats += 1
             agree += seen[item["repeat_of"]] == key
 
-    secs = [r["seconds"] for r in rows]
+    timed = [r for r in rows if not r.get("interrupted")
+             and r["seconds"] <= INTERRUPTED_SECONDS]
+    secs = [r["seconds"] for r in timed]
     import statistics as st
     return {
         "presentations_recorded": len(rows),
@@ -363,7 +377,9 @@ def score_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH) -> dict:
                              "rate": rate(agree, repeats)},
         "seconds_per_record": {"median": round(st.median(secs), 1) if secs else None,
                                "mean": round(st.mean(secs), 1) if secs else None,
-                               "total_minutes": round(sum(secs) / 60, 1) if secs else None},
+                               "total_minutes": round(sum(secs) / 60, 1) if secs else None,
+                               "timed": len(secs),
+                               "excluded_interrupted": len(rows) - len(secs)},
         "note": ("Stratified, so these two rates are not a population accuracy. "
                  "Any population figure must reweight to 17.3% recoverable."),
     }
