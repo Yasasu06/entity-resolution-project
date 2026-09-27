@@ -13,6 +13,23 @@ export const SWAP = {
   acceptGrowth: 46, headline: 61.46,
 };
 
+// D52: reciprocity evaluated within bounded arrival windows. Same model, same
+// thresholds; the only thing that varies is how many other records the
+// reciprocity stage can see.
+export const WINDOWS = {
+  batchF1: 61.46, batchAccepted: 971,
+  rows: [
+    { w: 1,    accepted: 1056, precision: 56.82, f1: 59.46, diff: -2.00 },
+    { w: 10,   accepted: 1056, precision: 56.82, f1: 59.46, diff: -2.00 },
+    { w: 25,   accepted: 1055, precision: 56.87, f1: 59.49, diff: -1.97 },
+    { w: 100,  accepted: 1052, precision: 57.03, f1: 59.58, diff: -1.88 },
+    { w: 250,  accepted: 1050, precision: 57.14, f1: 59.64, diff: -1.82 },
+    { w: 500,  accepted: 1040, precision: 57.69, f1: 59.94, diff: -1.52 },
+    { w: 1000, accepted: 1014, precision: 58.97, f1: 60.53, diff: -0.93 },
+    { w: 2554, accepted: 971,  precision: 61.17, f1: 61.46, diff: 0.00, batch: true },
+  ],
+};
+
 // D51: the review tier measured rather than modelled. One reviewer worked 60
 // queued records; the rates are reweighted to the full 1,214-record queue.
 export const HUMAN = {

@@ -1,0 +1,97 @@
+"""Tests for the windowed reciprocity measurement (D52).
+
+The two endpoint tests exist so the reported curve cannot drift silently. A
+change anywhere in the scoring path, the veto order or the arrival order would
+move one of them, and each is pinned to a figure published elsewhere in the
+project: 59.46 at window 1 and 61.46 at full batch.
+
+No test makes a network call.
+
+Run with:  pytest
+"""
+
+import pandas as pd
+import pytest
+
+from src.interfaces import LEFT_ID, RIGHT_ID
+from src.review_queue import ACCEPT, match_weight, rank_candidates
+from src.stream import (BATCH_ACCEPTED, BATCH_F1, WINDOWS, arrival_order,
+                        evaluate, measure, windowed_outcomes)
+
+
+# --- the pinned endpoints -----------------------------------------------------
+
+@pytest.fixture(scope="module")
+def curve():
+    return {row["window"]: row for row in measure()}
+
+
+def test_window_one_matches_the_record_at_a_time_figure(curve):
+    """With no other record visible, reciprocity leaves the outcomes as the
+    record-at-a-time stages produced them: the pre-D46 figure."""
+    assert curve[1]["f1"] == 59.46
+    assert curve[1]["accepted"] == 1056
+
+
+def test_full_batch_matches_the_reported_system(curve):
+    """The full-batch row is the system as reported in D46."""
+    assert curve[2554]["f1"] == BATCH_F1 == 61.46
+    assert curve[2554]["accepted"] == BATCH_ACCEPTED == 971
+    assert curve[2554]["precision"] == 61.17
+    assert curve[2554]["recall"] == 61.75
+
+
+def test_every_pre_registered_window_is_measured(curve):
+    assert set(curve) == set(WINDOWS)
+    assert WINDOWS == (1, 10, 25, 100, 250, 500, 1000, 2554)
+
+
+def test_f1_does_not_decrease_as_the_window_grows(curve):
+    values = [curve[w]["f1"] for w in sorted(curve)]
+    assert values == sorted(values)
+
+
+def test_accepted_count_does_not_increase_as_the_window_grows(curve):
+    """A larger window can only withhold more, never accept more."""
+    counts = [curve[w]["accepted"] for w in sorted(curve)]
+    assert counts == sorted(counts, reverse=True)
+
+
+def test_the_difference_column_is_zero_at_full_batch(curve):
+    assert curve[2554]["f1_difference_from_batch"] == 0.0
+
+
+# --- the pieces ---------------------------------------------------------------
+
+def _ranked(rows):
+    frame = pd.DataFrame(rows, columns=[LEFT_ID, RIGHT_ID, "bits"])
+    frame["match_probability"] = 1 / (1 + 2.0 ** -frame["bits"])
+    return rank_candidates(frame)
+
+
+def test_arrival_order_is_deterministic():
+    """Fixed here rather than left to the order rows sit in a file."""
+    r = _ranked([("A_2", "B_1", 9.0), ("A_1", "B_2", 8.0)])
+    assert arrival_order(r) == ["A_1", "A_2"]
+
+
+def test_window_one_returns_the_base_outcomes_unchanged():
+    base = pd.DataFrame({"outcome": [ACCEPT], "best_candidate": ["B_1"]}, index=["A_1"])
+    r = _ranked([("A_1", "B_1", 9.0)])
+    assert windowed_outcomes(r, base, 1, ["A_1"]).equals(base)
+
+
+def test_evaluate_counts_only_accepted_pairs():
+    out = pd.DataFrame({"outcome": [ACCEPT, "review_unsure"],
+                        "best_candidate": ["B_1", "B_9"]}, index=["A_1", "A_2"])
+    res = evaluate(out, {("A_1", "B_1")}, 2)
+    assert res["accepted"] == 1 and res["true_positives"] == 1
+    assert res["precision"] == 100.0 and res["recall"] == 50.0
+
+
+def test_evaluate_is_zero_rather_than_undefined_on_an_empty_accept_set():
+    out = pd.DataFrame({"outcome": ["review_unsure"], "best_candidate": ["B_1"]},
+                       index=["A_1"])
+    res = evaluate(out, {("A_1", "B_1")}, 1)
+    assert res == {"accepted": 0, "true_positives": 0, "precision": 0.0,
+                   "recall": 0.0, "f1": 0.0}

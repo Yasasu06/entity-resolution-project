@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { BENCHMARK, CI, ERRORS, HEADLINE, HUMAN, SWAP } from "../data/facts";
+import { BENCHMARK, CI, ERRORS, HEADLINE, HUMAN, SWAP, WINDOWS } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "var(--color-signal)", alarm: "var(--color-alarm)", hold: "var(--color-hold)", line: "var(--color-line)",
@@ -201,6 +201,76 @@ function ReviewTier() {
   );
 }
 
+function ArrivalWindows() {
+  const lo = 59.0, hi = 62.0;
+  const pos = (f1) => ((f1 - lo) / (hi - lo)) * 100;
+  return (
+    <Box>
+      <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
+        Reciprocity under bounded arrival
+      </div>
+      <h3 className="mt-4 max-w-[32ch] font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-tight tracking-[-0.015em]">
+        What the matcher measures when it cannot see every record.
+      </h3>
+
+      <p className="mt-6 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        Three stages of the decision rule read one record at a time: the accept threshold, the
+        margin against the runner-up, and the quantity veto. One stage reads across records. It
+        asks whether a candidate&rsquo;s own highest-scoring record is the record being judged,
+        which requires the other records to be available.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        The same trained model and the same thresholds were run with that stage given a bounded
+        window of arrivals, from a single record up to the full{" "}
+        <span className="tnum">2,554</span>.
+      </p>
+
+      <div className="mt-8 flex flex-col gap-2">
+        <div className="flex items-center gap-3 font-mono text-[0.72rem] text-faint">
+          <span className="w-16 shrink-0 text-right">window</span>
+          <span className="flex-1">F1 across {lo.toFixed(1)} to {hi.toFixed(1)}</span>
+          <span className="w-12 shrink-0 text-right">F1</span>
+          <span className="w-16 shrink-0 text-right">accepted</span>
+        </div>
+        {WINDOWS.rows.map((r) => (
+          <div key={r.w} className="flex items-center gap-3">
+            <div className={`w-16 shrink-0 text-right font-mono text-[0.78rem] tnum ${r.batch ? "text-ink" : "text-dim"}`}>
+              {r.w.toLocaleString()}
+            </div>
+            <div className="h-6 flex-1 overflow-hidden rounded-[3px] bg-raised ring-1 ring-line">
+              <div className={`h-full ${r.batch ? "bg-signal" : "bg-cool-tint"}`}
+                   style={{ width: `${Math.max(pos(r.f1), 1)}%` }} />
+            </div>
+            <div className={`w-12 shrink-0 text-right font-display tnum text-sm ${r.batch ? "text-signal" : "text-dim"}`}>
+              {r.f1.toFixed(2)}
+            </div>
+            <div className="w-16 shrink-0 text-right font-mono text-[0.72rem] tnum text-faint">
+              {r.accepted.toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-7 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        At a window of <span className="tnum">250</span> records, a tenth of the population,{" "}
+        <span className="tnum">0.18</span> of the{" "}
+        <span className="tnum">2.00</span> difference is present. Half of it appears between
+        windows of <span className="tnum">500</span> and{" "}
+        <span className="tnum">1,000</span>, where the window holds 39% of every record in the
+        dataset. The movement is carried by precision, which runs from{" "}
+        <span className="tnum">56.82%</span> to <span className="tnum">61.17%</span>; the stage
+        withholds pairs rather than adding them, and the accepted count falls from{" "}
+        <span className="tnum">1,056</span> to <span className="tnum">971</span>.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-faint">
+        Each window is evaluated independently. A deployment that had emitted a pair could not
+        withdraw it when a later record arrived, and that constraint is not modelled here. It is a
+        property of the measurement&rsquo;s design.
+      </p>
+    </Box>
+  );
+}
+
 export default function Charts() {
   const errTotal = ERRORS.reduce((s, e) => s + e.value, 0);
   return (
@@ -282,6 +352,10 @@ export default function Charts() {
 
       <Reveal delay={0.05}>
         <div className="mt-4"><ReviewTier /></div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="mt-4"><ArrivalWindows /></div>
       </Reveal>
 
       <Reveal delay={0.12}>

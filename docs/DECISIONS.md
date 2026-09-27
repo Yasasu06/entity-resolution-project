@@ -4668,6 +4668,66 @@ standard discipline so the reported figures come from a run executed against a
 committed specification; the run executed under this entry is the one reported
 as final.
 
+### Result
+
+Measured over the 2,554 Walmart records and their candidate pairs, in sorted
+arrival order:
+
+| Window | Accepted | Precision | Recall | F1 | Difference from full batch |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1,056 | 56.82% | 62.37% | 59.46 | −2.00 |
+| 10 | 1,056 | 56.82% | 62.37% | 59.46 | −2.00 |
+| 25 | 1,055 | 56.87% | 62.37% | 59.49 | −1.97 |
+| 100 | 1,052 | 57.03% | 62.37% | 59.58 | −1.88 |
+| 250 | 1,050 | 57.14% | 62.37% | 59.64 | −1.82 |
+| 500 | 1,040 | 57.69% | 62.37% | 59.94 | −1.52 |
+| 1,000 | 1,014 | 58.97% | 62.16% | 60.53 | −0.93 |
+| **2,554** | **971** | **61.17%** | **61.75%** | **61.46** | **0.00** |
+
+The window-1 row reproduces the figures the pipeline produces with the
+reciprocity stage absent, and the full-batch row reproduces
+[D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id).
+Both are pinned by tests.
+
+### Reading the curve
+
+The difference from full batch is **−2.00** at window 1 and remains **−1.97** at
+window 25. At window 250, a tenth of the population, **0.18 of the 2.00** has
+been recovered. Half the difference is recovered between window 500 and window
+1,000, at which point the window holds 39% of every record in the dataset.
+
+Movement is carried by precision rather than recall. Precision runs from 56.82%
+to 61.17% across the range; recall is unchanged at 62.37% until window 1,000 and
+is 61.75% at full batch. The reciprocity stage withholds pairs rather than
+adding them, which the accepted count shows directly: 1,056 at window 1 and 971
+at full batch.
+
+### Predictions against the result
+
+| Registered | Outcome |
+| --- | --- |
+| F1 increases with window size, converging toward the full-batch figure | Matches. 59.46 to 61.46, monotone across all eight windows |
+| Small windows (≤25) show minimal movement from the window-1 value | Matches. 59.46 at windows 1 and 10, 59.49 at window 25 |
+| Recovering a majority of the difference requires a window that is a substantial fraction of total record count | Matches. The majority is recovered between 500 and 1,000, that is between 20% and 39% of the population |
+
+**No deviation from the registered predictions is present.** The predictions
+were written after an exploratory run at the same window sizes, as the
+provenance note above records, so agreement is expected by construction and is
+reported rather than treated as confirmation.
+
+### What the measurement establishes
+
+Three stages of the decision rule read one record at a time: the accept
+threshold, the margin against the runner-up, and the quantity veto. The
+reciprocity stage reads across records. Under bounded arrival the figures
+produced by that stage depend on the bound, and the dependence is measured here
+across eight window sizes.
+
+The window-1 row is the figure obtainable where no other record is available to
+the reciprocity stage. The full-batch row is the figure obtainable where every
+record is available. The rows between give the figure at each intermediate
+bound.
+
 ---
 
 ## Working conventions
