@@ -1298,6 +1298,48 @@ measurement but is not would be worse than the model it replaces.
 4. Seconds per record, excluding any presentation flagged interrupted.
 5. The calibration block against the remainder, on both pace and false matches.
 
+#### Amendment, 27 September 2026 — how abstentions are counted
+
+**The original section above is left standing and is incomplete.** It specifies
+a false-match rate on stratum B "with a Wilson interval" and **never says how a
+*cannot tell* answer counts**. That is a gap in the pre-registration, not a
+question raised by any result.
+
+It surfaced in the calibration block, where the reviewer abstained on **4 of 10**
+stratum-B records. Two denominators are defensible and they say different
+things:
+
+| Denominator | Calibration figure | 95% CI |
+| --- | ---: | --- |
+| **All stratum-B records** | **3/10 = 30%** | [11%, 60%] |
+| Records where a decision was made | 3/6 = 50% | [19%, 81%] |
+
+**The headline is the rate over all stratum-B records.** It is the operational
+quantity: of the records the queue hands a reviewer where no partner is present,
+this is the share that come back wrongly matched. An abstention is a real
+outcome of the review tier and routing one onward is not the same failure as
+accepting a wrong pair.
+
+**The rate over decided records is reported beside it**, because it answers a
+different and sharper question — when this reviewer does commit on an
+unmatchable record, how often is the commitment wrong — and because publishing
+only the lower of two defensible figures would be a choice made after seeing
+which was lower.
+
+**Abstention rate becomes a measured quantity in its own right**, on both
+strata. It is not noise to be divided away. A tier that abstains on 40% of what
+it is given has a different cost and a different value from one that does not,
+and D24's model assumed a uniform error rate with no abstention at all.
+
+**This is fixed before the remaining 118 presentations run.** Choosing a
+denominator after seeing the full result is precisely the freedom
+pre-registration exists to remove, and the calibration block's 20 records stay
+in the final sample rather than being rerun under the amended rule.
+
+Section 14.5 item 2 therefore reads: **false-match rate over all stratum-B
+records as the headline, the decided-only rate beside it, and abstention rate
+reported separately for each stratum.**
+
 ### 14.6 The trial, and why it is not evidence
 
 Fifteen records were answered before this section was written. **None is

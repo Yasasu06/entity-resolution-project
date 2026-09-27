@@ -170,3 +170,29 @@ def test_the_judgement_survives_an_interrupted_timing():
     src = inspect.getsource(human_review.run_session)
     assert '"interrupted": interrupted' in src
     assert '"outcome": outcome' in src
+
+
+# --- abstentions (pre-registration 14.5, amended 27 September 2026) -----------
+
+def test_the_headline_false_match_rate_counts_every_record():
+    """3 false matches among 10 records is 30%, not 50% of the 6 decided."""
+    from src.human_review import score_session
+    import inspect
+    src = inspect.getsource(score_session)
+    assert '"rate": rate(b["false_match"], b["n"])' in src
+
+
+def test_the_decided_only_rate_is_reported_beside_it():
+    """Publishing only the lower of two defensible figures would be a choice
+    made after seeing which was lower."""
+    from src.human_review import score_session
+    import inspect
+    assert "rate_decided_only" in inspect.getsource(score_session)
+
+
+def test_abstention_is_a_measure_not_a_discard():
+    """D24 modelled a uniform error rate with no abstention at all."""
+    from src.human_review import score_session
+    import inspect
+    src = inspect.getsource(score_session)
+    assert '"abstention_rate"' in src and "stratum_a" in src and "stratum_b" in src

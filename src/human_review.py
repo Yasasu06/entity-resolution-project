@@ -371,8 +371,21 @@ def score_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH) -> dict:
         "recall_on_recoverable": {"n": a["n"], "found": a["found"],
                                   "rate": rate(a["found"], a["n"]),
                                   "wrong_candidate": a["wrong_pick"], "unsure": a["unsure"]},
-        "false_match_rate": {"n": b["n"], "false_matches": b["false_match"],
-                             "rate": rate(b["false_match"], b["n"]), "unsure": b["unsure"]},
+        # Headline is the rate over all stratum-B records: an abstention is a
+        # real outcome of the review tier, not a record to divide away. The
+        # decided-only rate sits beside it because it answers the sharper
+        # question and because reporting only the lower of two defensible
+        # figures would be a choice made after seeing which was lower.
+        # Pre-registration section 14.5, amended 27 September 2026.
+        "false_match_rate": {
+            "n": b["n"], "false_matches": b["false_match"],
+            "rate": rate(b["false_match"], b["n"]),
+            "rate_decided_only": rate(b["false_match"], b["n"] - b["unsure"]),
+            "decided": b["n"] - b["unsure"], "unsure": b["unsure"]},
+        "abstention_rate": {
+            "stratum_a": rate(a["unsure"], a["n"]),
+            "stratum_b": rate(b["unsure"], b["n"]),
+            "overall": rate(a["unsure"] + b["unsure"], a["n"] + b["n"])},
         "self_consistency": {"repeats": repeats, "agreed": agree,
                              "rate": rate(agree, repeats)},
         "seconds_per_record": {"median": round(st.median(secs), 1) if secs else None,
