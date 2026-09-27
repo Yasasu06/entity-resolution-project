@@ -248,3 +248,29 @@ def test_repeats_stay_proportional_when_the_sample_shrinks(tmp_path):
     s = _sample_file(tmp_path, 10)
     log = tmp_path / "l.jsonl"; log.write_text("")
     assert truncate_sample(10, s, log)["repeats"] == 3
+
+
+# --- the counter -------------------------------------------------------------
+
+def test_the_counter_never_exceeds_the_total_after_truncation(tmp_path):
+    """A reviewer saw "70 of 69": render was passed seq, which has gaps once
+    truncate_sample keeps original numbering so an existing log still joins."""
+    import itertools, json
+    from src.human_review import run_session
+
+    items = [{"seq": s, "stratum_hidden": "A", "repeat_of": None,
+              "walmart_id": f"A_{s}", "walmart": {"title": "t"},
+              "blocks": [{"tied": False, "truncated": False, "true_size": 1,
+                          "members": [{"amazon_id": "B_1", "title": "c"}]}],
+              "allowed_outcomes": []} for s in (1, 5, 70)]          # deliberate gaps
+    s = tmp_path / "s.json"
+    s.write_text(json.dumps({"items": items, "presentations": len(items)}))
+
+    pages = []
+    script = itertools.cycle(["n"])
+    run_session(s, tmp_path / "l.jsonl", reader=lambda _: next(script),
+                writer=lambda *a: pages.append(" ".join(str(x) for x in a)))
+    shown = [p for p in pages if " of 3" in p]
+    assert len(shown) == 3
+    for n, page in enumerate(shown, 1):
+        assert f" {n} of 3" in page, f"expected position {n}, got: {page.splitlines()[1]}"

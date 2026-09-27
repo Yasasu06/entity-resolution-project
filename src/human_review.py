@@ -200,13 +200,19 @@ def assert_no_answer(node, path="") -> None:
 # no truth field. The tool cannot reveal an answer because it does not have one.
 # ---------------------------------------------------------------------------
 
-def render(item: dict, n: int, total: int) -> str:
-    """One record and its candidates, as a terminal page."""
+def render(item: dict, position: int, total: int) -> str:
+    """One record and its candidates, as a terminal page.
+
+    ``position`` is the place in the running order, not the record's ``seq``.
+    The two diverge after truncate_sample, which keeps original seq values so
+    that an existing log still joins, leaving gaps. Displaying seq showed
+    "70 of 69" to a reviewer partway through a 69-record session.
+    """
     def fields(rec, keys=FIELDS):
         parts = [f"{k}: {rec[k]}" for k in keys if rec.get(k) not in (None, "")]
         return "\n      ".join(parts)
 
-    out = [f"\n{'='*78}", f" {n} of {total}", "=" * 78,
+    out = [f"\n{'='*78}", f" {position} of {total}", "=" * 78,
            "\n  WALMART", f"      {fields(item['walmart'])}", "\n  CANDIDATES"]
     idx = 0
     for block in item["blocks"]:
@@ -255,6 +261,9 @@ def run_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH, limit=None,
     """Present records and record judgements. No scoring, no feedback."""
     sample = json.loads(sample_path.read_text())
     items = sample["items"]
+    # position in the running order, which is not seq once the sample has been
+    # truncated: seq stays stable so an existing log keeps joining
+    position = {it["seq"]: n for n, it in enumerate(items, 1)}
     done = completed(log_path)
     pending = [i for i in items if i["seq"] not in done]
     if limit is not None:
@@ -268,7 +277,7 @@ def run_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH, limit=None,
     with log_path.open("a") as fh:
         for n, item in enumerate(pending, 1):
             ids = [m["amazon_id"] for b in item["blocks"] for m in b["members"]]
-            writer(render(item, item["seq"], len(items)))
+            writer(render(item, position[item["seq"]], len(items)))
             started = time.time()
             while True:
                 choice = parse_choice(reader("  > "), len(ids))

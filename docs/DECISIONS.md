@@ -1469,6 +1469,15 @@ when it matches nothing, rather than one that can quietly do nothing.
 **Decision.** Three parts, deliberately separated because only one of them can
 honestly be measured in this project.
 
+> **Note added 27 September 2026.** The human arm modelled here has now been
+> **observed** and is reported in
+> [D51](#d51--the-human-arm-observed-high-recall-bought-at-a-precision-the-tier-cannot-afford).
+> The uniform error rate assumed below does not describe the reviewer measured:
+> they abstain, they are strongly asymmetric between records that have a partner
+> and records that do not, and they err far more in one direction than the
+> other. Recall was 83.3% and the false-match rate 36.7%, giving a review output
+> whose precision is 31.8% against the automated tier's 61.17%.
+
 | | Approach | What this project does |
 | --- | --- | --- |
 | 1 | Human-only review | **Modelled** under a declared accuracy assumption |
@@ -4472,6 +4481,138 @@ and the remainder saturates after ten matches.
 **It also shows D19 understated the risk it was taking.** A "second day spent
 labelling a few dozen pairs" is not a reliably small gain. Done with the obvious
 strategy, it is a large loss.
+
+
+---
+
+## D51 — The human arm, observed: high recall bought at a precision the tier cannot afford
+
+**Finding.** One reviewer worked **60 records** from the queue under
+[section 14](PRE_REGISTRATION.md#14-the-human-review-arm-observed-rather-than-modelled).
+They found **83.3%** of the matches that were there to find, and called a match
+on **36.7%** of the records where none existed. Applied to the whole queue those
+rates recover **175** true matches and invent **368**, an output whose precision
+is **31.8%** against the automated tier's 61.17%.
+
+[D24](#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)
+modelled this arm with a uniform error rate and never observed it. The model is
+now replaced by a measurement, and the measurement is worse than the model
+assumed.
+
+### The two blocks, reported separately
+
+Section 14.3 was amended mid-experiment to cut the sample from 138
+presentations to 69, **after 20 had been scored and had returned a favourable
+result**. That amendment required the seen and unseen portions to be reported
+apart, so a reader can check whether stopping early selected a flattering half.
+
+| | n | Recall | 95% CI | False match | 95% CI |
+| --- | ---: | ---: | --- | ---: | --- |
+| **Calibration block**, outcomes known when the sample was cut | 20 | 80.0% | [49%, 94%] | 30.0% | [11%, 60%] |
+| **Later records**, unseen when the sample was cut | 40 | 85.0% | [64%, 95%] | 40.0% | [22%, 61%] |
+| **Combined** | 60 | **83.3%** | [66%, 93%] | **36.7%** | [22%, 54%] |
+
+**The blocks agree.** Both intervals overlap heavily on both measures, and the
+later records were **worse** on false matches, not better. Whatever the reason
+for cutting the sample, it did not select a flattering half — had it done so the
+unseen records would have come back weaker, and they came back stronger on
+recall and weaker on the error that matters.
+
+### What the rates cost at queue scale
+
+The queue holds 1,214 records, of which 210 have a true partner among the
+candidates shown and 1,004 do not. At the measured rates:
+
+| | |
+| --- | ---: |
+| True matches recovered | **175** |
+| Wrong partner chosen | 7 |
+| Matches invented | **368** |
+| Total accepts from review | 550 |
+| **Precision of that output** | **31.8%** |
+
+Across the confidence intervals that figure runs from **20.1% to 46.2%**. Its
+whole range sits below the automated tier's 61.17%.
+
+**Accepting the review tier's output wholesale would trade precision for
+recall at close to par:**
+
+| | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: |
+| System as reported | 61.17% | 61.75% | **61.46** |
+| Plus review output | 50.55% | 79.94% | **61.94** |
+
+F1 moves by half a point while precision falls more than ten. **A tier that
+produces accepts three times less reliable than the tier it is meant to
+supplement cannot be attached to its output unchanged.**
+
+### Why the reviewer was not simply careless
+
+Pace was tested before the run rather than assumed. A trial at a median of
+**8.9 seconds** a record produced a 50% false-match rate and an answer of
+"match" on every recoverable record, which is indistinguishable from a reflex.
+Section 14.4 therefore required a calibration block at a deliberate pace before
+the rest could proceed.
+
+The session ran at a median of **55.5 seconds**, six times slower, and:
+
+* **Self-consistency was 87.5%** across 8 repeat presentations, above the 85%
+  predicted. The reviewer was not answering at random.
+* **Recall of 83.3% beat the 55-75% predicted.** When a partner was present it
+  was usually found.
+* **Abstention was 8.3% overall**, and one pattern collapsed: 4 of the
+  calibration block's 10 stratum-B records were abstentions, and **none** of the
+  later 20 were. That 40% was small-sample noise.
+
+The false-match rate is not inattention. It is what happens when a person is
+shown a shortlist of plausible candidates and asked whether one of them matches:
+the shortlist is persuasive, and 82.7% of the time the honest answer is that
+none of them does.
+
+### Predictions, against section 14.8
+
+| Registered | Outcome |
+| --- | --- |
+| Recall 55-75% | **Exceeded.** 83.3% |
+| False-match rate 20-40%, revised up from 10-25% after the trial | **Correct.** 36.7% |
+| Calibration block shows a lower false-match rate than the trial | **Correct in direction**, 50% to 30%, but the intervals overlap and it is not established |
+| Self-consistency above 85% | **Correct.** 87.5% |
+| No prediction on whether recall exceeds the AI arm's | Held to |
+
+### What this does and does not settle
+
+**It does not say human review is worthless.** It says that routing a record to
+a person and accepting whatever comes back is worth less than it appears, and
+that the review tier needs its own acceptance rule rather than being trusted by
+construction. A reviewer finding 83.3% of present matches is a genuinely useful
+signal; the problem is what they do with the other 1,004 records.
+
+**It does not generalise past one reviewer.** Section 14.9 recorded before the
+run that the reviewer is the project owner, who knows the dominant failure mode,
+and that the result is an **upper bound rather than an estimate**. A hired
+annotator should be expected to do worse, which makes 31.8% a ceiling.
+
+**It replaces D24's model and contradicts it.** That entry assumed a uniform
+error rate with no abstention at all. The observed reviewer abstains, is
+strongly asymmetric between the two strata, and errs in one direction far more
+than the other. None of that is representable by a single rate.
+
+### Limits
+
+**±14 points on recall and ±16 on false matches**, because the sample was cut
+from 60 per stratum to 30. That was a deliberate trade recorded in the 14.3
+amendment.
+
+**One reviewer, so no inter-annotator agreement.** The 87.5% measures
+self-consistency, which is not the same as measuring how hard a record is.
+
+**68 of 69 presentations were recorded.** The missing one was a repeat, so both
+headline rates are on their full pre-registered 30 per stratum; only
+self-consistency lost a point, running on 8 pairs rather than 9. It was
+displayed and not answered, and the session's counter showed "70 of 69" while
+doing so, because the display used the record's identifier rather than its place
+in the running order after the sample was truncated. The reviewer saw a wrong
+number; nothing was recorded twice or lost.
 
 ---
 
