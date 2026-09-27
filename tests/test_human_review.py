@@ -196,3 +196,55 @@ def test_abstention_is_a_measure_not_a_discard():
     import inspect
     src = inspect.getsource(score_session)
     assert '"abstention_rate"' in src and "stratum_a" in src and "stratum_b" in src
+
+
+# --- reducing the sample (14.3, amended 27 September 2026) --------------------
+
+def _sample_file(tmp_path, n_each=6):
+    import json
+    items = []
+    for s in range(n_each * 2):
+        items.append({"seq": s + 1, "stratum_hidden": "A" if s % 2 == 0 else "B",
+                      "repeat_of": None, "walmart_id": f"A_{s}", "walmart": {},
+                      "blocks": [], "allowed_outcomes": []})
+    p = tmp_path / "s.json"
+    p.write_text(json.dumps({"items": items, "per_stratum": n_each, "repeats": 0,
+                             "presentations": len(items)}))
+    return p
+
+
+def test_reducing_never_discards_a_reviewed_record(tmp_path):
+    from src.human_review import truncate_sample
+    s = _sample_file(tmp_path, 6)
+    log = tmp_path / "l.jsonl"
+    log.write_text("\n".join(f'{{"seq": {i}}}' for i in range(1, 5)) + "\n")
+    out = truncate_sample(2, s, log)
+    assert out["already_done"] == 4
+    assert out["per_stratum"] == {"A": 2, "B": 2}
+
+
+def test_reducing_refuses_rather_than_dropping_reviewed_work(tmp_path):
+    """A cut small enough to orphan a scored record must fail loudly."""
+    from src.human_review import truncate_sample
+    s = _sample_file(tmp_path, 6)
+    log = tmp_path / "l.jsonl"
+    log.write_text("\n".join(f'{{"seq": {i}}}' for i in range(1, 11)) + "\n")
+    with pytest.raises(AssertionError, match="discard reviewed records"):
+        truncate_sample(2, s, log)
+
+
+def test_the_reduction_is_recorded_in_the_sample(tmp_path):
+    import json
+    from src.human_review import truncate_sample
+    s = _sample_file(tmp_path, 6)
+    log = tmp_path / "l.jsonl"; log.write_text("")
+    truncate_sample(3, s, log)
+    meta = json.loads(s.read_text())["reduced_from"]
+    assert meta["per_stratum"] == 60 and meta["presentations"] == 138
+
+
+def test_repeats_stay_proportional_when_the_sample_shrinks(tmp_path):
+    from src.human_review import truncate_sample
+    s = _sample_file(tmp_path, 10)
+    log = tmp_path / "l.jsonl"; log.write_text("")
+    assert truncate_sample(10, s, log)["repeats"] == 3

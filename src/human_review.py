@@ -396,3 +396,50 @@ def score_session(sample_path=SAMPLE_PATH, log_path=LOG_PATH) -> dict:
         "note": ("Stratified, so these two rates are not a population accuracy. "
                  "Any population figure must reweight to 17.3% recoverable."),
     }
+
+
+def truncate_sample(per_stratum: int, sample_path=SAMPLE_PATH, log_path=LOG_PATH,
+                    seed: int = SEED) -> dict:
+    """Cut the sample to ``per_stratum`` records each, keeping what is done.
+
+    Pre-registration 14.3 committed to 60 per stratum and was amended to 30 on
+    27 September 2026, after 20 presentations had been scored. The amendment
+    states that plainly, including that the interim result was favourable.
+
+    Records already reviewed are kept and counted, so the reduction only ever
+    removes unseen presentations. Repeats are redrawn from the retained set at
+    the same 15% proportion.
+    """
+    sample = json.loads(sample_path.read_text())
+    done = completed(log_path)
+    distinct = [i for i in sample["items"] if i["repeat_of"] is None]
+
+    kept, counts = [], {"A": 0, "B": 0}
+    for item in sorted(distinct, key=lambda i: i["seq"]):
+        stratum = item["stratum_hidden"]
+        if counts[stratum] < per_stratum:
+            kept.append(item)
+            counts[stratum] += 1
+    dropped_done = [s for s in done if s not in {i["seq"] for i in kept}]
+    assert not dropped_done, f"reduction would discard reviewed records {dropped_done}"
+
+    n_repeats = round(per_stratum * 2 * 0.15)
+    rng = random.Random(seed + per_stratum)
+    tail = max(i["seq"] for i in kept)
+    repeats = []
+    for n, src in enumerate(rng.sample(kept, min(n_repeats, len(kept))), 1):
+        clone = dict(src)
+        clone["seq"] = tail + n
+        clone["repeat_of"] = src["seq"]
+        repeats.append(clone)
+
+    sample.update({"per_stratum": per_stratum, "repeats": len(repeats),
+                   "presentations": len(kept) + len(repeats),
+                   "items": kept + repeats,
+                   "reduced_from": {"per_stratum": 60, "presentations": 138,
+                                    "after_presentations_seen": len(done)}})
+    sample_path.write_text(json.dumps(sample, indent=1))
+    assert_no_answer(sample)
+    return {"kept": len(kept), "per_stratum": counts, "repeats": len(repeats),
+            "presentations": sample["presentations"],
+            "already_done": len(done), "still_to_review": sample["presentations"] - len(done)}

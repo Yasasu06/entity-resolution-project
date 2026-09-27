@@ -1275,6 +1275,57 @@ reviewer is never told which stratum a record is in, and the two are interleaved
 under a fixed seed. **The sample is therefore not representative**, and any
 population figure must be reweighted to the 17.3 / 82.7 split.
 
+#### Amendment, 27 September 2026 — the sample is cut from 138 to 69
+
+**The design above committed to 138 presentations: 60 per stratum plus 18
+repeats. It is reduced to 30 per stratum plus 9 repeats, a total of 69.**
+
+**This change was made after 20 presentations had been reviewed and scored.**
+That is a departure from a pre-registered design taken with knowledge of an
+interim result, which is the form of optional stopping this project's discipline
+exists to prevent. It is recorded here in those terms rather than as a
+scheduling note.
+
+**The reason given was time.** At the observed pace of 71.3 seconds a record,
+the remaining 118 presentations were about 140 minutes; 49 are about an hour.
+
+**The interim result was favourable, and that has to be said.** The calibration
+block returned **80% recall**, above the 55-75% predicted in 14.8, and a 30%
+false-match rate inside its predicted band. A reader is entitled to ask whether
+the sample was cut short because the numbers were flattering. The stated reason
+was time, intent is not verifiable, and this project has argued twice over
+([D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished),
+[D19](DECISIONS.md#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key))
+that a guarantee resting on intention is not a guarantee. So the structure is
+stated instead of the motive.
+
+**What reducing the sample does and does not do.** It does not bias the point
+estimate; it widens the interval. The bias risk is confined to whether the
+decision to stop was influenced by the interim figures.
+
+| | Committed | After this amendment |
+| --- | --- | --- |
+| Per stratum | 60 | **30** |
+| Repeats | 18 | **9** |
+| Presentations | 138 | **69** |
+| Recall interval at 80% | ±10pp | **±14pp** |
+| False-match interval at 30% | ±11pp | **±16pp** |
+
+**Three things constrain it.**
+
+**The number is fixed before any further record is reviewed.** The remaining
+presentations are unseen, so the choice of 30 cannot have been influenced by
+them. This converts an open-ended stop into one pre-committed design change.
+
+**The calibration block is reported separately in the result.** Its 20 records
+are the only ones whose outcomes were known when this decision was taken.
+Reporting them as their own line against the later records lets a reader check
+whether the two agree. If the later records diverge, the divergence is visible
+rather than averaged into a single figure.
+
+**The repeats are kept proportional at 15%.** Dropping them would have saved
+more time and removed the only check on the reviewer's consistency.
+
 ### 14.4 The calibration block
 
 **The first 20 presentations are a calibration block**, reviewed deliberately at
