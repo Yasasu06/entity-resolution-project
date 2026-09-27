@@ -104,29 +104,7 @@ function Chosen() {
         <span className="tnum">{SWAP.precision}%</span>.
       </p>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2">
-        {[
-          { h: "Reported", f1: HEADLINE.f1, p: HEADLINE.precision, r: HEADLINE.recall,
-            n: HEADLINE.accepted, ring: "ring-signal/40", bg: "bg-signal-tint" },
-          { h: "Also measured", f1: SWAP.f1, p: SWAP.precision, r: SWAP.recall,
-            n: SWAP.accepted, ring: "ring-line2", bg: "bg-raised" },
-        ].map((c) => (
-          <div key={c.h} className={`rounded-xl px-5 py-4 ring-1 ${c.ring} ${c.bg}`}>
-            <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{c.h}</div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="font-display tnum text-4xl leading-none">{c.f1}</span>
-              <span className="font-mono text-[0.8125rem] text-dim">F1</span>
-            </div>
-            <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3 font-mono text-xs">
-              <div><dt className="text-faint">precision</dt><dd className="tnum mt-0.5 text-dim">{c.p}%</dd></div>
-              <div><dt className="text-faint">recall</dt><dd className="tnum mt-0.5 text-dim">{c.r}%</dd></div>
-              <div><dt className="text-faint">accepted</dt><dd className="tnum mt-0.5 text-dim">{c.n.toLocaleString()}</dd></div>
-            </dl>
-          </div>
-        ))}
-      </div>
-
-      <p className="mt-7 max-w-[62ch] text-[0.95rem] leading-relaxed">
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed">
         <span className="text-ink">The condition had already been written. This site reports the
         configuration that met it.</span>{" "}
         <span className="text-dim">Entity resolution feeds catalogues, billing and identity systems,
