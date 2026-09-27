@@ -3,7 +3,7 @@ import { Reveal } from "./ui";
 export default function Closing() {
   return (
     <Reveal>
-      <p className="font-mono text-xs uppercase tracking-[0.18em] text-faint">What this shows</p>
+      <p className="font-mono text-[0.8125rem] uppercase tracking-[0.11em] text-faint">What this shows</p>
       <h2 className="mt-6 max-w-[24ch] font-display text-[clamp(2.2rem,5.6vw,4.25rem)] leading-[1.02] tracking-[-0.022em]">
         The system is not deployable. The record of finding that out is the result.
       </h2>

@@ -1,28 +1,50 @@
 @import "tailwindcss";
 
+/* Light, neutral reading surface with dark text.
+ *
+ * The previous palette was dark, and one token failed WCAG AA: --color-faint
+ * measured 4.24 against a 4.5 requirement while carrying every label on the
+ * page. Every value below was measured rather than chosen by eye, and the
+ * lowest ratio here is 4.96.
+ *
+ * Accents come in two tiers. The solid tier carries text and clears AA. The
+ * tint tier is for fills only -- bars, bands, a wash behind a large number --
+ * and sits near 1.1 against the page, so it must never appear behind a
+ * paragraph or a small label.
+ */
+
 @theme {
   --font-display: "Instrument Serif", Georgia, serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-void: #08090B;
-  --color-base: #0B0D10;
-  --color-panel: #101317;
-  --color-raised: #161A1F;
-  --color-line: #1E242B;
-  --color-line2: #2B333C;
+  /* surfaces, lightest content on a faintly grey page */
+  --color-void: #F6F7F9;      /* page */
+  --color-base: #FFFFFF;      /* lifted sections */
+  --color-panel: #FFFFFF;     /* cards */
+  --color-raised: #EDF0F4;    /* recessed fills, bar tracks */
+  --color-line: #E4E8ED;      /* hairlines */
+  --color-line2: #CBD3DC;     /* stronger edges */
 
-  --color-ink: #EEF1F4;
-  --color-dim: #96A1AC;
-  --color-faint: #6A7580;
+  /* text: 16.61 / 7.07 / 5.46 against the page */
+  --color-ink: #15181C;
+  --color-dim: #4C555F;
+  --color-faint: #5C666F;
 
-  --color-signal: #64E3A1;
-  --color-alarm: #F0785A;
-  --color-hold: #E3C46A;
-  --color-cool: #6BA8F5;
+  /* accents that carry text: 5.02 / 5.19 / 4.96 / 6.09 */
+  --color-signal: #0F7A4A;
+  --color-alarm: #B4432A;
+  --color-hold: #8A6516;
+  --color-cool: #1D5BB5;
+
+  /* accents that carry only fills -- never text */
+  --color-signal-tint: #DCF3E7;
+  --color-alarm-tint: #FBE6DF;
+  --color-hold-tint: #F6EED8;
+  --color-cool-tint: #E0EAF9;
 }
 
-html { color-scheme: dark; background: var(--color-void); }
+html { color-scheme: light; background: var(--color-void); }
 body {
   margin: 0;
   background: var(--color-void);
@@ -31,13 +53,27 @@ body {
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "cv02","cv03","cv04";
 }
-::selection { background: color-mix(in srgb, var(--color-signal) 30%, transparent); }
+::selection { background: var(--color-signal-tint); }
 .tnum { font-variant-numeric: tabular-nums; }
-.grain {
-  background-image:
-    radial-gradient(60rem 30rem at 15% -10%, color-mix(in srgb, var(--color-signal) 7%, transparent), transparent 70%),
-    radial-gradient(50rem 26rem at 95% 8%, color-mix(in srgb, var(--color-cool) 6%, transparent), transparent 70%);
+
+/* The hero previously carried two radial gradients tinted with the accent
+ * colours. On a light page they read as a printing artifact rather than
+ * depth, so they are removed rather than retuned. The class is kept so the
+ * markup does not need to change. */
+.grain { background-image: none; }
+
+/* Labels are 13px with reduced tracking, not 12px at 0.14em. Small uppercase
+ * letter-spaced text was the other half of the readability problem, and no
+ * background colour fixes it. */
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-faint);
 }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }

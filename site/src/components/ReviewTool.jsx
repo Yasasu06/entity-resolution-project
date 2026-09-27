@@ -77,9 +77,9 @@ export default function ReviewTool() {
           {!err && !c && <p className="p-6 font-mono text-sm text-faint">Loading records…</p>}
           {c && (
             <>
-              <div className="flex flex-wrap items-center gap-3 border-b border-line bg-void/40 px-5 py-3.5">
+              <div className="flex flex-wrap items-center gap-3 border-b border-line bg-raised px-5 py-3.5">
                 <span className="rounded-md px-2 py-1 font-mono text-xs text-dim ring-1 ring-line2">{c.id}</span>
-                <span className={`rounded-md px-2 py-1 font-mono text-xs uppercase tracking-wider ring-1 ${REASON[c.outcome][1]}`}>
+                <span className={`rounded-md px-2 py-1 font-mono text-[0.8125rem] uppercase tracking-wider ring-1 ${REASON[c.outcome][1]}`}>
                   {REASON[c.outcome][0]}
                 </span>
                 <span className="ml-auto font-mono tnum text-xs text-faint">
@@ -89,7 +89,7 @@ export default function ReviewTool() {
               </div>
 
               <div className="border-b border-line px-5 py-5">
-                <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">Walmart record</div>
+                <div className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-faint">Walmart record</div>
                 <p className="mt-2.5 max-w-[64ch] text-base leading-snug">{c.walmart.title}</p>
                 <dl className="mt-3 flex flex-wrap gap-x-7 gap-y-1 font-mono text-xs text-dim">
                   {FIELDS.filter((f) => c.walmart[f]).map((f) => (
@@ -104,7 +104,7 @@ export default function ReviewTool() {
                 {c.blocks.map((b, bi) => (
                   <div key={bi} className={b.tied ? "rounded-lg border border-dashed border-hold/35 bg-hold/[0.04] p-3" : ""}>
                     {b.tied && (
-                      <div className="mb-2.5 font-mono text-xs uppercase tracking-[0.12em] text-hold">
+                      <div className="mb-2.5 font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-hold">
                         {b.members.length} candidates the evidence cannot separate, no order implied
                         {b.truncated && ` · showing ${b.shown} of ${b.true_size}`}
                       </div>
@@ -140,7 +140,7 @@ export default function ReviewTool() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 border-t border-line bg-void/40 px-5 py-4">
+              <div className="flex flex-wrap items-center gap-2.5 border-t border-line bg-raised px-5 py-4">
                 <button disabled={!picked || !!res} onClick={() => decide("match")}
                   className="rounded-lg bg-signal px-4 py-2 text-sm font-medium text-void transition disabled:opacity-30">
                   Confirm match
@@ -165,7 +165,7 @@ export default function ReviewTool() {
                   <motion.div
                     initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="overflow-hidden border-t border-line bg-void/50">
+                    className="overflow-hidden border-t border-line bg-raised">
                     <div className="px-5 py-5">
                       <div className={`font-display text-2xl ${res.kind === "cant" ? "text-dim" : res.ok ? "text-signal" : "text-alarm"}`}>
                         {res.verdict}
@@ -184,7 +184,7 @@ export default function ReviewTool() {
                             : `withheld it, ${REASON[c.outcome][0]}`],
                         ].map(([k, v]) => (
                           <div key={k} className="grid gap-1 bg-panel px-4 py-3 sm:grid-cols-[130px_1fr] sm:gap-4">
-                            <dt className="font-mono text-xs uppercase tracking-[0.14em] text-faint">{k}</dt>
+                            <dt className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{k}</dt>
                             <dd className="text-sm">{v}</dd>
                           </div>
                         ))}

@@ -22,7 +22,7 @@ export default function Investigation() {
             <Reveal key={s.h} delay={i * 0.06}>
               <li className="relative">
                 <span className="absolute -left-[2.05rem] top-1.5 h-2.5 w-2.5 rounded-full bg-cool ring-4 ring-void" />
-                <div className="font-mono text-xs uppercase tracking-[0.16em] text-cool">{s.k}</div>
+                <div className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-cool">{s.k}</div>
                 <h3 className="mt-1.5 text-lg font-medium">{s.h}</h3>
                 <p className="mt-2 max-w-[60ch] text-sm leading-relaxed text-dim">{s.p}</p>
               </li>
@@ -33,7 +33,7 @@ export default function Investigation() {
         <div className="space-y-4">
           <Reveal delay={0.1}>
             <div className="rounded-xl bg-panel p-5 ring-1 ring-line">
-              <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-faint">
                 The clearest single error
               </div>
               <div className="mt-4 space-y-2.5 font-mono text-sm leading-relaxed">
@@ -48,7 +48,7 @@ export default function Investigation() {
           </Reveal>
 
           <Reveal delay={0.16}>
-            <div className="rounded-xl border-l-2 border-cool bg-panel/60 p-5">
+            <div className="rounded-xl border-l-2 border-cool bg-panel p-5">
               <p className="text-sm leading-relaxed text-dim">
                 The error decomposition inverted the project&rsquo;s priorities. At the final
                 evaluation, of 456 wrong accepts, <span className="text-ink">413</span> were
@@ -61,7 +61,7 @@ export default function Investigation() {
 
           <Reveal delay={0.22}>
             <div className="rounded-xl bg-panel p-5 ring-1 ring-line">
-              <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">What followed</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-faint">What followed</div>
               <ul className="mt-3 space-y-2.5 text-sm text-dim">
                 <li><span className="text-ink">A quantity veto</span>. Refusing pairs whose stated capacities contradict. Reaches 1.5% of accepts; that honest figure is reported rather than the 9.6% the probes implied.</li>
                 <li><span className="text-ink">A mutual-best-match rule</span>. Removed 62 accepts that were wrong 93.5% of the time.</li>
@@ -78,7 +78,7 @@ export default function Investigation() {
 function Row({ k, v, n }) {
   return (
     <div className="grid grid-cols-[62px_1fr_auto] items-baseline gap-3">
-      <span className="text-faint text-xs uppercase tracking-wider">{k}</span>
+      <span className="text-faint text-[0.8125rem] uppercase tracking-wider">{k}</span>
       <span className="text-ink">{v}</span>
       <span className="tnum text-faint text-xs">{n}</span>
     </div>

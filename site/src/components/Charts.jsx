@@ -2,8 +2,8 @@ import F1Chart from "./F1Chart";
 import { BENCHMARK, CI, ERRORS, HEADLINE } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
-const C = { signal: "#64E3A1", alarm: "#F0785A", hold: "#E3C46A", line: "#1E242B",
-  dim: "#96A1AC", faint: "#6A7580", cool: "#6BA8F5" };
+const C = { signal: "var(--color-signal)", alarm: "var(--color-alarm)", hold: "var(--color-hold)", line: "var(--color-line)",
+  dim: "var(--color-dim)", faint: "var(--color-faint)", cool: "var(--color-cool)" };
 
 function Box({ children }) {
   return (
@@ -15,7 +15,7 @@ function Benchmark() {
   const max = Math.max(...BENCHMARK.rows.map((r) => r.f1));
   return (
     <Box>
-      <div className="font-mono text-xs uppercase tracking-[0.14em] text-faint">
+      <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
         The same matcher, scored the way the literature scores
       </div>
       <p className="mt-4 max-w-[62ch] text-sm leading-relaxed text-dim">
@@ -33,9 +33,9 @@ function Benchmark() {
             <div className={`w-28 shrink-0 text-sm ${r.ours ? "text-ink" : "text-dim"}`}>
               {r.name}
             </div>
-            <div className="h-7 flex-1 overflow-hidden rounded-[3px] bg-void/60 ring-1 ring-line">
+            <div className="h-7 flex-1 overflow-hidden rounded-[3px] bg-raised ring-1 ring-line">
               <div
-                className={`h-full ${r.ours ? "bg-signal/70" : "bg-line2"}`}
+                className={`h-full ${r.ours ? "bg-signal" : "bg-cool-tint"}`}
                 style={{ width: `${(r.f1 / max) * 100}%` }}
               />
             </div>
@@ -45,7 +45,7 @@ function Benchmark() {
             <div className={`w-32 shrink-0 text-right font-mono text-[0.68rem] ${r.ours ? "text-ink" : "text-faint"}`}>
               <div>{r.labels}</div>
               {r.verdict && (
-                <div className={r.verdict === "tied, within noise" ? "text-hold" : "text-faint/70"}>
+                <div className={r.verdict === "tied, within noise" ? "text-hold" : "text-faint"}>
                   {r.verdict}
                 </div>
               )}
@@ -112,7 +112,7 @@ export default function Charts() {
 
         <Reveal delay={0.08} className="lg:col-span-2">
           <Box>
-            <div className="mb-1 font-mono text-xs uppercase tracking-[0.14em] text-faint">
+            <div className="mb-1 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
               What the 971 accepted records are
             </div>
             <div className="mb-5 flex items-baseline gap-2">
@@ -156,7 +156,7 @@ export default function Charts() {
           ].map((k) => (
             <div key={k.l} className="rounded-xl bg-panel px-5 py-4 ring-1 ring-line">
               <div className="font-display tnum text-3xl leading-none">{k.v}</div>
-              <div className="mt-2 font-mono text-xs uppercase tracking-[0.14em] text-faint">{k.l}</div>
+              <div className="mt-2 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{k.l}</div>
               <div className="mt-1 text-xs text-dim">{k.s}</div>
             </div>
           ))}

@@ -35,7 +35,7 @@ export default function Problem() {
         <div className="mt-10 grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
           <Record rec={W_REC} align="left" />
           <div className="flex items-center justify-center py-2 lg:py-0">
-            <span className="rounded-full bg-signal/10 px-4 py-1.5 font-mono text-xs uppercase tracking-[0.14em] text-signal ring-1 ring-signal/30">
+            <span className="rounded-full bg-signal/10 px-4 py-1.5 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-signal ring-1 ring-signal/30">
               same product
             </span>
           </div>
@@ -51,7 +51,7 @@ export default function Problem() {
 
       <Reveal delay={0.14}>
         <div className="mt-16 border-t border-line pt-10">
-          <div className="font-mono text-xs uppercase tracking-[0.16em] text-faint">
+          <div className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-faint">
             Doing that 56 million times
           </div>
           <div className="mt-7 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
@@ -61,7 +61,7 @@ export default function Problem() {
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.5, delay: i * 0.09, ease: [0.16, 1, 0.3, 1] }}>
                 <div className={`font-display tnum leading-none ${f.s} ${f.tone}`}>{f.n}</div>
-                <div className="mt-2.5 font-mono text-xs uppercase tracking-[0.14em] text-faint">{f.l}</div>
+                <div className="mt-2.5 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{f.l}</div>
                 {f.note && <div className="mt-1 font-mono text-xs text-signal">{f.note}</div>}
                 {i < FUNNEL.length - 1 && (
                   <span aria-hidden="true"
@@ -80,7 +80,7 @@ function Record({ rec }) {
   return (
     <div className="rounded-xl bg-panel p-5 ring-1 ring-line">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-mono text-xs uppercase tracking-[0.16em] text-faint">{rec.src}</span>
+        <span className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-faint">{rec.src}</span>
         <span className="font-mono text-xs text-faint">{rec.id}</span>
       </div>
       <p className="mt-3 text-base leading-relaxed">

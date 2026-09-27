@@ -43,7 +43,7 @@ export default function Method() {
           <dl className="divide-y divide-line overflow-hidden rounded-xl ring-1 ring-line">
             {ROWS.map(([k, v]) => (
               <div key={k} className="grid gap-1.5 bg-panel px-5 py-4 sm:grid-cols-[110px_1fr] sm:gap-5">
-                <dt className="font-mono text-xs uppercase tracking-[0.14em] text-faint">{k}</dt>
+                <dt className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{k}</dt>
                 <dd className="text-sm leading-relaxed">{v}</dd>
               </div>
             ))}

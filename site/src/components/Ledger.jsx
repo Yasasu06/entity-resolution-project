@@ -38,7 +38,7 @@ export default function Ledger() {
                 ${open === i ? "opacity-100" : "opacity-45"} transition-opacity`} />
           ))}
         </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-xs uppercase tracking-[0.14em] text-faint">
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
           <span><span className="text-signal">&#9632;</span> 8 held</span>
           <span><span className="text-alarm">&#9632;</span> 3 failed</span>
           <span><span className="text-faint">&#9632;</span> 1 registered unknowable</span>
@@ -46,7 +46,7 @@ export default function Ledger() {
       </Reveal>
 
       <Reveal delay={0.1}>
-        <ul className="mt-8 divide-y divide-line rounded-xl bg-panel/60 ring-1 ring-line overflow-hidden">
+        <ul className="mt-8 divide-y divide-line rounded-xl bg-panel ring-1 ring-line overflow-hidden">
           {PREDICTIONS.map((p, i) => {
             const t = TONE[p.v];
             const isOpen = open === i;
@@ -74,7 +74,7 @@ export default function Ledger() {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden bg-void/40"
+                      className="overflow-hidden bg-raised"
                     >
                       <p className="max-w-[72ch] px-5 pb-5 pt-1 text-sm leading-relaxed text-dim sm:pl-[2.1rem]">
                         {p.detail}
