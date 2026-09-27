@@ -1,0 +1,153 @@
+"""Tests for the human-review recording tool.
+
+The property that matters most is negative: the session stage must have no way
+to reveal an answer. The sample file it reads is asserted to carry no truth
+field, and a test below confirms the tool's own guard catches a leak.
+
+Run with:  pytest
+"""
+
+import json
+
+import pytest
+
+from src.human_review import (FIELDS, OUTCOME_NONE, OUTCOME_UNSURE, completed,
+                              parse_choice, render, revealed_ids, shown_ids,
+                              strip_for_review)
+
+
+def _item(n_members=3, tied=False):
+    return {
+        "walmart_id": "A_1", "reason": "review_tied",
+        "walmart": {"title": "a thing", "brand": "acme", "modelno": "m1",
+                    "category": "cat", "price": "9.99"},
+        "candidate_blocks": [{
+            "tied": tied, "shown": n_members, "true_size": n_members, "truncated": False,
+            "members": [{"amazon_id": f"B_{i}", "bits": 9.5, "match_probability": 0.99,
+                         "title": f"candidate {i}", "brand": "acme", "modelno": f"m{i}",
+                         "category": "cat", "price": "8.00"} for i in range(n_members)]}],
+        "allowed_outcomes": ["match", OUTCOME_NONE, OUTCOME_UNSURE],
+    }
+
+
+# --- what the reviewer is and is not shown ------------------------------------
+
+def test_the_model_score_is_withheld():
+    """Showing it would measure agreement with the model, not the judgement."""
+    out = strip_for_review(_item())
+    blob = json.dumps(out)
+    assert "bits" not in blob and "match_probability" not in blob
+
+
+def test_the_queue_bucket_is_withheld():
+    """'This one was tied' would anchor the answer."""
+    assert "reason" not in json.dumps(strip_for_review(_item()))
+
+
+def test_candidate_identity_and_order_are_preserved():
+    out = strip_for_review(_item(4))
+    assert [m["amazon_id"] for m in out["blocks"][0]["members"]] == ["B_0", "B_1", "B_2", "B_3"]
+
+
+def test_the_tie_flag_and_truncation_survive():
+    """D32 and D33 fix these as part of the interface, not as decoration."""
+    out = strip_for_review(_item(tied=True))
+    assert out["blocks"][0]["tied"] is True
+    assert "truncated" in out["blocks"][0] and "true_size" in out["blocks"][0]
+
+
+def test_every_display_field_is_carried():
+    out = strip_for_review(_item())
+    assert set(out["walmart"]) == set(FIELDS)
+
+
+# --- the keystrokes -----------------------------------------------------------
+
+def test_a_number_selects_that_candidate():
+    assert parse_choice("2", 3) == "pick:2"
+
+
+def test_the_three_outcomes_map_correctly():
+    assert parse_choice("n", 3) == OUTCOME_NONE
+    assert parse_choice("?", 3) == OUTCOME_UNSURE
+
+
+def test_an_out_of_range_number_is_refused_rather_than_clamped():
+    assert parse_choice("4", 3) is None
+    assert parse_choice("0", 3) is None
+
+
+def test_junk_is_refused():
+    assert parse_choice("", 3) is None and parse_choice("yes", 3) is None
+
+
+# --- rendering ----------------------------------------------------------------
+
+def test_the_page_numbers_candidates_from_one():
+    page = render(strip_for_review(_item(3)), 1, 10)
+    assert "[1]" in page and "[3]" in page and "[4]" not in page
+
+
+def test_a_tie_is_announced_without_naming_the_bucket():
+    page = render(strip_for_review(_item(2, tied=True)), 1, 10)
+    assert "cannot separate" in page
+    assert "review_tied" not in page
+
+
+def test_empty_fields_are_omitted_rather_than_shown_as_none():
+    item = _item()
+    item["walmart"]["brand"] = None
+    page = render(strip_for_review(item), 1, 10)
+    assert "None" not in page
+
+
+# --- resuming -----------------------------------------------------------------
+
+def test_an_absent_log_means_nothing_is_done(tmp_path):
+    assert completed(tmp_path / "nope.jsonl") == set()
+
+
+def test_recorded_sequences_are_read_back(tmp_path):
+    p = tmp_path / "log.jsonl"
+    p.write_text('{"seq": 1}\n\n{"seq": 5}\n')
+    assert completed(p) == {1, 5}
+
+
+# --- the exclusion ------------------------------------------------------------
+
+def test_the_revealed_set_is_read_from_the_site_bundle():
+    """71 of these overlap the queue and must not be sampled."""
+    assert len(revealed_ids()) == 120
+
+
+def test_a_missing_site_bundle_does_not_silently_pass(tmp_path):
+    """Returning an empty set would let contaminated records into the sample,
+    so the caller must be able to tell the difference."""
+    assert revealed_ids(tmp_path / "absent.json") == set()
+
+
+def test_shown_ids_flattens_every_block():
+    item = _item(2)
+    item["candidate_blocks"].append(dict(item["candidate_blocks"][0]))
+    assert len(shown_ids(item)) == 4
+
+
+# --- the leak guard -----------------------------------------------------------
+
+def test_the_guard_catches_an_answer_key_field():
+    from src.human_review import assert_no_answer
+    with pytest.raises(AssertionError, match="leaks an answer"):
+        assert_no_answer({"items": [{"walmart_id": "A_1", "truth": ["B_2"]}]})
+
+
+def test_the_guard_reports_where_the_leak_is():
+    from src.human_review import assert_no_answer
+    with pytest.raises(AssertionError, match=r"/items\[0\]/label"):
+        assert_no_answer({"items": [{"label": 1}]})
+
+
+def test_a_product_called_a_label_is_not_a_leak():
+    """270 queued records are Avery label sheets. The first version of this
+    guard scanned for the substring and fired on all of them."""
+    from src.human_review import assert_no_answer
+    assert_no_answer({"items": [{"walmart": {"title": "avery 5692 laser cd dvd labels"}}]})
