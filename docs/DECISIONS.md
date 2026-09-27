@@ -4614,6 +4614,60 @@ doing so, because the display used the record's identifier rather than its place
 in the running order after the sample was truncated. The reviewer saw a wrong
 number; nothing was recorded twice or lost.
 
+
+---
+
+## D52 — Reciprocity under windowed arrival
+
+**Method and predictions committed 27 September 2026, before the run reported
+below.** Below the [boundary](PRE_UNSEAL.md) and label-informed.
+
+### Experiment
+
+Measure how enforcing the reciprocity constraint
+([D46](#d46--a-tie-is-not-a-preference-the-reciprocity-test-was-settled-by-record-id))
+interacts with arrival window size, using the existing trained model and
+thresholds. No retraining. No hyperparameter tuning.
+
+### Method
+
+1. Replay the 2,554 Walmart records and their candidate pairs in arrival order.
+2. Evaluate reciprocity within fixed window sizes: **1, 10, 25, 100, 250, 500,
+   1,000, and full batch (2,554)**.
+3. Report F1, precision, recall and accepted count at each window size against
+   the established full-batch figures: **61.46% F1, 971 accepted**.
+
+Reciprocity is the one stage of the decision rule that reads across records:
+`reciprocal_best` groups by the Amazon identifier and asks whether a candidate's
+own highest-scoring Walmart record is the record under consideration. Threshold,
+margin and the quantity veto each read one record at a time. A window therefore
+bounds how many other records the reciprocity stage can see.
+
+### Predictions
+
+* F1 increases with window size, converging toward the full-batch figure.
+* Small windows (≤25) show minimal movement from the window-1 value.
+* Recovering a majority of the window-1 to full-batch difference requires a
+  window that is a substantial fraction of total record count.
+
+### Scope condition
+
+**This measurement evaluates each window independently and does not model
+retrospective non-reversal of an already-emitted match.** A deployment that
+emitted a pair could not withdraw it when a later record arrived; the
+measurement here re-evaluates each window in isolation. This is a property of
+the experimental design and is stated as such.
+
+### Provenance
+
+**An initial run at these window sizes was performed during design evaluation,
+before this entry existed, and the predictions above were written after seeing
+it.** They are therefore consistent with that run by construction and carry no
+predictive weight. This entry formalises the method under the project's
+standard discipline so the reported figures come from a run executed against a
+committed specification; the run executed under this entry is the one reported
+as final.
+
 ---
 
 ## Working conventions
