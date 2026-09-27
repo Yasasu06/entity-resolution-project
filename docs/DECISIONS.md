@@ -4781,6 +4781,100 @@ entry exists to give the disclosure its own number, so a reader scanning the log
 for the project's pre-registration record encounters it directly rather than
 inside the entry it qualifies.
 
+
+---
+
+## D54 — The published figures came from an unseeded training run
+
+**27 September 2026.** The headline result this project reports — **61.46% F1,
+61.17% precision, 61.75% recall, 971 accepted** — was produced by a training run
+in which `estimate_u_using_random_sampling` was called without a fixed random
+seed. Splink accepts a `seed` argument for that call and `src/matcher.py` does
+not pass one.
+
+This entry records what an investigation into that found. **No figure reported
+elsewhere in this project is changed by it.**
+
+### What was run
+
+The `u` estimation draws 50,000,000 random pairs to estimate how often each
+comparison level fires between non-matching records. A seed was added in a
+scratch copy and the full pipeline was run **four times** from the committed
+candidate set through training, scoring and the complete decision rule.
+
+### Finding one: seeding makes the pipeline reproducible
+
+Runs with the same seed agree exactly, and the agreement was checked on the
+**exact set of accepted pairs** rather than on the aggregate figures alone. A
+SHA-256 over the sorted accepted pairs was identical across runs, as were every
+`u` probability and every reported metric. The four expectation-maximisation
+sessions introduce no further variation once `u` is fixed.
+
+An earlier check using Python's built-in `hash()` reported the pair sets as
+differing. That was a property of the check: Python salts string hashing per
+process, so the same input hashes differently in every run. The content hash
+replaced it.
+
+### Finding two: the seeded run differs from the published figures
+
+| | Published | Seeded | Difference |
+| --- | ---: | ---: | ---: |
+| Accepted | 971 | **973** | +2 |
+| True positives | 594 | **594** | 0 |
+| Precision | 61.17% | **61.05%** | −0.12 |
+| Recall | 61.75% | **61.75%** | 0.00 |
+| **F1** | **61.46** | **61.40** | **−0.06** |
+
+The two additional accepted pairs are both false positives. True positives and
+recall are unchanged to the decimal, so nothing about retrieval or ranking
+moves; the difference is confined to which pairs clear the acceptance rule.
+
+### Where the variation comes from
+
+Two measurements locate it.
+
+**The `u` estimate for one level varies with the draw.** Across two different
+seeds, `title / Exact token-set match` moved from 7.962e-08 to 1.005e-07, a
+factor of **1.26**, which is 0.34 bits of match weight. That level's `u` implies
+an expected **4.0 observations** in a 50,000,000-pair sample, and a rate
+estimated from about four events carries that much sampling variation.
+[D27](#d27--comparing-titles-by-proportion-of-shared-words) already recorded
+this level as fragile from the `m` side, noting it rests on five pairs; the same
+scarcity applies to `u`. Other levels moved by a factor of 1.03 to 1.04, around
+0.04 bits.
+
+**A number of records sit close enough to a boundary for that to matter.**
+Measured over the published scores, **57 records are within 0.05 bits of the
+1.0-bit reciprocity margin**, and 8 are within 0.05 bits of the 6.0-bit accept
+threshold. A shift of 0.04 bits is the same order as that distance.
+
+### What this establishes
+
+**The published 61.46 is one draw from a small distribution rather than an
+exactly reproducible constant.** Over the runs observed, F1 fell in the range
+**61.40 to 61.46**, and the published figures carry approximately **±0.06 F1**
+of inherent variation from this step.
+
+**The published figures stand as the project's reported result.** They were
+produced by the committed pipeline against the sealed labels in the single pass
+D39 describes, and nothing about them is altered here. What is added is the
+measured extent to which a rerun would reproduce them.
+
+### What continuous integration can and cannot verify
+
+`tests/test_stream.py` pins the windowed measurement's endpoints at 59.46 and
+61.46. Those tests skip where `data/processed/` is absent, which includes a
+fresh checkout in CI.
+
+**Regenerating the pipeline in CI would not let CI verify 61.46.** With the call
+unseeded, a regenerated run would land somewhere in the range above and the pin
+would pass or fail depending on the draw. With the call seeded, CI could verify
+that a seeded pipeline reproduces itself, which is a narrower guarantee: it
+establishes internal determinism, not agreement with the published figure. **The
+61.46 figure is not verifiable by re-running the pipeline as it currently
+stands**, and no arrangement of CI changes that without first fixing the seed
+and accepting the different result that follows.
+
 ---
 
 ## Working conventions
