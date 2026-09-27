@@ -19,7 +19,7 @@ export default function HowItWasRun() {
         </h2>
         <p className="mt-6 max-w-[58ch] text-lg leading-relaxed text-dim">
           Every claim on this page was written down before anyone could check it. That is what
-          makes the next section mean anything.
+          makes the ledger below mean anything.
         </p>
       </Reveal>
 

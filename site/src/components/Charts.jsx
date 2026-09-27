@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { BENCHMARK, CI, ERRORS, HEADLINE } from "../data/facts";
+import { BENCHMARK, CI, ERRORS, HEADLINE, SWAP } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "var(--color-signal)", alarm: "var(--color-alarm)", hold: "var(--color-hold)", line: "var(--color-line)",
@@ -75,14 +75,118 @@ function Benchmark() {
   );
 }
 
+function Chosen() {
+  return (
+    <Box>
+      <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
+        How the reported configuration was chosen
+      </div>
+      <h3 className="mt-4 max-w-[30ch] font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-tight tracking-[-0.015em]">
+        The bar was set before the numbers existed.
+      </h3>
+
+      <p className="mt-6 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        One condition was committed in writing beforehand: a change would be adopted only if it
+        reduced the count of accepted pairs whose products have no counterpart in the other
+        catalogue.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        Measurement then produced a configuration scoring{" "}
+        <span className="tnum font-medium text-ink">{SWAP.f1}% F1</span> against{" "}
+        <span className="tnum font-medium text-ink">{HEADLINE.f1}%</span>. It reaches that score by
+        accepting {SWAP.acceptGrowth}% more pairs &mdash;{" "}
+        <span className="tnum">{SWAP.accepted.toLocaleString()}</span> rather than{" "}
+        <span className="tnum">{HEADLINE.accepted.toLocaleString()}</span> &mdash; which catches more
+        genuine matches and more that are not genuine. The group the condition named moved from{" "}
+        <span className="tnum">{SWAP.noPartnerBefore}</span> to{" "}
+        <span className="tnum font-medium text-alarm">{SWAP.noPartnerAfter}</span>, and precision from{" "}
+        <span className="tnum">{HEADLINE.precision}%</span> to{" "}
+        <span className="tnum">{SWAP.precision}%</span>.
+      </p>
+
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+        {[
+          { h: "Reported", f1: HEADLINE.f1, p: HEADLINE.precision, r: HEADLINE.recall,
+            n: HEADLINE.accepted, ring: "ring-signal/40", bg: "bg-signal-tint" },
+          { h: "Also measured", f1: SWAP.f1, p: SWAP.precision, r: SWAP.recall,
+            n: SWAP.accepted, ring: "ring-line2", bg: "bg-raised" },
+        ].map((c) => (
+          <div key={c.h} className={`rounded-xl px-5 py-4 ring-1 ${c.ring} ${c.bg}`}>
+            <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{c.h}</div>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-display tnum text-4xl leading-none">{c.f1}</span>
+              <span className="font-mono text-[0.8125rem] text-dim">F1</span>
+            </div>
+            <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3 font-mono text-xs">
+              <div><dt className="text-faint">precision</dt><dd className="tnum mt-0.5 text-dim">{c.p}%</dd></div>
+              <div><dt className="text-faint">recall</dt><dd className="tnum mt-0.5 text-dim">{c.r}%</dd></div>
+              <div><dt className="text-faint">accepted</dt><dd className="tnum mt-0.5 text-dim">{c.n.toLocaleString()}</dd></div>
+            </dl>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-7 max-w-[62ch] text-[0.95rem] leading-relaxed">
+        <span className="text-ink">The condition had already been written. This site reports the
+        configuration that met it.</span>{" "}
+        <span className="text-dim">Entity resolution feeds catalogues, billing and identity systems,
+        where a confident wrong answer travels further than a missed one.</span>
+      </p>
+    </Box>
+  );
+}
+
+function LabelValue() {
+  const rows = [
+    { l: "12 labels, chosen by score", v: 4.06, tone: "bg-alarm-tint", ring: "ring-alarm/30" },
+    { l: "no labels at all", v: 47.54, tone: "bg-raised", ring: "ring-line2" },
+    { l: "12 labels, chosen at the boundary", v: 60.94, tone: "bg-signal-tint", ring: "ring-signal/40" },
+  ];
+  const max = 70;
+  return (
+    <Box>
+      <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
+        What labels would have bought
+      </div>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        The standing objection to building without labels is that labels are cheap: the two most used
+        open-source tools reach production quality from thirty or forty hand-labelled pairs. That was
+        measured rather than argued.{" "}
+        <span className="text-ink">Twelve labels are worth either &minus;43 F1 points or +13,
+        depending entirely on which twelve pairs are labelled.</span>
+      </p>
+
+      <div className="mt-7 flex flex-col gap-2.5">
+        {rows.map((r) => (
+          <div key={r.l} className="flex items-center gap-3">
+            <div className="w-[15rem] shrink-0 text-sm text-dim">{r.l}</div>
+            <div className="h-7 flex-1 overflow-hidden rounded-[3px] bg-raised ring-1 ring-line">
+              <div className={`h-full ${r.tone}`} style={{ width: `${(r.v / max) * 100}%` }} />
+            </div>
+            <div className="w-12 shrink-0 text-right font-display tnum text-base">{r.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-7 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        A threshold is a decision about where to <span className="text-ink">stop</span> accepting,
+        and it cannot be learned from a sample that is almost entirely accepts. Ranking by score
+        finds matches efficiently and leaves two negatives in twelve. Querying near the decision
+        boundary leaves eleven. Both runs stay inside a fixed six-comparison model, so the ceiling
+        near 70 belongs to that model rather than to supervision in general.
+      </p>
+    </Box>
+  );
+}
+
 export default function Charts() {
   const errTotal = ERRORS.reduce((s, e) => s + e.value, 0);
   return (
     <>
       <Reveal>
-        <Eyebrow>The result</Eyebrow>
-        <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
-          It works, modestly. Not deployably.
+        <Eyebrow>The measurements</Eyebrow>
+        <h2 className="mt-4 max-w-[28ch] font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
+          Measured completely, including where it falls short.
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
           Six probabilistic comparisons trained by expectation&ndash;maximisation, against a
@@ -144,6 +248,14 @@ export default function Charts() {
 
       <Reveal delay={0.05}>
         <div className="mt-4"><Benchmark /></div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="mt-4"><Chosen /></div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="mt-4"><LabelValue /></div>
       </Reveal>
 
       <Reveal delay={0.12}>

@@ -13,8 +13,8 @@ const REPO = "https://github.com/Yasasu06/entity-resolution-project";
 const GITHUB = "https://github.com/Yasasu06";
 const LINKEDIN = "https://www.linkedin.com/in/yasaswidutta/";
 const NAV = [
-  ["problem", "The problem"], ["ledger", "Predictions"], ["result", "Result"],
-  ["investigation", "The failure"], ["review", "Try it"],
+  ["what", "What it does"], ["evidence", "Why believe it"],
+  ["measurements", "Measurements"], ["review", "Try it"],
 ];
 
 export default function App() {
@@ -34,13 +34,24 @@ export default function App() {
       </nav>
 
       <Hero />
-      <Section id="problem"><Problem /></Section>
-      <Section id="sealed"><HowItWasRun /></Section>
-      <Section id="ledger"><Ledger /></Section>
-      <Section id="result"><Charts /></Section>
-      <Section id="investigation"><Investigation /></Section>
+
+      {/* 2 - what it does, and the architecture it uses */}
+      <Section id="what"><Problem /></Section>
+
+      {/* 3 - why the claims can be believed: the seal, then the ledger it protects */}
+      <Section id="evidence">
+        <HowItWasRun />
+        <div className="mt-24 border-t border-line pt-20"><Ledger /></div>
+        <div className="mt-24 border-t border-line pt-20"><Method /></div>
+      </Section>
+
+      {/* 4 - every measurement, including the unflattering ones */}
+      <Section id="measurements">
+        <Charts />
+        <div className="mt-24 border-t border-line pt-20"><Investigation /></div>
+      </Section>
+
       <Section id="review"><ReviewTool /></Section>
-      <Section id="method"><Method /></Section>
       <Section id="closing" className="bg-base"><Closing /></Section>
 
       <footer className="border-t border-line">

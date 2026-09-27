@@ -3,7 +3,7 @@ import { Eyebrow, Reveal } from "./ui";
 const ROWS = [
   ["Boundary", "commit 9819d63 · 20 September 2026"],
   ["Proof", "OpenTimestamps, anchored in the Bitcoin blockchain, controlled by neither the author nor the host"],
-  ["Record", "41 decision entries · 10 pre-registration sections · 254 tests"],
+  ["Record", "50 decision entries · 13 pre-registration sections · 318 tests"],
   ["Evaluation", "One pass over all three splits, nothing adjusted afterwards"],
 ];
 
@@ -12,9 +12,9 @@ export default function Method() {
     <>
       <Reveal>
         <Eyebrow>How it was kept honest</Eyebrow>
-        <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
+        <h3 className="mt-4 font-display text-[clamp(1.55rem,3vw,2.35rem)] leading-tight tracking-[-0.015em]">
           The seal
-        </h2>
+        </h3>
       </Reveal>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-2">

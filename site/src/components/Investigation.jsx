@@ -6,9 +6,9 @@ export default function Investigation() {
     <>
       <Reveal>
         <Eyebrow>What went wrong, found before checking</Eyebrow>
-        <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
+        <h3 className="mt-4 font-display text-[clamp(1.55rem,3vw,2.35rem)] leading-tight tracking-[-0.015em]">
           The investigation
-        </h2>
+        </h3>
         <p className="mt-5 max-w-[62ch] text-dim">
           The system&rsquo;s central weakness was found, measured and published while the labels
           were still sealed, by two methods that needed no ground truth, and a third finding

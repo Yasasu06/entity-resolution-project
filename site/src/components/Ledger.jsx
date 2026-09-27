@@ -15,9 +15,9 @@ export default function Ledger() {
     <>
       <Reveal>
         <Eyebrow>The ledger</Eyebrow>
-        <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
+        <h3 className="mt-4 font-display text-[clamp(1.55rem,3vw,2.35rem)] leading-tight tracking-[-0.015em]">
           Predicted blind, then measured
-        </h2>
+        </h3>
         <p className="mt-5 max-w-[62ch] text-dim">
           Every substantive claim made before the labels were read, against what the answer key
           said. The misses are here because a table showing only successes would be worth nothing.

@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { HEADLINE } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const W_REC = { src: "Walmart", id: "A_1607",
@@ -70,6 +71,46 @@ export default function Problem() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </Reveal>
+
+      <Reveal delay={0.1}>
+        <div className="mt-20 border-t border-line pt-14">
+          <h3 className="max-w-[26ch] font-display text-[clamp(1.6rem,3.2vw,2.5rem)] leading-tight tracking-[-0.015em]">
+            Three answers, not two: match, reject, or hand it to a person.
+          </h3>
+          <p className="mt-6 max-w-[62ch] text-lg leading-relaxed text-dim">
+            A matcher that must answer every pair will be wrong on the ones it cannot see clearly.
+            This system is allowed a third answer, and the hardest cases go to a review queue
+            instead of to a guess.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {[
+              { n: HEADLINE.accepted.toLocaleString(), l: "accepted automatically",
+                s: "high enough evidence to commit", tone: "text-signal", ring: "ring-signal/30" },
+              { n: HEADLINE.queued.toLocaleString(), l: "routed to a person",
+                s: "genuinely uncertain, so not decided alone", tone: "text-hold", ring: "ring-hold/30" },
+              { n: HEADLINE.different.toLocaleString(), l: "rejected outright",
+                s: "evidence actively against a match", tone: "text-dim", ring: "ring-line2" },
+            ].map((c) => (
+              <div key={c.l} className={`rounded-xl bg-panel px-5 py-5 ring-1 ${c.ring}`}>
+                <div className={`font-display tnum text-4xl leading-none ${c.tone}`}>{c.n}</div>
+                <div className="mt-2 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">{c.l}</div>
+                <p className="mt-2 text-sm leading-relaxed text-dim">{c.s}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-10 max-w-[62ch] text-base leading-relaxed text-dim">
+            That three-way split is not an invention of this project. It is the decision rule
+            Fellegi and Sunter set out in{" "}
+            <span className="text-ink">A Theory for Record Linkage</span> in 1969, which proved it
+            optimal: for fixed limits on false matches and missed matches, routing the uncertain
+            middle to clerical review is the rule that leaves the smallest middle. National
+            statistical offices and health registries have run on it for over fifty years, and the
+            engine underneath this system is an implementation of it.
+          </p>
         </div>
       </Reveal>
     </>
