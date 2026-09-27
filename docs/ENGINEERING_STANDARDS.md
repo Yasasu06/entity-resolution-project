@@ -14,6 +14,21 @@ built and why, and apply to any change made to it.
   not a narrator working on it. No first-person narrative, no personal framing,
   no commentary on who did what or how the work felt. This applies from the
   first draft — it is a writing standard, not something corrected afterwards.
+- **Describe measurements, do not pass verdicts on the work.** A finding that
+  reveals a limitation stays on the page in full, with its real numbers, and is
+  written in the language of measurement rather than self-assessment. The line
+  falls between the two: *"identified a match on 36.7% of records where none
+  existed"* is a measurement and stays; *"the reviewer did badly"* is a verdict
+  and does not. By the same rule *"wrong partner chosen"* stays, because it
+  names a category in the error decomposition, and the prediction ledger's
+  *"three failed"* stays, because reporting the three that were wrong is the
+  reason the ledger is worth reading. What gets rewritten is phrasing that
+  judges rather than reports — *falls short*, *weakness*, *modestly* — since it
+  adds no information the numbers do not already carry.
+
+  **This is not permission to soften a finding.** Nothing is removed, no figure
+  is omitted, and the site is never gentler than the decision log. The
+  constraint is on adjectives, not on evidence.
 
 ## 2. Never silently substitute data
 
