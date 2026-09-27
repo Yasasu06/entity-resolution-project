@@ -91,7 +91,7 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines, and bootstrap confidence intervals |
-| `tests/` | Automated tests (358 passing) covering the code in `src/`, run on every push by CI |
+| `tests/` | Automated tests (367 passing) covering the code in `src/`, run on every push by CI |
 | `docs/` | Decision log, the pre-registered decision rule, the label-free boundary and its timestamp proof, dataset provenance |
 | `site/` | The project site: Vite, React, Tailwind and Motion, built and deployed by GitHub Actions |
 
@@ -160,7 +160,7 @@ Checks that read nothing and write nothing:
 ```bash
 python -m src.data_loading           # confirm the tables load and are sealed
 python -m src.features               # confirm derived columns build
-pytest                               # the test suite (307 tests)
+pytest                               # the test suite (367 tests)
 ```
 
 These need an OpenAI API key in a gitignored `.env`, and cost money:
@@ -218,7 +218,7 @@ The work is finished. These are the outcomes it was built to produce:
   recall was found and fixed; it had run against this project throughout,
   and correcting it roughly doubled the measured margin over the baseline
   ([D45](docs/DECISIONS.md#d45--correcting-d39-the-baselines-best-point-was-measured-on-the-wrong-denominator));
-  49 decision entries record what changed and why, each superseded entry
+  54 decision entries record what changed and why, each superseded entry
   pointing forward to whatever replaced it.
 
 ## No-peek policy

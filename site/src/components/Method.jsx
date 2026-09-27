@@ -3,7 +3,7 @@ import { Eyebrow, Reveal } from "./ui";
 const ROWS = [
   ["Boundary", "commit 9819d63 · 20 September 2026"],
   ["Proof", "OpenTimestamps, anchored in the Bitcoin blockchain, controlled by neither the author nor the host"],
-  ["Record", "50 decision entries · 13 pre-registration sections · 318 tests"],
+  ["Record", "54 decision entries · 14 pre-registration sections · 367 tests"],
   ["Evaluation", "One pass over all three splits, nothing adjusted afterwards"],
 ];
 

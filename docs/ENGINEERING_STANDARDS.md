@@ -139,6 +139,14 @@ training round to the three set out in D26. When two entries disagree, the
 higher number wins, and the superseded entry carries a dated note pointing
 forward to whatever replaced it, so the correction is visible from either end.
 
+**A new entry and the counts that describe it move in the same commit.** The
+entry total and the highest entry number are stated in three places outside the
+log: the count above, the line in `README.md` that links to the log, and the
+record row in `site/src/components/Method.jsx`. All of them are updated in the
+commit that adds the entry, so the log and its description are never out of step,
+including briefly. The same applies to the test total and the pre-registration
+section count where those appear.
+
 ### Blocking — complete
 
 **Finalised, implemented in `src/blocking.py`, and fully documented.** Produces
@@ -254,7 +262,7 @@ A **second, embedding-based system** follows, for comparison against the
 classical one ([D22](DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
 Labels stay sealed until both are finished, then one evaluation covers both.
 
-73 tests currently pass.
+367 tests currently pass.
 
 Under the no-peek policy above, every design choice is justified from data
 structure only — no checking rules or thresholds against known matches.
