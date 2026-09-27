@@ -4622,6 +4622,12 @@ number; nothing was recorded twice or lost.
 **Method and predictions committed 27 September 2026, before the run reported
 below.** Below the [boundary](PRE_UNSEAL.md) and label-informed.
 
+> **Note added 27 September 2026.** The predictions in this entry were written
+> after an informal scouting run at the same window sizes had been performed and
+> its output seen, so they **do not constitute blind predictions** under this
+> project's standard. The method, the result and the scope condition stand. See
+> [D53](#d53--the-windowed-measurements-predictions-were-written-with-the-result-known).
+
 ### Experiment
 
 Measure how enforcing the reciprocity constraint
@@ -4727,6 +4733,53 @@ The window-1 row is the figure obtainable where no other record is available to
 the reciprocity stage. The full-batch row is the figure obtainable where every
 record is available. The rows between give the figure at each intermediate
 bound.
+
+
+---
+
+## D53 — The windowed measurement's predictions were written with the result known
+
+**27 September 2026.**
+[D52](#d52--reciprocity-under-windowed-arrival) measures how the reciprocity
+stage of the decision rule behaves when it is given a bounded window of arriving
+records rather than the whole population. It carries a method, a set of
+predictions, and a result.
+
+**The predictions in D52 were written after an informal scouting run at the same
+eight window sizes had already been performed and its output seen.** That run
+was made while the four candidate designs for the experiment were being
+compared, and it produced the same curve D52 reports.
+
+**The consequence for the pre-registration standard.** This project treats a
+prediction as a commitment made before the answer is available; D14 and D19 both
+rest on that. A prediction written after the outcome is known does not meet that
+standard. The three predictions in D52 therefore **do not constitute blind
+predictions**, and their agreement with the result is a property of the order in
+which they were written rather than evidence that the method was validated in
+advance.
+
+**What is unaffected.** The measurement itself does not depend on when the
+predictions were written:
+
+* The eight rows are produced by `src/stream.py` from the committed model and
+  thresholds, with no retraining and no parameter changes.
+* The window-1 row, **59.46 F1 over 1,056 accepted**, and the full-batch row,
+  **61.46 F1 over 971 accepted**, reproduce figures published independently in
+  D41 and D46 and are pinned by tests.
+* The figures reported on the project site are checked against the run's own
+  output rather than transcribed.
+
+**What this entry changes about reading D52.** Its method, its result and its
+scope condition stand. Its predictions section should be read as a description
+of what the measurement shows, not as a record of what was expected before the
+measurement was available.
+
+**Relationship to D52's own provenance note.** D52 states in its provenance
+paragraph that an initial run preceded the entry and that the predictions were
+written after seeing it. That disclosure is accurate and is not superseded. This
+entry exists to give the disclosure its own number, so a reader scanning the log
+for the project's pre-registration record encounters it directly rather than
+inside the entry it qualifies.
 
 ---
 
