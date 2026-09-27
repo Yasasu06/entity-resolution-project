@@ -79,7 +79,7 @@ Ditto, and statistically indistinguishable from DeepMatcher**
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (49 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (50 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
@@ -91,7 +91,7 @@ and why.
 | `data/processed/` | Generated pipeline outputs (candidate pairs, etc.) — not committed; regenerable from `data/raw/` |
 | `notebooks/` | Jupyter notebooks for exploration |
 | `src/` | Reusable Python code — data loading and label sealing, text normalisation, blocking rules and diagnostics, the blocking/matching interface contract, derived features, comparison definitions, the Splink matcher, the review queue, the quantity veto, the AI escalation arm, the modelled human reviewer, and both token-overlap baselines, and bootstrap confidence intervals |
-| `tests/` | Automated tests (307 passing) covering the code in `src/`, run on every push by CI |
+| `tests/` | Automated tests (318 passing) covering the code in `src/`, run on every push by CI |
 | `docs/` | Decision log, the pre-registered decision rule, the label-free boundary and its timestamp proof, dataset provenance |
 | `site/` | The project site: Vite, React, Tailwind and Motion, built and deployed by GitHub Actions |
 

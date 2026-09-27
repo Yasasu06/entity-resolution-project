@@ -1028,6 +1028,13 @@ dozen hand-labelled pairs actually buy, against a system designed without any?
 That comparison only works if this build stays clean. Doing it later is what
 makes it possible; doing it now is what would make it meaningless.
 
+> **Note added 26 September 2026.** The deferred comparison above has been run
+> and is reported in
+> [D50](#d50--what-a-few-dozen-labels-are-worth-the-strategy-matters-more-than-the-labels).
+> The answer is that a few dozen labels are worth between −43 and +13 F1 points
+> depending on which pairs are chosen, and that most of what labels buy is
+> threshold calibration rather than a better model.
+
 ### The cost, stated plainly
 
 This is stricter than real practice, and something real is lost by it: no early
@@ -4322,6 +4329,149 @@ touching this constraint at all.
 [D43](#d43--the-component-swap-a-better-f1-a-failed-mechanism-and-no-second-system)
 declined it. Between that entry and this one, both directions out of the
 current operating point have now been measured and both are closed.
+
+
+---
+
+## D50 — What a few dozen labels are worth: the strategy matters more than the labels
+
+**Finding.** [D19](#d19--no-self-labelling-the-project-does-not-create-its-own-answer-key)
+deferred this measurement: *how much does a few dozen hand-labelled pairs
+actually buy, against a system designed without any?* Measured under
+[section 13](PRE_REGISTRATION.md#13-what-a-few-dozen-labels-are-worth):
+
+**Twelve labels are worth either −43 F1 points or +13, depending entirely on
+which twelve pairs you label.** The same budget, spent two different ways,
+scores **4.06** and **60.94** against a label-free **47.54**.
+
+The question D19 asked has no single answer. The variable that dominates is not
+how many labels you buy but which pairs you choose to label, and the
+pre-registered strategy chose badly for a reason worth understanding.
+
+### An error in the first run, and how it was caught
+
+The first execution reported a curve that was flat at roughly 68 from ten
+labels onward — an apparent **+17 points for twelve labels**. It was wrong.
+
+Section 13.4 commits the threshold to be "selected on train and charged to the
+budget". The implementation selected it on **all 6,144 training labels** while
+reporting a budget of twelve. Every point was inflated by labels the experiment
+claimed not to have spent. The result was caught before publication by running
+the control below, which reproduced most of the supposed gain **without using
+any labels for m at all** — which is not a result, it is a symptom.
+
+`budget_for` now returns the inspected pairs, the threshold is selected from
+those and nothing else, and a test pins the mistake by name.
+
+### The control: what is the supervision actually doing
+
+| Configuration | Labels | m from | Test F1 |
+| --- | ---: | --- | ---: |
+| Pre-registered rule, 6.0 bits | 0 | EM | **47.54** |
+| **Threshold tuned, m untouched** | 6,144 | **EM** | **66.09** |
+| Threshold tuned, m from 10 matches | 6,144 | labels | 69.12 |
+| Best achieved anywhere in this experiment | 168 | labels | **69.95** |
+
+All figures are without the quantity veto, so they are comparable to each
+other; D44's 51.38 is the same rule with the veto applied.
+
+**Roughly 18.5 of the 22 points belong to the threshold, not to the model.**
+Estimating m from labels adds two to three points on top, and ten matches gets
+m as good as 576 does. What labels buy here is almost entirely the ability to
+place the operating point — which is exactly the portability limitation
+[D44](#d44--the-system-measured-under-the-benchmarks-own-protocol-and-a-threshold-that-does-not-transfer)
+identified and said could not be fixed without them.
+
+### The pre-registered arm, and why it fails
+
+Section 13.3 fixed the acquisition strategy in advance: rank the training pairs
+by the label-free model, work down the list, charge every pair inspected. It
+called this "the honest floor: a real tool would do better."
+
+| Confirmed matches | Labels | Negatives seen | Test F1 |
+| ---: | ---: | ---: | ---: |
+| 0 | 0 | 0 | 47.54 |
+| 10 | 12 | **2** | **4.06** |
+| 20 | 23 | 3 | 47.76 |
+| 40 | 44 | **4** | 47.97 |
+| 80 | 85 | 5 | 58.19 |
+| 160 | 168 | 8 | 59.18 |
+| 320 | 407 | 87 | 67.66 |
+| 576 | 6,059 | 5,483 | 68.72 |
+
+**The failure is negative-starvation, not "labels do not help".** A threshold is
+a decision about where to stop accepting, and it cannot be learned from a sample
+that is almost entirely accepts. Ranking by the label-free model finds matches
+efficiently — 89% of inspected pairs are matches at k=40 — and that efficiency
+is precisely what makes the sample useless for calibration. **At 44 labels the
+annotator has seen four negatives.** The threshold fitted to them is 26.78 bits
+and generalises catastrophically.
+
+The two halves of the budget want opposite things. Finding matches wants the top
+of the ranking. Calibrating a threshold wants the boundary.
+
+### The post-hoc arm: a competent query strategy
+
+**Not pre-registered.** This was added after seeing the result above, because
+the pre-registered strategy is a strawman against real practice: `dedupe` and
+Zingg query pairs near the decision boundary, which produces exactly the
+negatives the other arm starves itself of. It is reported as a post-hoc
+addition and is not part of section 13's commitment.
+
+| Labels | Positives | Negatives | Ranked arm | **Uncertainty arm** |
+| ---: | ---: | ---: | ---: | ---: |
+| 12 | 1 | 11 | 4.06 | **60.94** |
+| 23 | 2 | 21 | 47.76 | 32.57 |
+| 44 | 11 | 33 | 47.97 | **63.11** |
+| 85 | 15 | 70 | 58.19 | **68.48** |
+| 168 | 27 | 141 | 59.18 | **69.95** |
+| 407 | 63 | 344 | **67.66** | 61.57 |
+
+**Twelve well-chosen labels beat the label-free system by 13 points.** Twelve
+badly-chosen labels lose to it by 43. That gap — 57 points at an identical
+budget — is the result.
+
+**The curve is not monotone and that is real, not sampling noise.** The
+uncertainty arm is deterministic given its seed ranking. The dips at 23 and 407
+come from small labelled sets producing unstable m and threshold estimates
+together: at 23 labels only two are matches, and the selected threshold is
+−16.94 bits. Few labels are not merely weak, they are **erratic**, and a
+practitioner spending forty labels should expect variance rather than a
+reliable small gain. Neither arm was repeated, so no interval is claimed for
+either.
+
+### The limitation this cannot escape
+
+**This measures what labels buy inside a fixed six-comparison Fellegi-Sunter
+model.** Estimating m from labels adjusts how much weight each comparison level
+carries. It cannot invent a comparison the model lacks, and it cannot learn a
+representation. Ditto fine-tunes a pre-trained language model over raw text and
+is doing something categorically different with its 60% of the labelled set.
+
+**The ceiling of roughly 70 F1 observed here is this model family's ceiling, not
+a statement about supervision in general.** Ditto reaches 85.69. Nothing in this
+experiment explains that gap or claims to.
+
+### Predictions, against section 13.6
+
+| Registered | Outcome |
+| --- | --- |
+| Rises steeply, flattens by roughly k = 80 | **Split.** True of the uncertainty arm, false of the pre-registered one, which needed 400+ labels |
+| Does not reach Ditto's 85.69; plateaus 55 to 70 | **Correct.** Highest observed 69.95 |
+| No prediction on overtaking DeepMatcher's 53.80 | It overtakes decisively, at twelve labels with a competent strategy |
+
+### What this says about D19
+
+**D19's decision is supported, and not for the reason it gave.** That entry
+argued the constraint was worth its cost as a matter of demonstrating
+label-free design. The measurement says something narrower and more useful: in
+this model family, labels are worth about 22 F1 points, of which roughly 18.5
+is calibration that the label-free build could never have performed on itself,
+and the remainder saturates after ten matches.
+
+**It also shows D19 understated the risk it was taking.** A "second day spent
+labelling a few dozen pairs" is not a reliably small gain. Done with the obvious
+strategy, it is a large loss.
 
 ---
 
