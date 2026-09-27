@@ -79,7 +79,7 @@ Ditto, and statistically indistinguishable from DeepMatcher**
 
 Every design decision — including several corrected mid-project on new
 evidence — is recorded with its reasoning in
-[`docs/DECISIONS.md`](docs/DECISIONS.md) (53 entries). That log,
+[`docs/DECISIONS.md`](docs/DECISIONS.md) (54 entries). That log,
 not this README, is the authoritative account of what has actually been built
 and why.
 
