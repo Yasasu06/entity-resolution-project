@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { BENCHMARK, CI, ERRORS, HEADLINE, SWAP } from "../data/facts";
+import { BENCHMARK, CI, ERRORS, HEADLINE, HUMAN, SWAP } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "var(--color-signal)", alarm: "var(--color-alarm)", hold: "var(--color-hold)", line: "var(--color-line)",
@@ -157,6 +157,50 @@ function LabelValue() {
   );
 }
 
+function ReviewTier() {
+  return (
+    <Box>
+      <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
+        What routing to a person actually recovers
+      </div>
+      <h3 className="mt-4 max-w-[30ch] font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-tight tracking-[-0.015em]">
+        The review tier, measured rather than assumed.
+      </h3>
+
+      <p className="mt-6 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        The architecture sends <span className="tnum">{HUMAN.queue.toLocaleString()}</span>{" "}
+        uncertain records to human review. How much that recovers had been modelled and never
+        measured, so one reviewer worked <span className="tnum">{HUMAN.reviewed}</span> of them at
+        about a minute each.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        They found <span className="tnum font-medium text-ink">{HUMAN.recall}%</span> of the matches
+        that were present, above what was predicted in advance. On records where no match existed,
+        they identified one anyway <span className="tnum font-medium text-ink">{HUMAN.falseMatch}%</span>{" "}
+        of the time. At queue scale those rates recover{" "}
+        <span className="tnum font-medium text-signal">{HUMAN.recovered}</span> genuine matches and
+        introduce <span className="tnum font-medium text-alarm">{HUMAN.introduced}</span>, giving the
+        review tier&rsquo;s output a precision of{" "}
+        <span className="tnum">{HUMAN.tierPrecision}%</span> alongside the automated tier&rsquo;s{" "}
+        <span className="tnum">{HUMAN.autoPrecision}%</span>.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
+        This is a property of the task rather than the reviewer. Shown a shortlist of plausible
+        candidates and asked whether one of them matches, the shortlist is persuasive &mdash; and{" "}
+        <span className="tnum">{HUMAN.noneCorrect}%</span> of the time the accurate answer is that
+        none of them does.
+      </p>
+      <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed">
+        <span className="text-ink">The measurement establishes that the review tier needs its own
+        acceptance rule rather than being trusted by construction.</span>{" "}
+        <span className="text-dim">The earlier model assumed a single uniform error rate across
+        every record; the reviewer is strongly asymmetric between records that have a match and
+        records that do not, which no single rate represents.</span>
+      </p>
+    </Box>
+  );
+}
+
 export default function Charts() {
   const errTotal = ERRORS.reduce((s, e) => s + e.value, 0);
   return (
@@ -164,7 +208,7 @@ export default function Charts() {
       <Reveal>
         <Eyebrow>The measurements</Eyebrow>
         <h2 className="mt-4 max-w-[28ch] font-display text-[clamp(2rem,4vw,3.25rem)] leading-tight tracking-[-0.015em]">
-          Measured completely, including where it falls short.
+          Measured completely, and reported with its limits.
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
           Six probabilistic comparisons trained by expectation&ndash;maximisation, against a
@@ -234,6 +278,10 @@ export default function Charts() {
 
       <Reveal delay={0.05}>
         <div className="mt-4"><LabelValue /></div>
+      </Reveal>
+
+      <Reveal delay={0.05}>
+        <div className="mt-4"><ReviewTier /></div>
       </Reveal>
 
       <Reveal delay={0.12}>

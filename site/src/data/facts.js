@@ -13,6 +13,14 @@ export const SWAP = {
   acceptGrowth: 46, headline: 61.46,
 };
 
+// D51: the review tier measured rather than modelled. One reviewer worked 60
+// queued records; the rates are reweighted to the full 1,214-record queue.
+export const HUMAN = {
+  queue: 1214, reviewed: 60, recall: 83.3, falseMatch: 36.7,
+  recovered: 175, introduced: 368, tierPrecision: 31.8, autoPrecision: 61.17,
+  noneCorrect: 82.7,
+};
+
 // D48: every reported figure carries a 95% bootstrap interval. The headline
 // was never stated with one, and the DeepMatcher ranking did not survive it.
 export const CI = {

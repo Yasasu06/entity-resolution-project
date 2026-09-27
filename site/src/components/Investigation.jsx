@@ -5,12 +5,12 @@ export default function Investigation() {
   return (
     <>
       <Reveal>
-        <Eyebrow>What went wrong, found before checking</Eyebrow>
+        <Eyebrow>Found before the answers were opened</Eyebrow>
         <h3 className="mt-4 font-display text-[clamp(1.55rem,3vw,2.35rem)] leading-tight tracking-[-0.015em]">
           The investigation
         </h3>
         <p className="mt-5 max-w-[62ch] text-dim">
-          The system&rsquo;s central weakness was found, measured and published while the labels
+          The system&rsquo;s central limitation was identified, measured and published while the labels
           were still sealed, by two methods that needed no ground truth, and a third finding
           that neither could see.
         </p>

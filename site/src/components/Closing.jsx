@@ -15,9 +15,9 @@ export default function Closing() {
           only thing that makes the number worth reading.
         </p>
         <p className="max-w-[56ch] text-lg leading-relaxed text-dim">
-          Every material weakness was found, measured and published <span className="text-ink">before</span> the
+          Every material limitation was found, measured and published <span className="text-ink">before</span> the
           answer key was opened, and the analysis written while blind turned out to be
-          <span className="text-signal"> conservative</span> about the failure, not defensive of it.
+          <span className="text-signal"> conservative</span> about what it found, not defensive of it.
           That is harder to fake than a good score.
         </p>
       </div>
