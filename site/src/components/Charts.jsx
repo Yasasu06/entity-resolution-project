@@ -42,7 +42,7 @@ function Benchmark() {
             <div className={`w-14 shrink-0 text-right font-display tnum text-base ${r.ours ? "text-signal" : "text-dim"}`}>
               {r.f1.toFixed(2)}
             </div>
-            <div className={`w-32 shrink-0 text-right font-mono text-[0.68rem] ${r.ours ? "text-ink" : "text-faint"}`}>
+            <div className={`w-20 shrink text-right font-mono text-[0.68rem] sm:w-32 sm:shrink-0 ${r.ours ? "text-ink" : "text-faint"}`}>
               <div>{r.labels}</div>
               {r.verdict && (
                 <div className={r.verdict === "tied, within noise" ? "text-hold" : "text-faint"}>
@@ -137,11 +137,11 @@ function LabelValue() {
       <div className="mt-7 flex flex-col gap-2.5">
         {rows.map((r) => (
           <div key={r.l} className="flex items-center gap-3">
-            <div className="w-[15rem] shrink-0 text-sm text-dim">{r.l}</div>
+            <div className="w-[8.5rem] shrink text-sm text-dim sm:w-[15rem] sm:shrink-0">{r.l}</div>
             <div className="h-7 flex-1 overflow-hidden rounded-[3px] bg-raised ring-1 ring-line">
               <div className={`h-full ${r.tone}`} style={{ width: `${(r.v / max) * 100}%` }} />
             </div>
-            <div className="w-12 shrink-0 text-right font-display tnum text-base">{r.v}</div>
+            <div className="w-11 shrink-0 text-right font-display tnum text-base sm:w-12">{r.v}</div>
           </div>
         ))}
       </div>
