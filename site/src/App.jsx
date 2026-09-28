@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Hero from "./components/Hero";
 import Problem from "./components/Problem";
 import HowItWasRun from "./components/HowItWasRun";
@@ -18,6 +19,30 @@ const NAV = [
 ];
 
 export default function App() {
+  // A fragment in the URL is resolved by the browser before this app has
+  // mounted, so the target section does not exist yet and the page stays at the
+  // top. Loading /#measurements landed on the hero. Scrolling once after mount
+  // covers it; in-page nav clicks are unaffected because the target exists by
+  // then and the browser handles them itself.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    // Re-applied on every frame for roughly half a second rather than once.
+    // The document grows as sections below the target render, which moves the
+    // target after the first scroll: a single scroll to #measurements landed
+    // 86px short. Exiting as soon as two consecutive frames agreed on the
+    // height was not enough, because the height settles briefly and then grows
+    // again within the first few frames.
+    let frames = 0;
+    const settle = () => {
+      const target = document.getElementById(id);
+      if (target) target.scrollIntoView();
+      frames += 1;
+      if (frames < 36) requestAnimationFrame(settle);
+    };
+    requestAnimationFrame(settle);
+  }, []);
+
   return (
     <div className="min-h-screen bg-void">
       <nav className="sticky top-0 z-30 border-b border-line bg-void/90 backdrop-blur-[2px]">
