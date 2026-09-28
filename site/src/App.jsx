@@ -92,6 +92,10 @@ export default function App() {
           </p>
           <p className="border-t border-line pt-5 text-faint">
             Built by <span className="text-dim">Yasaswi Dutta</span>
+            {/* Reviewed 27 September 2026 and kept. This separator measures 1.41
+                against the page, below the 4.5 AA threshold for text, and is
+                exempt: it carries no information and is hidden from assistive
+                technology. The same applies to the arrow in Ledger.jsx. */}
             <span className="mx-2 text-line2" aria-hidden="true">&middot;</span>
             <a href={GITHUB}
                className="text-dim underline decoration-line2 underline-offset-4 transition hover:text-ink hover:decoration-dim">

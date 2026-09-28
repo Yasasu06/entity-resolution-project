@@ -45,6 +45,10 @@ export default function ReviewTool() {
         : "This record has no partner in the answer key at all.";
     } else if (kind === "none") {
       if (!hasTruth) { ok = true; verdict = "Correct."; why = "No partner exists. Two thirds of records have none."; }
+      // Reviewed 27 September 2026 and kept. No card in the sample reaches
+      // this branch: of 120, 41 have the partner shown and 79 have none, so
+      // none has a partner cut by the display cap. The branch is kept
+      // because the cap is a real property of the interface (D33).
       else if (!shownTruth) { ok = true; verdict = "Correct, given what you were shown."; why = "A partner exists, but the display cap cut it from the list. The answer key still scores this wrong, and that gap belongs to the interface rather than to you."; }
       else { verdict = "There was a match."; why = "The correct partner was on the list."; }
     } else { verdict = "Held."; why = "Recorded as undecided, not counted either way."; }
