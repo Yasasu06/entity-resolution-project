@@ -52,7 +52,7 @@ export default function App() {
       </Section>
 
       <Section id="review"><ReviewTool /></Section>
-      <Section id="closing" className="bg-base"><Closing /></Section>
+      <Section id="closing" className="bg-lift"><Closing /></Section>
 
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-12 text-sm text-faint">

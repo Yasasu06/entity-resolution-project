@@ -20,7 +20,11 @@
 
   /* surfaces, lightest content on a faintly grey page */
   --color-void: #F6F7F9;      /* page */
-  --color-base: #FFFFFF;      /* lifted sections */
+  /* Named 'lift' rather than 'base': a --color-base token makes Tailwind
+   * generate .text-base as a colour utility, so the ordinary font-size
+   * class painted text in this colour. Eighteen elements rendered
+   * invisible against it. */
+  --color-lift: #FFFFFF;      /* lifted sections */
   --color-panel: #FFFFFF;     /* cards */
   --color-raised: #EDF0F4;    /* recessed fills, bar tracks */
   --color-line: #E4E8ED;      /* hairlines */
