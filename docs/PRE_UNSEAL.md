@@ -1,14 +1,26 @@
-# The label-free boundary
+# The label-feedback boundary
+
+> **Correction added after the original boundary.** Earlier exploratory work
+> used `train` and `valid` labels before the stricter D14 policy was adopted.
+> The original version of this document wrongly claimed that no labeled data
+> had ever been read. The defensible claim is that later blocking and matching
+> design decisions for the original pre-registered evaluation were made without
+> further label feedback. [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+> documents the earlier exposure. D41 and D46 then changed the decision policy
+> after the original evaluation with knowledge of its labels. The original
+> document text is available at `26f5d30`, its first commit; the `.ots` proof
+> belongs to the original bytes, not this corrected file.
 
 **Boundary commit: `9819d63b5257be5a0f67d29c93b8e8b48d9a0767`**
 (`9819d63`, "Write the human-only arm and the comparable baseline", 20 September 2026)
 
-Everything reachable from that commit was designed, written, measured and
-documented **without any labelled data ever having been read**. No `train`,
-`valid` or `test` split was opened at any point in its history.
+This commit marks the end of the later design period governed by D14. The
+blocking, matching and original decision rules developed in that period were
+not selected using label feedback. Earlier train/validation exploration had
+already occurred and is disclosed in D14 and [ASSESSMENT.md](ASSESSMENT.md).
 
-This document exists so that the boundary is a specific, checkable claim rather
-than a vague one.
+This document identifies the pre-evaluation policy and the limits of its
+label-feedback claim.
 
 ## What the claim rests on
 
@@ -17,20 +29,21 @@ commit for navigation. It is not evidence: `git tag -f` moves a tag freely,
 commit dates are author-controlled, and a tagger date is self-reported. The same
 is true of every date recorded in this repository.
 
-The claim rests on three things a reader can check independently.
+The narrower claim is supported by three kinds of evidence a reader can inspect.
 
-**1. The seal is enforced in code, not by assertion.** `src/data_loading.py`
-refuses to open a labelled split without an explicit `unlock_final_evaluation`
-override, and `src/baseline_token_overlap.py` refuses to run without a
-command-line flag. Both guards have tests. A reader can inspect the mechanism
-rather than trust a statement.
+**1. Label reads require an explicit unlock.** `src/data_loading.py` refuses
+to open a labeled split without `unlock_final_evaluation`, and
+`src/baseline_token_overlap.py` requires a command-line flag. Tests exercise
+these guards, and some tests explicitly unlock and read train/validation labels.
+The guards make access deliberate; they do not prove that no prior access
+occurred.
 
 **2. The work makes falsifiable predictions.** `PRE_REGISTRATION.md` fixes exact
 thresholds, an exact prompt, an exact model identifier and an exact list of
-measurements, all before the answers were available. Several are specific enough
+measurements before the original final evaluation. Several are specific enough
 to be wrong: the display ceiling is predicted to fall below 1.00, the baseline is
 predicted to accept 1,055 records, and the AI arm's stability floor was set at
-60% before it was run. When the labels are read, these hold or they do not.
+60% before it was run. The original evaluation tested these predictions.
 
 **3. The record is self-damaging.** [D36](DECISIONS.md) records that the system's
 headline output fails: an independent judge rejects roughly 31% of
@@ -40,29 +53,31 @@ reaches 1.5% of the problem. [D38](DECISIONS.md) declines a change that would
 have improved the reported numbers, on the grounds that it would misrepresent a
 structural problem as a calibration one.
 
-Work is not retrofitted to look like this.
+These entries can be compared against the original evaluation in D39.
 
 ## Independent timestamping
 
 `PRE_UNSEAL.md.ots` is an [OpenTimestamps](https://opentimestamps.org) proof for
-this file, which contains the boundary commit hash. It anchors that content into
-the Bitcoin blockchain and is verifiable with `ots verify docs/PRE_UNSEAL.md.ots`.
+the **original version** of this file, first committed as `26f5d30` after the
+boundary commit. Because this
+document now contains a correction, running `ots verify` against the current
+file will not verify its contents. Retrieve the original bytes from
+`26f5d30:docs/PRE_UNSEAL.md` to verify that historical version with the proof.
 
-Unlike a git tag, it is controlled by neither this repository's author nor by
-GitHub. It is the only artefact here that constitutes actual proof that this
-content existed before a given time.
+The proof file records a proposed independent timestamp anchor. Its external
+anchor was not independently verified in this correction pass, and it does not
+prove that earlier labels were unread.
 
 ## The convention from this point
 
-**Nothing at or before the boundary commit is ever edited after the labels are
-read.** Corrections to pre-unseal documents are made by adding new entries that
-reference them, never by revising them in place — the practice already followed
-for [D34](DECISIONS.md)'s correction of an earlier reading, and for the
-cross-reference added to section 6.3 rather than a rewrite of it.
+The pre-evaluation policy is accessible at the boundary commit; the original
+version of this document is accessible at `26f5d30`. This corrected document
+explicitly records where its original claim went too
+far. Historical decision-log entries remain as written, with later corrections
+identified as later work.
 
-Results obtained after unsealing go in **new documents**. A reader comparing a
-post-unseal claim against a pre-unseal one should never have to wonder which was
-written first.
+Original and post-evaluation results are identified separately: D39 is the
+original pre-registered policy; D41 and D46 are later label-informed changes.
 
 ## One disclosure about this repository's history
 

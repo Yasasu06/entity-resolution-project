@@ -1,8 +1,7 @@
 """Tests for the modelled human reviewer.
 
 Every label here is invented in the test. The module takes truth as an argument
-and never opens a labelled file, which is what makes it testable at all before
-the seal is lifted.
+and never opens a labelled file, so these tests do not load benchmark labels.
 
 Run with:  pytest
 """

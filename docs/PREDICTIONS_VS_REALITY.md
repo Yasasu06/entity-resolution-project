@@ -1,11 +1,14 @@
 # Predictions versus reality
 
-Every substantive claim this project made **before any labelled data was read**,
-set against what the answer key actually said.
+Predictions recorded during the stricter D14 design period, before the original
+final evaluation, set against what the answer key said. Earlier exploration had
+already used train/validation labels; [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+discloses and quarantines that exposure.
 
-The claims were committed to git and independently timestamped before the labels
-were opened — see [`PRE_UNSEAL.md`](PRE_UNSEAL.md) for the boundary commit and
-the proof. The measurements are in [D39](DECISIONS.md) and [D40](DECISIONS.md).
+The claims were committed before the original final evaluation — see
+[`PRE_UNSEAL.md`](PRE_UNSEAL.md) for the boundary commit and the historical
+timestamp proof. The measurements are in [D39](DECISIONS.md) and
+[D40](DECISIONS.md). The proof does not establish that no earlier labels were read.
 
 **The misses are included.** A table showing only successful predictions would
 be worth nothing: anyone who found a single omitted failure would be right to
@@ -67,12 +70,15 @@ not settle. It cost **11 records of 1,129**.
 independent label-free methods that the auto-accepted set was unreliable at the
 level of product identity. **It was: 456 of the 1,056 accepts at that point were
 wrong.** The finding, the diagnosis and the evidence were published weeks before
-the answer key was opened. The system now accepts 994, of which 398 are wrong.
+the original final evaluation. The later D41 policy accepted 994, of which 398
+were wrong; D46 superseded that result with 971 accepts, 377 wrong, in its
+historical unseeded run.
 
 **8 — Overconfidence.** The tension between λ's implied 1,128 and the posteriors'
 13,000 was recorded as unresolved from D25 onward. It resolves against the model:
-**12,941 implied, 962 actual.** The scores are not calibrated probabilities and
-were never treated as such.
+**12,941 implied, 962 actual.** The scores are not empirically calibrated
+probabilities. D10 had originally expected calibration; D39 corrected that
+assumption.
 
 ---
 
@@ -120,16 +126,18 @@ partner.
 
 ## What this is and is not evidence of
 
-**It is not evidence that the system works.** It does not: 59.96% precision on
-unattended output is not deployable, and [D39](DECISIONS.md) says so. (That figure
-was 56.82% when D39 was written; [D41](DECISIONS.md)'s mutual-best-match rule
-raised it, and F1 with it, from 59.46% to 60.94%.)
+**These predictions do not establish a deployable matcher.** Unattended
+precision was 56.82% for the original D39 policy. D41 raised it to 59.96%
+(F1 from 59.46% to 60.94%), and D46's historical unseeded run raised it to
+61.17% (F1 61.46%). These later changes used evaluation labels.
+With a fixed `u`-sampling seed, D55's current post-evaluation policy scores
+61.09% precision and 61.47% F1; it is a separate reproducible run.
 
-**It is evidence that the reasoning was sound more often than not, and that the
-failures were found before the answers were available.** The project's largest
-weakness was documented, diagnosed and published while the labels were still
-sealed — and the pre-unseal analysis turned out to be *conservative* about that
-weakness rather than defensive of it.
+**It is evidence that some failure modes were anticipated before the final
+evaluation.** The
+pre-evaluation analysis identified an unreliable accepted set. D39 then found
+that most wrong accepts involved records with no known partner; D46 and D54
+identified additional tie-handling and reproducibility issues afterward.
 
 The three misses matter as much as the eight hits. Two of them are cases where
 this project was **too pessimistic or too narrow**, not too flattering — and the

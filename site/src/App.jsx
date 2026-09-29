@@ -87,8 +87,8 @@ export default function App() {
           </div>
           <p className="max-w-[72ch]">
             Dataset: the dirty Walmart/Amazon benchmark from the Magellan collection. 2,554 and
-            22,074 records, 56,376,996 possible pairs, reduced to 564,450 candidates. Every figure
-            on this page is measured, not illustrative.
+            22,074 records, 56,376,996 possible pairs, reduced to 564,450 candidates (98.9988%).
+            The 60-record human study is observed; full-queue estimates are projections.
           </p>
           <p className="border-t border-line pt-5 text-faint">
             Built by <span className="text-dim">Yasaswi Dutta</span>

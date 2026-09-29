@@ -19,8 +19,8 @@ export default function Ledger() {
           Predicted blind, then measured
         </h3>
         <p className="mt-5 max-w-[62ch] text-dim">
-          Every substantive claim made before the labels were read, against what the answer key
-          said. The misses are here because a table showing only successes would be worth nothing.
+          Pre-registered claims from the later label-free design period, checked against the answer key.
+          Earlier train and validation exploration is documented separately. The misses remain visible.
           Select any row for the detail.
         </p>
       </Reveal>

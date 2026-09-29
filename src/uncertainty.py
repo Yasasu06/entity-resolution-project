@@ -1,7 +1,7 @@
 """Confidence intervals for the figures this project reports.
 
 Every headline number here is a statistic of one sample: 2,554 Walmart records
-drawn once from a benchmark. Reported bare, `61.46%` invites the reading that a
+drawn once from a benchmark. Reported bare, `61.47%` invites the reading that a
 system scoring 61.0% would be worse, which the data does not support.
 
 The project already holds this standard. The stability gate in
@@ -105,7 +105,7 @@ def contains(interval: dict, value: float) -> bool:
 
 
 def fmt(interval: dict, places: int = 2) -> str:
-    """``61.46 [58.95, 64.07]`` -- the form every reported figure should take."""
+    """``61.47 [58.95, 64.09]`` -- the form every reported figure should take."""
     return (f"{interval['point']:.{places}f} "
             f"[{interval['lo']:.{places}f}, {interval['hi']:.{places}f}]")
 

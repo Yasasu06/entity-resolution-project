@@ -66,11 +66,10 @@ def test_values_are_preserved_as_text():
 
 
 def test_all_labelled_splits_are_sealed_by_default():
-    """The strict no-peek policy must be enforced in code, not by memory.
+    """Train, valid and test all require an explicit unlock by default.
 
-    Every labelled split — train and valid as well as test — is off limits
-    while the system is being designed. This is the guard that makes an
-    accidental peek impossible rather than merely discouraged.
+    This guard makes a label read deliberate; it does not establish that no
+    labels have ever been read. D14 discloses earlier train/valid exploration.
     """
     for split in ("train", "valid", "test"):
         with pytest.raises(ValueError, match="SEALED"):
@@ -78,17 +77,16 @@ def test_all_labelled_splits_are_sealed_by_default():
 
 
 def test_sealed_splits_open_only_with_explicit_unlock():
-    """The final evaluation must still be possible — just never by accident."""
+    """An explicit flag permits label reads, including from tests."""
     pairs = load_labelled_pairs("train", unlock_final_evaluation=True)
     assert {"unique_id_l", "unique_id_r", "label"} == set(pairs.columns)
     assert len(pairs) > 0
 
 
 def test_unlocked_pairs_reference_real_records():
-    """When finally unlocked, pair ids must resolve against the source tables.
+    """When explicitly unlocked, pair ids resolve against the source tables.
 
-    Uses the explicit unlock, since verifying the id translation is a property
-    of the loader rather than a peek at the answers.
+    This test reads train/valid labels to verify the loader's id translation.
     """
     table_a, table_b = load_source_tables()
     ids_a = set(table_a[ID_COLUMN])

@@ -229,7 +229,7 @@ def collect(index: BlockingIndex, candidates: dict[str, set[str]]) -> dict:
         "note": (
             "Summary only. The discarded pairs themselves are not stored: they are "
             "fully regenerable by rerunning src.blocking against the untouched raw "
-            "data. No labelled data was consulted (see docs/DECISIONS.md D14, D21)."
+            "data. This diagnostic uses no labels; D14 and D21 document its design boundary."
         ),
     }
 
@@ -269,7 +269,7 @@ def render(report: dict) -> None:
         print(f"      {k:>2} shared words : {share * 100:>6.2f}%")
 
     print("\n  Summary only — the discarded pairs are regenerable by rerunning")
-    print("  src.blocking. No labelled data consulted.")
+    print("  src.blocking. This diagnostic uses no labels.")
 
 
 def main() -> None:

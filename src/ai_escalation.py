@@ -28,7 +28,7 @@ credentials: without a key this module raises rather than quietly producing
 invented answers, because a fabricated result that looks real is worse than no
 result at all.
 
-Run with ``python -m src.ai_escalation`` once ANTHROPIC_API_KEY is set.
+Run with ``python -m src.ai_escalation`` once OPENAI_API_KEY is set.
 """
 
 import json

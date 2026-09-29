@@ -103,4 +103,4 @@ def test_a_published_figure_inside_the_interval_is_not_distinguishable():
 
 
 def test_the_reported_form_carries_the_interval():
-    assert fmt({"point": 61.46, "lo": 58.95, "hi": 64.07}) == "61.46 [58.95, 64.07]"
+    assert fmt({"point": 61.47, "lo": 58.95, "hi": 64.09}) == "61.47 [58.95, 64.09]"
