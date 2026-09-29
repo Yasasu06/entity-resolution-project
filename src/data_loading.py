@@ -25,9 +25,10 @@ Typical use::
 
     table_a, table_b = load_source_tables()
 
-The labelled pair files are **sealed** under this project's strict no-peek
-policy and cannot be loaded without an explicit override. Design work uses the
-source tables only. See docs/DECISIONS.md (D14).
+The labelled pair files require an explicit override. This guard makes label
+access deliberate; it does not mean labels were never read. Earlier train and
+validation exploration is disclosed in docs/DECISIONS.md (D14). Later blocking
+and matching design for the original evaluation used no label feedback.
 """
 
 from pathlib import Path
@@ -52,17 +53,11 @@ ID_COLUMN = "unique_id"
 
 # The labelled pair files that ship with the benchmark.
 #
-# STRICT NO-PEEK POLICY: every labelled split is sealed.
-#
-# Not just "test" — train and valid too. No labelled answers are consulted at
-# any point while the system is being designed and built. That includes checks
-# that feel like harmless due diligence, such as "how many known matches
-# survive my blocking rules?" — that is still using the answer key to validate
-# a design choice, and it is not permitted until the end.
-#
-# Loading any of these requires passing unlock_final_evaluation=True, which
-# exists to make the single, final, one-time evaluation a deliberate act that
-# cannot happen by accident. See docs/DECISIONS.md (D14).
+# Every labelled split, including train and valid, requires an explicit unlock.
+# The flag name reflects the original evaluation boundary. It makes later label
+# reads deliberate but cannot prevent a caller or test from requesting them.
+# D14 discloses earlier train/valid exploration and records the later design
+# period conducted without label feedback.
 ROUTINE_SPLITS = ()
 SEALED_SPLITS = ("train", "valid", "test")
 
@@ -147,10 +142,9 @@ def load_labelled_pairs(
     Returns a frame with columns ``unique_id_l``, ``unique_id_r``, ``label``,
     where ``label`` is 1 for "same real-world entity" and 0 for "different".
 
-    **Every split is sealed.** Loading any of them raises unless
-    ``unlock_final_evaluation=True`` is passed explicitly. This is not a
-    formality — it is the mechanism that enforces the project's strict no-peek
-    policy. See docs/DECISIONS.md (D14).
+    Every split is guarded: loading one raises unless
+    ``unlock_final_evaluation=True`` is passed explicitly. The guard does not
+    establish a history of zero label access; see docs/DECISIONS.md (D14).
     """
     all_splits = ROUTINE_SPLITS + SEALED_SPLITS
     if split not in all_splits:
@@ -158,17 +152,10 @@ def load_labelled_pairs(
 
     if split in SEALED_SPLITS and not unlock_final_evaluation:
         raise ValueError(
-            f"The '{split}' split is SEALED. This project uses a strict no-peek "
-            f"policy: no labelled answers (train, valid or test) may be consulted "
-            f"until the entire pipeline is built, at which point there is one "
-            f"single final evaluation.\n\n"
-            f"This includes checks that feel like ordinary due diligence, such as "
-            f"measuring how many known matches survive a blocking rule. That is "
-            f"still tuning a design choice against the answer key.\n\n"
-            f"Design decisions must come from the structure of the source tables "
-            f"(see load_source_tables), not from labels.\n\n"
-            f"If this genuinely is the final evaluation, pass "
-            f"unlock_final_evaluation=True explicitly."
+            f"The '{split}' split is SEALED by default. Reading labels requires "
+            f"unlock_final_evaluation=True. This guard makes label access "
+            f"explicit; earlier train/valid exploration and the later D14 "
+            f"design boundary are documented in docs/DECISIONS.md."
         )
 
     path = _dataset_dir(dataset) / f"{split}.csv"
@@ -198,5 +185,5 @@ if __name__ == "__main__":
     print(f"tableA: {len(a):,} rows   tableB: {len(b):,} rows")
     print(f"attributes: {attribute_columns(a)}")
     print(f"first ids  A: {list(a[ID_COLUMN].head(3))}   B: {list(b[ID_COLUMN].head(3))}")
-    print(f"\nlabelled splits {SEALED_SPLITS} are SEALED — no-peek policy (D14).")
-    print("Design work uses the source tables above only.")
+    print(f"\nlabelled splits {SEALED_SPLITS} require an explicit unlock (D14).")
+    print("The guard does not prove that labels were never read; see D14.")

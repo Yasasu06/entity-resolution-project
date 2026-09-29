@@ -1,4 +1,4 @@
-"""A deliberately simple baseline, to give the real system a number to beat.
+"""A deliberately simple historical baseline on curated candidate pairs.
 
 The idea is about as unsophisticated as record matching gets:
 
@@ -8,12 +8,11 @@ The idea is about as unsophisticated as record matching gets:
 3. Call the pair a match if that score is above some threshold.
 
 No learning, no probabilities, no per-field logic — it does not even know which
-attribute a word came from. That is the point. If a sophisticated system cannot
-comfortably beat this, the sophistication is not earning its keep.
+attribute a word came from. That is the point of the simple reference.
 
 Establishing a weak baseline first is standard practice for a reason: it is very
 easy to build something complicated and *feel* like it works, without ever
-checking whether a five-line heuristic would have done just as well.
+checking a five-line heuristic on the same evaluation protocol.
 
 **Which evaluation is this?**
 This scores the benchmark's own pre-selected pairs — the ~10,242 curated pairs
@@ -23,18 +22,14 @@ that ship with the dataset. It measures the *decision step only*, on a set where
 space. Those two numbers are not comparable, and this project reports them
 separately. See docs/DECISIONS.md.
 
-**SEALED — this does not run during development.**
-Under the project's strict no-peek policy (docs/DECISIONS.md D14) no labelled
-data is consulted until the entire pipeline is built. This script scores
-against labels, so it belongs to the single final evaluation pass at the end
-of the project, alongside the real system.
+**Historical, label-reading baseline.**
+This script requires an explicit unlock and reads the train and valid labels,
+but not test.csv. Those labels were inspected in early exploration before the
+later D14 boundary for blocking and matching design without label feedback.
+Its F1 = 0.381 on valid is a historical decision-only result, not the current
+full-pipeline baseline. See docs/DECISIONS.md D9 and D14.
 
-An earlier result from this script (F1 = 0.381 on valid) was computed under a
-looser rule that has since been superseded. It is retained in the decision log
-as history, not as a live number, and will be recomputed at the final
-evaluation.
-
-Run it, as that final evaluation only::
+Run it explicitly::
 
     python -m src.baseline_token_overlap --unlock-final-evaluation
 """
@@ -156,22 +151,16 @@ def _print_result(name: str, result: dict[str, float], n_pairs: int, n_matches: 
 
 
 def main(unlock_final_evaluation: bool = False) -> None:
-    # SEALED under the strict no-peek policy (docs/DECISIONS.md D14). This
-    # script consults labelled answers, so it may only run as part of the single
-    # final evaluation at the end of the project — not during development.
+    # Keep label access behind an explicit flag. The flag's historical name
+    # predates the completed final evaluation; this script reads train/valid.
     if not unlock_final_evaluation:
         print(__doc__.strip().splitlines()[0])
         print(
-            "\nThis baseline is SEALED and did not run.\n\n"
-            "It scores against labelled answers, and this project uses a strict\n"
-            "no-peek policy: no labelled data (train, valid or test) is consulted\n"
-            "until the whole pipeline is built and the single final evaluation\n"
-            "is run.\n\n"
-            "The previously recorded result (F1 = 0.381 on valid) was computed\n"
-            "under an earlier, looser rule and is SUPERSEDED — see D9 and D14 in\n"
-            "docs/DECISIONS.md. It will be recomputed at the final evaluation,\n"
-            "as part of one honest pass alongside the real system.\n\n"
-            "To run it as that final evaluation:\n"
+            "\nNo labels were read in this invocation. The explicit flag below\n"
+            "allows this historical script to read train and valid labels.\n"
+            "Its recorded valid F1 = 0.381 comes from early exploration;\n"
+            "see D9 and D14 in docs/DECISIONS.md for the chronology.\n\n"
+            "To run it explicitly:\n"
             "    python -m src.baseline_token_overlap --unlock-final-evaluation"
         )
         return
@@ -192,8 +181,8 @@ def main(unlock_final_evaluation: bool = False) -> None:
     print("\n  Evaluation scope: the benchmark's OWN curated pairs (decision step only).")
     print("  This is NOT the full ~56.4M-pair pipeline evaluation. Not comparable.")
 
-    # The threshold is chosen using train only; valid is untouched until it is
-    # used once, for reporting. This mirrors how the real system will be tuned.
+    # This invocation chooses the threshold on train and reports valid at that
+    # threshold. The earlier valid result is historical, not a fresh holdout.
     best = choose_threshold(train["label"], train_scores)
     _print_result("TRAIN (threshold chosen here)", best,
                   len(train), int(train["label"].sum()))
@@ -202,9 +191,9 @@ def main(unlock_final_evaluation: bool = False) -> None:
     _print_result("VALID (held out — the number that counts)", held_out,
                   len(valid), int(valid["label"].sum()))
 
-    print("\n  test.csv was NOT read. It stays sealed for one final evaluation.")
-    print("\n  This is the number the real system must beat:"
-          f"  F1 = {held_out['f1']:.3f} on valid.\n")
+    print("\n  This script did not read test.csv; the final evaluation occurred elsewhere.")
+    print("\n  Historical curated-pair valid result:"
+          f"  F1 = {held_out['f1']:.3f}. Not a full-pipeline comparison.\n")
 
 
 if __name__ == "__main__":

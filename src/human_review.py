@@ -1,22 +1,23 @@
 """Recording a real human reviewer working the queue.
 
-[D24](../docs/DECISIONS.md) modelled the human arm and never observed it. This
-records one reviewer's actual judgements so the modelled estimate can be
-replaced with a measurement.
+[D24](../docs/DECISIONS.md) modelled the human arm and never observed it. D51
+records one owner's actual judgements on the historical unseeded queue; its
+full-queue figures are projections from that sample.
 
 **The three stages are separated on purpose, and the separation is the point.**
 
 ``build_sample`` reads the answer key, because stratifying on whether a true
-partner is shown requires knowing. It writes a sample file that contains **no
-truth field of any kind**, and a test asserts that.
+partner is shown requires knowing. The sample omits partner IDs and labels but
+retains ``stratum_hidden`` for later scoring. That metadata reveals whether a
+true partner is shown, so the sample file itself is not truth-free.
 
-``run_session`` reads only that file. It cannot reveal an answer because it has
-no access to one, and it gives no feedback of any sort while the session runs.
+``run_session`` reads only that file. Its terminal display hides the stratum
+metadata and gives no feedback of any sort while the session runs.
 
 ``score_session`` reads the log and the answer key afterwards.
 
-**Why stratify.** Only 210 of the 1,214 queued records have their true partner
-shown; for the other 1,004 the correct answer is "none of these". A reviewer who
+**Why stratify.** In D51's historical 1,214-record queue, only 210 have their
+true partner shown; for the other 1,004 the answer is "none of these". A reviewer who
 always answered "none of these" would score 82.7%, so a single accuracy figure
 is uninterpretable. Recall and the false-match rate are measured separately, on
 the two strata, and any population figure is reweighted back to 17.3 / 82.7.
@@ -25,8 +26,8 @@ the two strata, and any population figure is reweighted back to 17.3 / 82.7.
 "this one was tied" cannot anchor the judgement. The model's match weight is
 hidden too: showing it would measure whether the reviewer agrees with the model
 rather than whether the reviewer can find the match. Candidate ordering and the
-display cap are left exactly as the queue defines them, because those are fixed
-in D32 and D33 and are the production interface.
+display cap are left exactly as the queue defines them in D32 and D33. This
+local terminal study does not establish an operating review service.
 
 This reads the answer key in two of its three stages and therefore sits below
 the boundary in docs/PRE_UNSEAL.md.
@@ -98,7 +99,7 @@ def strip_for_review(item: dict) -> dict:
 
 def build_sample(per_stratum: int = 60, repeats: int = 18, seed: int = SEED,
                  queue_path=QUEUE_PATH, out_path=SAMPLE_PATH) -> dict:
-    """Draw a stratified sample and write it without any answer.
+    """Draw a stratified sample for a blinded terminal review.
 
     Stratum A: the true partner is among the candidates shown.
     Stratum B: it is not, so the correct answer is "none of these".
@@ -176,7 +177,10 @@ BANNED_KEYS = frozenset({"truth", "truth_shown", "truthshown", "label", "labels"
 
 
 def assert_no_answer(node, path="") -> None:
-    """Fail if any *key* in the sample could carry an answer.
+    """Reject direct answer-key fields from the sample by *key*.
+
+    This does not reject ``stratum_hidden``, which is truth-derived metadata
+    needed for later scoring and must stay hidden by the terminal display.
 
     Keys, not substrings. The first version of this check scanned the serialised
     file for the word "label" and fired on 270 records: this is a product
@@ -194,10 +198,10 @@ def assert_no_answer(node, path="") -> None:
 
 
 # ---------------------------------------------------------------------------
-# Stage 2: the session. This stage has no access to the answer key.
+# Stage 2: the session. This stage does not load the answer key.
 #
-# Nothing here imports src.data_loading, and the sample file it reads carries
-# no truth field. The tool cannot reveal an answer because it does not have one.
+# Nothing here imports src.data_loading. The sample file does carry
+# truth-derived stratum metadata, but the terminal display does not show it.
 # ---------------------------------------------------------------------------
 
 def render(item: dict, position: int, total: int) -> str:

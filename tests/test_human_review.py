@@ -1,8 +1,9 @@
 """Tests for the human-review recording tool.
 
-The property that matters most is negative: the session stage must have no way
-to reveal an answer. The sample file it reads is asserted to carry no truth
-field, and a test below confirms the tool's own guard catches a leak.
+The terminal review display hides answers and truth-derived stratum metadata.
+The sample file retains ``stratum_hidden`` for later scoring, so it is not
+truth-free. Tests below check the display fields and the guard against direct
+answer-key fields separately.
 
 Run with:  pytest
 """

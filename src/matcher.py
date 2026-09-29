@@ -1,8 +1,9 @@
 """The classical matcher: scoring candidate pairs with Splink.
 
-Blocking produced 564,450 candidate pairs. This module scores each one,
-producing a calibrated probability that the two records describe the same
-product. Deciding what to do with those probabilities - accept, reject, or
+Blocking produced 564,450 candidate pairs. This module scores each one with
+Splink's ``match_probability`` output. Evaluation found that output is not
+empirically calibrated, so it is used as a ranking and threshold signal.
+Deciding what to do with those scores - accept, reject, or
 abstain and route for review - happens later and is deliberately separate.
 
 The model is **unsupervised**. Splink learns how much each kind of agreement is
@@ -32,7 +33,9 @@ Run with ``python -m src.matcher``.
 """
 
 import collections
+import json
 import time
+from importlib.metadata import version
 
 import pandas as pd
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
@@ -40,7 +43,7 @@ from splink.blocking_rule_library import CustomRule
 from splink.comparison_library import ArrayIntersectAtSizes
 
 from src.comparisons import price_comparison, title_comparison
-from src.data_loading import ID_COLUMN, load_source_tables
+from src.data_loading import DEFAULT_DATASET, ID_COLUMN, load_source_tables
 from src.features import add_features
 from src.interfaces import (
     LEFT_ID,
@@ -94,6 +97,9 @@ TRAINING_COLUMNS = [
 # slower; this is enough to see every comparison level that occurs at a
 # workable rate.
 U_SAMPLE_PAIRS = 50_000_000
+# Splink's DuckDB u-sampler supports an explicit seed. Zero is a fixed
+# convention, not a seed selected against evaluation labels (D54).
+U_SAMPLE_SEED = 0
 
 
 def training_rule(column: str) -> CustomRule:
@@ -114,6 +120,7 @@ def training_rule(column: str) -> CustomRule:
     )
 
 SCORES_PATH = PROCESSED_DIR / "scores_classical.csv"
+RUN_METADATA_PATH = PROCESSED_DIR / "run_classical.json"
 
 
 def attach_pair_keys(
@@ -174,7 +181,9 @@ def train(linker: Linker) -> None:
     """
     print("  estimating u by random sampling ...", flush=True)
     started = time.time()
-    linker.training.estimate_u_using_random_sampling(max_pairs=U_SAMPLE_PAIRS)
+    linker.training.estimate_u_using_random_sampling(
+        max_pairs=U_SAMPLE_PAIRS, seed=U_SAMPLE_SEED
+    )
     print(f"    done in {time.time() - started:.1f}s")
 
     for column in TRAINING_COLUMNS:
@@ -231,6 +240,15 @@ def main() -> None:
     linker.misc.save_model_to_json(
         str(PROCESSED_DIR / "model_classical.json"), overwrite=True
     )
+    RUN_METADATA_PATH.write_text(json.dumps({
+        "dataset": DEFAULT_DATASET,
+        "candidate_pairs": len(candidates),
+        "u_sample_pairs": U_SAMPLE_PAIRS,
+        "u_sample_seed": U_SAMPLE_SEED,
+        "splink_version": version("splink"),
+        "scores_path": SCORES_PATH.name,
+        "model_path": "model_classical.json",
+    }, indent=2) + "\n")
 
 
 if __name__ == "__main__":

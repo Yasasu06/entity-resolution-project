@@ -71,14 +71,13 @@ def describe_source_table(path: Path) -> pd.DataFrame:
 def describe_pair_files(dataset_dir: Path, unlock_final_evaluation: bool = False) -> None:
     """Report row counts and label balance across the train/valid/test splits.
 
-    SEALED by default. Label counts are answer-key information, so summarising
-    them counts as peeking under the project's strict no-peek policy
-    (docs/DECISIONS.md D14) even though it looks like harmless description.
+    Guarded by default. Label counts are answer-key information, so this
+    command requires an explicit flag to display them (docs/DECISIONS.md D14).
     """
     if not unlock_final_evaluation:
-        print("\n  --- labeled pairs: SEALED (no-peek policy, D14) ---")
-        print("  Label files exist but are not summarised during development.")
-        print("  Run with --unlock-final-evaluation as part of the final evaluation.")
+        print("\n  --- labeled pairs: guarded by default (D14) ---")
+        print("  Label files exist but are not summarised without an explicit flag.")
+        print("  Run with --unlock-final-evaluation to inspect them.")
         return
 
     print("\n  --- labeled pairs ---")

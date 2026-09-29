@@ -43,33 +43,38 @@ is never filled.**
   against published figures where possible rather than trusted.
 - A clearly reported failure is a better outcome than a quietly filled gap.
 
-## 3. Strict no-peek on all labelled data
+## 3. Label-feedback boundary and disclosure
 
-**No labelled answers — `train`, `valid` *or* `test` — are consulted for any
-purpose until the entire system is built.** Then one single evaluation is run,
-once. See [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
-for the full reasoning and the trade-off accepted deliberately.
+Earlier exploration used train/validation labels before D14 adopted a stricter
+policy. From that point through the original evaluation, later blocking,
+matching and threshold decisions were developed without further label feedback.
+The original pre-registered policy scored **59.46% F1**. D41 and D46 then made
+label-informed policy changes; D54 records that the historical **61.46% F1**
+run was unseeded. D55 fixes `u` sampling at seed 0 and reports the current
+reproducible **61.47% F1** run over 974 accepts. See [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished)
+for the earlier exposure and its quarantine.
 
 - This includes checks that resemble ordinary due diligence. *"How many known
   true matches survive this blocking step?"* is a peek: if a rule is kept or
   dropped based on that number, the answer key has shaped the design.
 - It includes reporting label counts or match percentages for a split.
   Describing the answer key is still using the answer key.
-- Blocking rules, comparison logic and thresholds are all justified from the
-  **structure of the data** — row counts, column names, missing-value rates,
+- The later pre-evaluation blocking rules, comparison logic and original
+  thresholds were justified from the **structure of the data** — row counts,
+  column names, missing-value rates,
   token frequency distributions, the documented corruption mechanism, and
   published benchmark totals. Never from label feedback.
-- It is enforced in code, not by convention: `src/data_loading.py` refuses to
-  open a labelled split without `unlock_final_evaluation=True`, the baseline
-  refuses to run without `--unlock-final-evaluation`, and a test asserts all
-  three splits are sealed by default. **These guards are not to be weakened or
-  worked around.**
+- The loader refuses to open a labeled split without
+  `unlock_final_evaluation=True`, and the baseline requires
+  `--unlock-final-evaluation`. Tests check the default guard, while some tests
+  explicitly unlock and read train/validation labels. The guard makes access
+  deliberate; it cannot establish that a split has never been read.
 - Parts of [`ASSESSMENT.md`](ASSESSMENT.md) predate this policy and are
   **label-derived and quarantined** — they are flagged in that file and must not
   be used as design input. D14 lists exactly what is contaminated and what is
   safe.
-- **No self-labelling either.** Pairs are not hand-judged to create a feedback
-  signal — not 40, not 4 — even though doing so would never open a sealed file.
+- **No self-labeling for the original design.** Pairs were not hand-judged to
+  create feedback for pre-evaluation blocking or matching choices.
   Writing a new answer key defeats the purpose as thoroughly as reading the
   supplied one. This rules out learned blocking schemes of the `dedupe`/Zingg
   kind, tuning thresholds by eye, and any model trained on judgements produced
@@ -79,8 +84,9 @@ for the full reasoning and the trade-off accepted deliberately.
   whether a specific pair is a match, and feeding that back into a design
   choice, is not.
 
-Any step that would touch labelled data — or manufacture a substitute for it —
-stops, and the conflict is stated rather than resolved silently.
+Post-evaluation label use and human judgments are recorded as such. The
+60-record owner review study in D51 does not establish an operating review
+service or independent-reviewer agreement.
 
 ## 4. Dataset scope
 
@@ -95,8 +101,8 @@ stops, and the conflict is stated rather than resolved silently.
 
 ## 5. Project context
 
-A system demonstrating **entity resolution** — matching records across sources
-that refer to the same real-world company, with no shared ID.
+A system demonstrating **entity resolution** — matching product listings across
+retailers that refer to the same real-world item, with no shared ID.
 
 The emphasis is on engineering judgement, not just model accuracy. The
 distinguishing focus is **how the system handles genuinely uncertain cases**.
@@ -132,7 +138,7 @@ invented terms such as "unsure band"
 Where it disagrees with [`DECISIONS.md`](DECISIONS.md), the decision
 log wins.*
 
-**Decisions recorded: D1–D54.** Several supersede earlier ones — D14 replaced
+**Decisions recorded: D1–D55.** Several supersede earlier ones — D14 replaced
 D6 and voided the D9 baseline result; D17 and D18 changed settings first stated
 in D16; D23 corrected how R3 had been described throughout; D29 added a fourth
 training round to the three set out in D26. When two entries disagree, the
@@ -194,13 +200,14 @@ blocking↔matching interface contract in `src/interfaces.py`
 
 ### Matching — complete
 
-Implemented in `src/matcher.py`. Scores all 564,450 candidate pairs with Splink,
-unsupervised, in about 157 seconds: u estimated by random sampling over 50
-million pairs, four expectation-maximisation sessions, then prediction. Every
-model parameter is estimated; none is imputed.
+Implemented in `src/matcher.py`. The seed-0 local rerun scored all 564,450
+candidate pairs with Splink in about 185 seconds without pair-label training:
+u was estimated by seeded random sampling over 50 million pairs, followed by
+four expectation-maximisation sessions and prediction. Every model parameter
+is estimated; none is imputed.
 
-Scores are strongly bimodal — 93.3% below 0.01 and 0.8% above 0.99, with a
-sparse middle that the abstention band can sit in.
+In the earlier unseeded analysis, scores were strongly bimodal — 93.3% below
+0.01 and 0.8% above 0.99, with a sparse middle for the abstention band.
 
 Settled during the build:
 
@@ -225,11 +232,13 @@ Settled during the build:
   only**, the definition is broadened to include long pure-numeric tokens.
   **Blocking's R2 definition is unchanged** — altering it would invalidate every
   measured blocking figure.
-- **`probability_two_random_records_match` = 2.0e-05**, derived label-free and
-  to be sensitivity-tested across [1e-05, 4e-05] at final evaluation
-  ([D25](DECISIONS.md#d25--the-prior-probability-that-two-random-records-match)).
+- **`probability_two_random_records_match` = 2.0e-05**, derived without label
+  feedback during D14 design. D39 later found that this prior implied about
+  1,128 matches against 962 actual, while the model's posterior mass implied
+  12,941 ([D25](DECISIONS.md#d25--the-prior-probability-that-two-random-records-match),
+  [D39](DECISIONS.md)).
 
-**Open items carried forward:**
+**Build observations and remaining questions:**
 
 1. **Two price levels collapsed.** "Within 10%" and "Within 20%" learned
    essentially the same weight, +1.33 and +1.32 bits, so the 10% boundary
@@ -240,10 +249,10 @@ Settled during the build:
    because separate EM sessions estimate different levels against different
    populations and Splink does not renormalise across them
    ([D29](DECISIONS.md#d29--a-fourth-training-round-and-a-lesson-about-which-statistic-governs)).
-3. **The λ tension.** 4,454 pairs score at or above 0.99 against a prior
-   implying roughly 1,128 matches. Either the prior is low or the model is
-   overconfident; only the sensitivity check at final evaluation can tell
-   ([D25](DECISIONS.md#d25--the-prior-probability-that-two-random-records-match)).
+3. **The λ tension was resolved at the original evaluation.** The prior
+   implied roughly 1,128 matches against 962 actual; the model's summed scores
+   implied 12,941. Its score values are not calibrated match probabilities
+   ([D39](DECISIONS.md)).
 4. The DF ≤ 5 cutoff separating rare from common identifiers is inherited from
    blocking and remains untuned for matching.
 5. **Clarification, not a question:** Splink's native term-frequency adjustment
@@ -252,17 +261,19 @@ Settled during the build:
 
 ### After matching
 
-Selective prediction and review routing are designed but not built, and depend
-on match scores existing ([D24](DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)):
-the review interface shows evidence but never a recommendation, AI-only review
-is measured for real, human-only review is modelled across a stated range of
-assumed accuracies.
+Selective prediction and review routing are implemented. A local JSON queue
+and terminal tool support review; one owner reviewer completed 60 distinct
+records in D51. Full-queue outcomes are projections, and no operational review
+service or feedback into production accepts is established. The site is a
+static interactive demo over a committed snapshot.
 
-A **second, embedding-based system** follows, for comparison against the
-classical one ([D22](DECISIONS.md#d22--how-the-two-systems-will-be-compared)).
-Labels stay sealed until both are finished, then one evaluation covers both.
+D43 ran an embedding and model **component-swap experiment** over the classical
+candidate set. It was declined; an independent embedding blocker and complete
+second pipeline were not built. Its 1,416 accepts were 42.4547% more than the
+994 classical accepts at the time, or 45.8290% more than the later historical
+D46 policy's 971 accepts. These comparisons use different denominators.
 
-367 tests currently pass.
+The original policy's 59.46% F1, historical unseeded D46's 61.46% F1 and the
+current seed-0 policy's 61.47% F1 must be reported separately.
 
-Under the no-peek policy above, every design choice is justified from data
-structure only — no checking rules or thresholds against known matches.
+368 tests currently pass.

@@ -90,6 +90,12 @@ def test_a_well_formed_score_set_passes():
     validate_scores(scores([("A_0", "B_0", 0.9), ("A_1", "B_1", 0.1)]), cand)
 
 
+def test_a_matcher_may_not_score_a_candidate_twice():
+    cand = candidates([("A_0", "B_0")])
+    with pytest.raises(ValueError, match="duplicate scored pairs"):
+        validate_scores(scores([("A_0", "B_0", 0.9), ("A_0", "B_0", 0.1)]), cand)
+
+
 def test_a_matcher_must_score_every_candidate():
     """Dropping pairs would look like precision but is actually missing work."""
     cand = candidates([("A_0", "B_0"), ("A_1", "B_1")])

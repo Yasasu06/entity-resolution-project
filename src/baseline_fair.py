@@ -4,8 +4,9 @@ The original baseline in ``baseline_token_overlap`` is kept, but it cannot be
 compared with the system it is meant to be a baseline *for*. Two reasons, both
 recorded in ``docs/PRE_REGISTRATION.md`` section 7:
 
-* **It was supervised and the system was not.** It chose its threshold by
-  maximising F1 on ``train`` labels. The matcher never saw a label.
+* **Its threshold used labels; the matcher's training did not.** It chose its
+  threshold by maximising F1 on ``train`` labels. Earlier train/valid exploration
+  elsewhere in the project is disclosed in D14.
 * **It scored different pairs.** It ran on the benchmark's curated set - the
   decision step alone - while the system runs the full pipeline over 564,450
   candidates.
@@ -18,9 +19,9 @@ The baseline gains the structural treatment the system had and none of the
 sophistication, which is what isolates the contribution of the probabilistic
 model.
 
-**Everything except the evaluation runs now.** Scoring and deciding touch no
-labelled data; only precision and recall need the answer key, and truth is
-passed in as an argument so this module never opens a sealed file.
+Scoring and deciding in this module touch no labelled data. Precision and
+recall require the answer key, passed in as an argument; this module does not
+open a labelled split itself.
 
 Run with ``python -m src.baseline_fair``.
 """
@@ -31,10 +32,9 @@ from src.baseline_token_overlap import jaccard, record_tokens
 from src.data_loading import load_source_tables
 from src.interfaces import LEFT_ID, PROCESSED_DIR, RIGHT_ID, load_candidates
 
-# Fixed in section 7.3 by equal coverage: at 0.34 the baseline accepts 1,055
-# records against the system's 1,072, the nearest achievable point. Comparing at
-# matched coverage stops either system buying precision by abstaining more, and
-# needs no label to set.
+# Fixed in section 7.3 by equal coverage on the historical pre-evaluation
+# scores: at 0.34 the baseline accepts 1,055 records against the system's
+# then-1,072, the nearest achievable point. The threshold needs no label to set.
 THRESHOLD = 0.34
 
 ACCEPTED_PATH = PROCESSED_DIR / "accepted_baseline.csv"
@@ -134,8 +134,8 @@ def main() -> None:
     print(f"  similarity of accepts     median {accepted['similarity'].median():.3f}, "
           f"min {accepted['similarity'].min():.3f}")
     print(f"  written to                {ACCEPTED_PATH.name}")
-    print("\n  Precision and recall need the answer key and are computed once, at")
-    print("  final evaluation. This module never opens a labelled file.")
+    print("\n  Precision and recall need the answer key; see the evaluation reports.")
+    print("  This module does not open a labelled file.")
 
 
 if __name__ == "__main__":

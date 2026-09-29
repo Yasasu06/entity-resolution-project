@@ -2,18 +2,19 @@ import { Eyebrow, Reveal } from "./ui";
 
 const ROWS = [
   ["Boundary", "commit 9819d63 · 20 September 2026"],
-  ["Proof", "OpenTimestamps, anchored in the Bitcoin blockchain, controlled by neither the author nor the host"],
-  ["Record", "54 decision entries · 14 pre-registration sections · 367 tests"],
-  ["Evaluation", "One pass over all three splits, nothing adjusted afterwards"],
+  ["Proof", "OpenTimestamps proof file included with the repository"],
+  ["Record", "55 decision entries · 14 pre-registration sections · 368 tests"],
+  ["Original", "59.46% F1 under the pre-registered decision rule"],
+  ["Revision", "Mutual-best-match and tie handling adopted after label-informed evaluation"],
 ];
 
 export default function Method() {
   return (
     <>
       <Reveal>
-        <Eyebrow>How it was kept honest</Eyebrow>
+        <Eyebrow>Evaluation chronology</Eyebrow>
         <h3 className="mt-4 font-display text-[clamp(1.55rem,3vw,2.35rem)] leading-tight tracking-[-0.015em]">
-          The seal
+          What was fixed, and when
         </h3>
       </Reveal>
 
@@ -21,20 +22,18 @@ export default function Method() {
         <Reveal>
           <div className="space-y-5 text-dim">
             <p>
-              No labelled data was read until the whole system was finished. That was enforced in
-              code, not by intention: the loader refuses to open a labelled split without an
-              explicit override, and the refusal has its own test.
+              Early train and validation exploration used labels. Later blocking and matching work
+              after the documented boundary did not use label feedback for those design decisions.
+              The loader requires an explicit override to open labelled splits; tests can use it.
             </p>
             <p>
-              Every threshold, the review interface&rsquo;s display rules, the AI reviewer&rsquo;s
-              exact prompt and model, and the full list of measurements were fixed in a
-              pre-registration and committed before the answer key was opened. Corrections are made
-              by adding new entries, never by revising old ones.
+              The original decision thresholds and evaluation plan were committed before the final
+              all-split evaluation. That rule scored 59.46% F1. Later reciprocity and tie-handling
+              revisions were chosen with label feedback and have a separate result.
             </p>
             <p className="text-ink">
-              The strongest evidence is not the timestamp. It is that the record documents its own
-              system failing, and that the pre-unseal analysis turned out to be conservative about
-              that failure rather than defensive of it.
+              The decision log records both the failed pre-evaluation expectations and the
+              post-evaluation corrections. Those two stages should be read as different evidence.
             </p>
           </div>
         </Reveal>

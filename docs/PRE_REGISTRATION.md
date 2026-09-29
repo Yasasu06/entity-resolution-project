@@ -1,17 +1,32 @@
 # Pre-registration: the decision rule and how it will be evaluated
 
-**Written 19 September 2026, before any labelled data has been read.**
+**Original decision rule written 19 September 2026, before the final evaluation.**
 
-This document fixes the decision rule, its thresholds and the measurements that
-will be taken, in advance of unsealing `train`, `valid` or `test`. Its purpose
+> **Reading note added after evaluation.** Earlier train/validation exploration
+> had already used labels before the stricter D14 policy; see
+> [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
+> The original wording claimed no labeled data had *ever* been read; that was
+> overbroad. Sections 1–10 retain the original pre-registered rule and
+> measurements, with chronology corrected here; later sections are dated,
+> post-evaluation additions.
+> The original policy scored **59.46% F1**. D41 and D46 subsequently changed
+> decisions with knowledge of the labels; D55 reports the seed-0 reproducible
+> result of **61.47% F1**. Section 14's statement that nobody
+> had worked the queue was true when written; D51 reports one owner reviewer on
+> 60 distinct records. The terminal display hid the answer category, but its
+> underlying sample file included `stratum_hidden`, so the file itself was not
+> truth-free. D39 withdrew the planned test-only record metric because the
+> benchmark partitions pairs while this system decides records.
+
+The original sections fix the decision rule, its thresholds and measurements
+before the final combined-key evaluation. Their purpose
 is to make the final result a *result* rather than a *claim*: once labels are
 visible it becomes impossible to prove, even in good faith, that a threshold was
 not nudged to flatter the outcome. Writing the rule down first costs nothing and
 settles the question.
 
-Nothing in this document may be revised after the labels are unsealed. If the
-rule turns out to be wrong, that finding is reported against this text, not
-substituted for it.
+The original rule remains in the repository history for comparison. Corrections
+are explicitly dated and identified rather than substituted into that record.
 
 ---
 
@@ -202,15 +217,15 @@ The label **confidently different** reflects genuine confidence derived from the
 analysis in this document, and is used deliberately in preference to a softer
 phrase. That confidence is nonetheless **structural, not empirical**: it rests
 on the model's ordering of pairs and on the shape of the score distribution, and
-**it has never been checked against a real label.** Until the measurements in
-section 3 are taken, every number in this document describes what the system
-believes, not what is true.
+**it had not been checked against label feedback during the D14 design
+period.** Until the measurements in section 3 are taken, every number here
+describes what the system believes, not what is true.
 
 ---
 
 ## 6. The two review arms
 
-**Added 19 September 2026, still before any labelled data has been read.** The
+**Added 19 September 2026, before the original final evaluation.** The
 sections above were written first and are unchanged. This section fixes the two
 arms described in [D24](DECISIONS.md#d24--how-abstained-pairs-are-handled-build-for-humans-measure-the-ai)
 before either is run.
@@ -292,10 +307,11 @@ ran, and this block records the change rather than hiding it in a revision.
 | Reason | Account access, and cost: the cheapest viable option was preferred |
 | Date | 19 September 2026 |
 
-**When this happened matters.** No call had been made, no result existed, and no
-labelled data had been read. The change could not have been influenced by an
-outcome, because there was no outcome. Had the arm already run, replacing the
-model would have voided the pre-registration rather than amended it.
+**When this happened matters.** No call had been made, no result existed, and
+the model switch used no label feedback under D14. The change could not have
+been influenced by an outcome, because there was no outcome. Had the arm
+already run, replacing the model would have voided the pre-registration rather
+than amended it.
 
 **A dated snapshot, not a floating alias.** `gpt-5.4-mini` without the date can be
 repointed to a different model without notice, which would leave this document
@@ -434,7 +450,7 @@ For each arm, over the agreed population:
 
 ## 7. The baseline comparison
 
-**Added 19 September 2026, before any labelled data has been read.**
+**Added 19 September 2026, before the original final evaluation.**
 
 [D9](DECISIONS.md#d9--establish-a-deliberately-dumb-baseline-before-building-anything-clever)'s baseline result was voided by
 [D14](DECISIONS.md#d14--strict-no-peek-no-labelled-data-until-the-system-is-finished).
@@ -626,8 +642,8 @@ flatters the system.
 
 ## 9. The quantity veto, and its held-out validation
 
-**Added 20 September 2026, before the veto was written, and before any labelled
-data has been read.**
+**Added 20 September 2026, before the veto was written and before the original
+final evaluation.**
 
 [D36](DECISIONS.md#d36--the-accepted-set-does-not-reliably-identify-products-and-a-threshold-will-not-fix-it)
 established that the matcher cannot separate a real partner from a near-miss
@@ -725,8 +741,8 @@ it is the clearest case yet for what the AI-based system exists to provide.
 
 ## 10. Which splits are opened, and what the answer key can and cannot say
 
-**Added 20 September 2026. Written before any labelled file has been opened, and
-the last thing added before unsealing.**
+**Added 20 September 2026. Written before the original final evaluation and
+the last thing added before the D39 measurement.**
 
 Sections 1 to 9 refer throughout to "unsealing `train`, `valid` or `test`"
 without ever fixing which are used. That gap is closed here rather than settled
@@ -738,12 +754,13 @@ in the moment, when a split could be chosen for its result.
 reported alongside it.
 
 The benchmark's three-way split exists so that supervised methods can fit on one
-part and be judged on another. **This system fits nothing.** Its prior was
+part and be judged on another. **This system fits no supervised parameters.**
+Its prior was
 derived structurally, its thresholds were placed on the shape of the score
 distribution, its comparisons were trained by expectation-maximisation without
-labels, and the whole rule was pre-registered before any answer was available.
-No split was ever used to tune anything, so none is contaminated and none needs
-holding back.
+labels, and the whole rule was pre-registered before the original final
+evaluation. No split was used to tune that rule after D14; earlier exploratory
+train/validation exposure is disclosed there.
 
 Combining gives the largest evaluation sample and the most reliable estimates.
 Reporting `test` alone as well costs one extra computation and allows comparison

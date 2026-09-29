@@ -1,9 +1,9 @@
 """Tests for the windowed reciprocity measurement (D52).
 
-The two endpoint tests exist so the reported curve cannot drift silently. A
+The two endpoint tests exist so the seeded run's curve cannot drift silently. A
 change anywhere in the scoring path, the veto order or the arrival order would
-move one of them, and each is pinned to a figure published elsewhere in the
-project: 59.46 at window 1 and 61.46 at full batch.
+move one of them. The original unseeded 59.46/61.46 endpoints remain historical
+measurements in the decision log.
 
 No test makes a network call.
 
@@ -38,18 +38,18 @@ def curve():
 @needs_scores
 def test_window_one_matches_the_record_at_a_time_figure(curve):
     """With no other record visible, reciprocity leaves the outcomes as the
-    record-at-a-time stages produced them: the pre-D46 figure."""
-    assert curve[1]["f1"] == 59.46
-    assert curve[1]["accepted"] == 1056
+    record-at-a-time stages produced them on the seeded scores."""
+    assert curve[1]["f1"] == 59.50
+    assert curve[1]["accepted"] == 1058
 
 
 @needs_scores
 def test_full_batch_matches_the_reported_system(curve):
-    """The full-batch row is the system as reported in D46."""
-    assert curve[2554]["f1"] == BATCH_F1 == 61.46
-    assert curve[2554]["accepted"] == BATCH_ACCEPTED == 971
-    assert curve[2554]["precision"] == 61.17
-    assert curve[2554]["recall"] == 61.75
+    """The full-batch row matches the seeded current policy."""
+    assert curve[2554]["f1"] == BATCH_F1 == 61.47
+    assert curve[2554]["accepted"] == BATCH_ACCEPTED == 974
+    assert curve[2554]["precision"] == 61.09
+    assert curve[2554]["recall"] == 61.85
 
 
 @needs_scores

@@ -9,16 +9,14 @@ export default function Closing() {
       </h2>
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
         <p className="max-w-[56ch] text-lg leading-relaxed text-dim">
-          61.17% precision on unattended output is not something to ship unattended, which is why
-          1,214 records go to a person instead. Every figure on this page carries its interval and
-          its error profile, because stating the limits beside a number rather than after it is the
-          only thing that makes the number worth reading.
+          The measured unattended precision is too low for automatic deployment. Uncertain records
+          are routed to a local JSON review queue, and one owner reviewer completed 60 distinct
+          records in a terminal study. That does not establish an operating review service.
         </p>
         <p className="max-w-[56ch] text-lg leading-relaxed text-dim">
-          Every material limitation was found, measured and published <span className="text-ink">before</span> the
-          answer key was opened, and the analysis written while blind turned out to be
-          <span className="text-signal"> conservative</span> about what it found, not defensive of it.
-          That is harder to fake than a good score.
+          The original rule&rsquo;s 59.46% F1 is the pre-registered evaluation. The later policy was
+          revised with label feedback, so its higher F1 is a post-evaluation result. The public demo
+          uses a fixed snapshot of that policy and reveals the benchmark answer after each choice.
         </p>
       </div>
     </Reveal>

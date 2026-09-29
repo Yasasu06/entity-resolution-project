@@ -1,5 +1,5 @@
 import F1Chart from "./F1Chart";
-import { BENCHMARK, CI, ERRORS, HEADLINE, HUMAN, SWAP, WINDOWS } from "../data/facts";
+import { BENCHMARK, CI, ERRORS, HEADLINE, HISTORICAL, HUMAN, SWAP, WINDOWS } from "../data/facts";
 import { Eyebrow, Reveal } from "./ui";
 
 const C = { signal: "var(--color-signal)", alarm: "var(--color-alarm)", hold: "var(--color-hold)", line: "var(--color-line)",
@@ -16,10 +16,10 @@ function Benchmark() {
   return (
     <Box>
       <div className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
-        The same matcher, scored the way the literature scores
+        The historical matcher, scored the way the literature scores
       </div>
       <p className="mt-4 max-w-[62ch] text-sm leading-relaxed text-dim">
-        The {HEADLINE.f1}% above is measured under this project&rsquo;s own protocol: its own
+        The historical {HISTORICAL.f1}% run was measured under this project&rsquo;s own protocol: its own
         blocking, all three splits, and one match per record. Published results use the
         benchmark&rsquo;s candidate pairs, the test split alone, and judge each pair
         independently. Those numbers cannot be set side by side, so the matcher was rerun
@@ -61,8 +61,9 @@ function Benchmark() {
         <span className="text-ink">clearly above Magellan, clearly below Ditto, and
         statistically indistinguishable from DeepMatcher</span>. An earlier version of this
         page ranked it 2.42 points below DeepMatcher, which the data does not support.
-        The three published systems each train on 60% of the labels. This one has never
-        read one except to measure. That narrows the gap. It does not turn it into a win.
+        The three published systems each train on 60% of the labels. This matcher was not trained
+        on pair labels, although earlier train and validation exploration used labels. That narrows
+        the comparison; it does not turn it into a win.
       </p>
       <p className="mt-3 max-w-[62ch] text-sm leading-relaxed text-faint">
         Recall holds at {BENCHMARK.recall}% while precision falls to {BENCHMARK.precision}%,
@@ -82,7 +83,7 @@ function Chosen() {
         How the reported configuration was chosen
       </div>
       <h3 className="mt-4 max-w-[30ch] font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-tight tracking-[-0.015em]">
-        The bar was set before the numbers existed.
+        The swap criterion was set before its results existed.
       </h3>
 
       <p className="mt-6 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
@@ -91,22 +92,22 @@ function Chosen() {
         catalogue.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        Measurement then produced a configuration scoring{" "}
-        <span className="tnum font-medium text-ink">{SWAP.f1}% F1</span> against{" "}
-        <span className="tnum font-medium text-ink">{HEADLINE.f1}%</span>. It reaches that score by
-        accepting {SWAP.acceptGrowth}% more pairs &mdash;{" "}
-        <span className="tnum">{SWAP.accepted.toLocaleString()}</span> rather than{" "}
-        <span className="tnum">{HEADLINE.accepted.toLocaleString()}</span> &mdash; which catches more
-        genuine matches and more that are not genuine. The group the condition named moved from{" "}
+        A historical component-swap experiment produced{" "}
+        <span className="tnum font-medium text-ink">{SWAP.f1}% F1</span> against its unseeded
+        classical comparator&rsquo;s <span className="tnum font-medium text-ink">{SWAP.comparatorF1}%</span>.
+        It accepted <span className="tnum">{SWAP.accepted.toLocaleString()}</span> pairs, {SWAP.acceptGrowthHistorical}% more
+        than the historical {SWAP.comparatorHistorical.toLocaleString()} accepts. Relative to the
+        current seeded {SWAP.comparatorCurrent.toLocaleString()} accepts, that count is {SWAP.acceptGrowthCurrent}% higher;
+        the swap itself was not rerun. In the historical error comparison, no-partner accepts moved from{" "}
         <span className="tnum">{SWAP.noPartnerBefore}</span> to{" "}
         <span className="tnum font-medium text-alarm">{SWAP.noPartnerAfter}</span>, and precision from{" "}
-        <span className="tnum">{HEADLINE.precision}%</span> to{" "}
+        <span className="tnum">{HISTORICAL.precision}%</span> to{" "}
         <span className="tnum">{SWAP.precision}%</span>.
       </p>
 
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed">
-        <span className="text-ink">The condition had already been written. This site reports the
-        configuration that met it.</span>{" "}
+        <span className="text-ink">The swap failed the registered criterion, so it did not replace
+        the classical policy.</span>{" "}
         <span className="text-dim">Entity resolution feeds catalogues, billing and identity systems,
         where a confident wrong answer travels further than a missed one.</span>
       </p>
@@ -117,7 +118,7 @@ function Chosen() {
 function LabelValue() {
   const rows = [
     { l: "12 labels, chosen by score", v: 4.06, tone: "bg-alarm-tint", ring: "ring-alarm/30" },
-    { l: "no labels at all", v: 47.54, tone: "bg-raised", ring: "ring-line2" },
+    { l: "no newly selected labels", v: 47.54, tone: "bg-raised", ring: "ring-line2" },
     { l: "12 labels, chosen at the boundary", v: 60.94, tone: "bg-signal-tint", ring: "ring-signal/40" },
   ];
   const max = 70;
@@ -127,9 +128,8 @@ function LabelValue() {
         What labels would have bought
       </div>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        The standing objection to building without labels is that labels are cheap: the two most used
-        open-source tools reach production quality from thirty or forty hand-labelled pairs. That was
-        measured rather than argued.{" "}
+        This historical experiment asked how much a small set of newly selected labels could change
+        one decision threshold in the fixed six-comparison model.{" "}
         <span className="text-ink">Twelve labels are worth either &minus;43 F1 points or +13,
         depending entirely on which twelve pairs are labelled.</span>
       </p>
@@ -164,35 +164,35 @@ function ReviewTier() {
         What routing to a person actually recovers
       </div>
       <h3 className="mt-4 max-w-[30ch] font-display text-[clamp(1.5rem,3vw,2.25rem)] leading-tight tracking-[-0.015em]">
-        The review tier, measured rather than assumed.
+        One reviewer, 60 records.
       </h3>
 
       <p className="mt-6 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        The architecture sends <span className="tnum">{HUMAN.queue.toLocaleString()}</span>{" "}
-        uncertain records to human review. How much that recovers had been modelled and never
-        measured, so one reviewer worked <span className="tnum">{HUMAN.reviewed}</span> of them at
-        about a minute each.
+        In the historical unseeded run, the local queue contained{" "}
+        <span className="tnum">{HUMAN.queue.toLocaleString()}</span> records. One owner reviewer
+        worked <span className="tnum">{HUMAN.reviewed}</span> distinct records in a terminal
+        study. There was no operating review service or multiple-reviewer validation.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
         They found <span className="tnum font-medium text-ink">{HUMAN.recall}%</span> of the matches
-        that were present, above what was predicted in advance. On records where no match existed,
-        they identified one anyway <span className="tnum font-medium text-ink">{HUMAN.falseMatch}%</span>{" "}
-        of the time. At queue scale those rates recover{" "}
+        whose partner was shown. When no correct partner was shown, they selected one anyway{" "}
+        <span className="tnum font-medium text-ink">{HUMAN.falseMatch}%</span>{" "}
+        of the time. Projected to that full historical queue, these rates would recover{" "}
         <span className="tnum font-medium text-signal">{HUMAN.recovered}</span> genuine matches and
-        introduce <span className="tnum font-medium text-alarm">{HUMAN.introduced}</span>, giving the
-        review tier&rsquo;s output a precision of{" "}
-        <span className="tnum">{HUMAN.tierPrecision}%</span> alongside the automated tier&rsquo;s{" "}
-        <span className="tnum">{HUMAN.autoPrecision}%</span>.
+        introduce <span className="tnum font-medium text-alarm">{HUMAN.introduced}</span> false
+        matches, for a projected review-tier precision of{" "}
+        <span className="tnum">{HUMAN.tierPrecision}%</span>. Those counts are extrapolations, not
+        observed full-queue decisions.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        This is a property of the task rather than the reviewer. Shown a shortlist of plausible
-        candidates and asked whether one of them matches, the shortlist is persuasive &mdash; and{" "}
+        The sample suggests that a shortlist of plausible candidates can persuade a reviewer to
+        select a match &mdash; even though{" "}
         <span className="tnum">{HUMAN.noneCorrect}%</span> of the time the accurate answer is that
         none of them does.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed">
-        <span className="text-ink">The measurement establishes that the review tier needs its own
-        acceptance rule rather than being trusted by construction.</span>{" "}
+        <span className="text-ink">The observed 60 records suggest that a review tier needs its
+        own acceptance rule.</span>{" "}
         <span className="text-dim">The earlier model assumed a single uniform error rate across
         every record; the reviewer is strongly asymmetric between records that have a match and
         records that do not, which no single rate represents.</span>
@@ -220,8 +220,8 @@ function ArrivalWindows() {
         which requires the other records to be available.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        The same trained model and the same thresholds were run with that stage given a bounded
-        window of arrivals, from a single record up to the full{" "}
+        In the current seeded run, the same trained model and thresholds were evaluated with
+        a bounded window of arrivals, from a single record up to the full{" "}
         <span className="tnum">2,554</span>.
       </p>
 
@@ -252,15 +252,12 @@ function ArrivalWindows() {
       </div>
 
       <p className="mt-7 max-w-[62ch] text-[0.95rem] leading-relaxed text-dim">
-        At a window of <span className="tnum">250</span> records, a tenth of the population,{" "}
-        <span className="tnum">0.18</span> of the{" "}
-        <span className="tnum">2.00</span> difference is present. Half of it appears between
-        windows of <span className="tnum">500</span> and{" "}
-        <span className="tnum">1,000</span>, where the window holds 39% of every record in the
-        dataset. The movement is carried by precision, which runs from{" "}
-        <span className="tnum">56.82%</span> to <span className="tnum">61.17%</span>; the stage
-        withholds pairs rather than adding them, and the accepted count falls from{" "}
-        <span className="tnum">1,056</span> to <span className="tnum">971</span>.
+        At a window of <span className="tnum">250</span> records, about a tenth of the population,
+        the F1 difference from full batch is <span className="tnum">1.79</span> points. At{" "}
+        <span className="tnum">1,000</span> records it is <span className="tnum">0.93</span> points.
+        Precision rises from <span className="tnum">56.81%</span> to{" "}
+        <span className="tnum">61.09%</span> across the window range, while accepted pairs fall
+        from <span className="tnum">1,058</span> to <span className="tnum">974</span>.
       </p>
       <p className="mt-4 max-w-[62ch] text-[0.95rem] leading-relaxed text-faint">
         Each window is evaluated independently. A deployment that had emitted a pair could not
@@ -281,8 +278,9 @@ export default function Charts() {
           Measured completely, and reported with its limits.
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
-          Six probabilistic comparisons trained by expectation&ndash;maximisation, against a
-          five-line token-overlap heuristic tuned to its own optimum. The gap is 6.5&nbsp;points.
+          The current seeded result, its baseline comparison and its record-level uncertainty
+          interval are shown first. The benchmark, component-swap, label-value and human-review
+          studies remain historical experiments and are identified separately.
         </p>
       </Reveal>
 
@@ -291,7 +289,7 @@ export default function Charts() {
           <Box>
             <F1Chart />
             <div className="mt-4 border-t border-line pt-3 font-mono text-[0.7rem] text-faint">
-              95% interval, bootstrapped over {HEADLINE.records.toLocaleString()} records:{" "}
+              Current seeded run: 95% interval, bootstrapped over {HEADLINE.records.toLocaleString()} records:{" "}
               <span className="tnum text-dim">
                 {HEADLINE.f1} [{CI.system[0]}, {CI.system[1]}]
               </span>
@@ -309,10 +307,10 @@ export default function Charts() {
         <Reveal delay={0.08} className="lg:col-span-2">
           <Box>
             <div className="mb-1 font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">
-              What the 971 accepted records are
+              What the {HEADLINE.accepted} current accepts are
             </div>
             <div className="mb-5 flex items-baseline gap-2">
-              <span className="font-display text-5xl leading-none text-alarm tnum">342</span>
+              <span className="font-display text-5xl leading-none text-alarm tnum">344</span>
               <span className="text-sm text-dim">have no partner at all</span>
             </div>
             <div className="flex h-12 w-full overflow-hidden rounded-md ring-1 ring-line">
@@ -332,7 +330,7 @@ export default function Charts() {
             </ul>
             <p className="mt-5 text-sm leading-relaxed text-dim">
               <span className="text-ink">The dominant error is absence, not confusion.</span> Only
-              852 of 2,554 records have any partner in the answer key, and 971 were accepted.
+              852 of 2,554 records have any partner in the answer key, and {HEADLINE.accepted} were accepted.
             </p>
           </Box>
         </Reveal>
@@ -362,7 +360,7 @@ export default function Charts() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { v: `${HEADLINE.blockingRecall}%`, l: "Blocking recall", s: "961 of 962 kept" },
-            { v: `${HEADLINE.precision}%`, l: "Precision", s: "on 971 unattended" },
+            { v: `${HEADLINE.precision}%`, l: "Precision", s: `on ${HEADLINE.accepted} unattended` },
             { v: `${HEADLINE.recall}%`, l: "Recall", s: "of 962 true matches" },
             { v: HEADLINE.queued.toLocaleString(), l: "Sent to review", s: "not decided alone" },
           ].map((k) => (

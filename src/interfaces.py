@@ -53,9 +53,10 @@ RIGHT_ID = "unique_id_r"
 # two systems explainable rather than merely visible.
 CANDIDATE_COLUMNS = [LEFT_ID, RIGHT_ID, "rules"]
 
-# What a matcher must produce. 'match_probability' is a calibrated probability
-# in [0, 1]; the three-way decision (match / unsure / non-match) is made later
-# by applying thresholds, never inside the matcher itself.
+# What a matcher must produce. 'match_probability' is a model-reported score
+# in [0, 1]; this contract checks its range, not its empirical calibration.
+# The three-way decision (match / unsure / non-match) is made later by applying
+# thresholds, never inside the matcher itself.
 SCORE_COLUMNS = [LEFT_ID, RIGHT_ID, "match_probability"]
 
 
@@ -74,7 +75,7 @@ class Blocker(Protocol):
 
 @runtime_checkable
 class Matcher(Protocol):
-    """Anything that attaches a match probability to each candidate pair."""
+    """Anything that attaches a model-reported score to each candidate pair."""
 
     name: str
 
@@ -128,13 +129,17 @@ def validate_candidates(
 def validate_scores(scores: pd.DataFrame, candidates: pd.DataFrame) -> None:
     """Check a score frame against the contract.
 
-    A matcher must score every candidate it was given and invent none of its
+    A matcher must score every candidate exactly once and invent none of its
     own. Silently dropping pairs would look like good precision while actually
     being missing work.
     """
     missing = [c for c in SCORE_COLUMNS if c not in scores.columns]
     if missing:
         raise ValueError(f"scores missing required columns: {missing}")
+
+    duplicates = scores.duplicated(subset=[LEFT_ID, RIGHT_ID]).sum()
+    if duplicates:
+        raise ValueError(f"matcher returned {duplicates} duplicate scored pairs")
 
     given = set(zip(candidates[LEFT_ID], candidates[RIGHT_ID]))
     returned = set(zip(scores[LEFT_ID], scores[RIGHT_ID]))

@@ -1,13 +1,13 @@
 """Tests for the token-overlap baseline.
 
-The baseline exists to give the real system a number to beat, so a defect in it
-is not harmless: an accidentally weak baseline would flatter the real system,
-and an accidentally strong one would understate it. Neither would raise.
+This historical baseline scores curated candidate pairs. A defect would distort
+that result, so its scoring behavior still warrants tests. Its protocol is not
+directly comparable to the current full-pipeline evaluation.
 
 The most important test here is not about scoring at all. It is that the module
-**does not read labelled data unless explicitly unlocked** — the guard standing
-between this project and an accidental peek (D14). Nothing in this file opens a
-labelled split; where labels are needed they are invented in the test.
+**does not read labelled data unless explicitly unlocked**. Nothing in this
+file opens a labelled split; where labels are needed they are invented in the
+test. Other tests in this repository do read train/validation labels.
 
 Run with:  pytest
 """
@@ -26,10 +26,10 @@ from src.baseline_token_overlap import (
 )
 
 
-# --- the seal -----------------------------------------------------------------
+# --- the explicit label-access guard -----------------------------------------
 
 def test_the_baseline_does_not_read_labels_unless_unlocked(monkeypatch, capsys):
-    """The guard that keeps the no-peek policy honest.
+    """The guard that prevents accidental label reads by this script.
 
     Without the flag the module must decline to run and must not touch a
     labelled split. Monkeypatching the loader to raise means any attempt to
@@ -44,15 +44,15 @@ def test_the_baseline_does_not_read_labels_unless_unlocked(monkeypatch, capsys):
     baseline.main()  # no flag
 
     out = capsys.readouterr().out
-    assert "SEALED" in out
-    assert "did not run" in out
+    assert "No labels were read in this invocation" in out
+    assert "explicit flag" in out
 
 
 def test_the_superseded_result_is_not_presented_as_live(capsys):
-    """D9's F1 = 0.381 was voided by D14; the module must say so, not report it."""
+    """D9's F1 = 0.381 is a historical result, not the current baseline."""
     baseline.main()
     out = capsys.readouterr().out
-    assert "SUPERSEDED" in out
+    assert "historical" in out
     assert "0.381" in out, "the old number is kept as history, clearly marked"
 
 

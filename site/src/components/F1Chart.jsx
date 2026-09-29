@@ -13,12 +13,12 @@ export default function F1Chart() {
   return (
     <figure className="m-0">
       <figcaption className="mb-5 flex items-baseline justify-between gap-4">
-        <span className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">F1 score</span>
+        <span className="font-mono text-[0.8125rem] uppercase tracking-[0.09em] text-faint">Current seeded F1</span>
         <span className="font-mono text-xs text-faint">higher is better</span>
       </figcaption>
 
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
-        aria-label={`F1 comparison. This system ${HEADLINE.f1}. Token-overlap baseline ${HEADLINE.baselineBest}. Baseline at matched coverage ${HEADLINE.baselineMatched}.`}>
+        aria-label={`Current seeded F1 comparison. This system ${HEADLINE.f1}. Token-overlap baseline ${HEADLINE.baselineBest}. Baseline at matched coverage ${HEADLINE.baselineMatched}.`}>
         {TICKS.map((t) => (
           <line key={t} x1={scale(t)} x2={scale(t)} y1={TOP - 6} y2={AXIS_Y}
             stroke="var(--color-line)" strokeWidth="1" />

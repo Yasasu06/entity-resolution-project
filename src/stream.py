@@ -31,8 +31,9 @@ from src.review_queue import (ACCEPT, SCORES_PATH, apply_quantity_veto,
 WINDOWS = (1, 10, 25, 100, 250, 500, 1000, 2554)
 RESULT_PATH = PROCESSED_DIR / "stream_windows.json"
 
-# The figures the full-batch pipeline reports, for comparison at every row.
-BATCH_F1, BATCH_ACCEPTED = 61.46, 971
+# The seeded full-batch run's figures. D52's earlier unseeded curve remains a
+# historical measurement in the decision log.
+BATCH_F1, BATCH_ACCEPTED = 61.47, 974
 
 
 def arrival_order(ranked: pd.DataFrame) -> list:

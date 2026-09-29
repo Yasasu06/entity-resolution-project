@@ -1,12 +1,12 @@
 import { Eyebrow, Reveal } from "./ui";
 
 const STAGES = [
-  { n: "01", h: "Sealed", tone: "text-cool", ring: "ring-cool/25",
-    p: "The loader refuses to open a labelled split without an explicit override, and the refusal has its own test. Not a promise. A mechanism." },
-  { n: "02", h: "Predicted", tone: "text-hold", ring: "ring-hold/25",
-    p: "Every threshold, the review interface's display rules, the AI reviewer's exact prompt, and the full list of measurements, all fixed in writing, committed, and timestamped into the Bitcoin blockchain." },
-  { n: "03", h: "Opened once", tone: "text-signal", ring: "ring-signal/25",
-    p: "One pass over all three splits at the end. Nothing was adjusted afterwards. Corrections are added as new entries, never as edits to old ones." },
+  { n: "01", h: "Earlier exploration", tone: "text-cool", ring: "ring-cool/25",
+    p: "Train and validation labels were inspected early in the project. That history limits any absolute claim that labels were never seen." },
+  { n: "02", h: "Original rule fixed", tone: "text-hold", ring: "ring-hold/25",
+    p: "After a documented boundary, later blocking and matching choices were made without label feedback. The original decision thresholds and evaluation plan were committed before final evaluation." },
+  { n: "03", h: "Evaluated and revised", tone: "text-signal", ring: "ring-signal/25",
+    p: "The original rule scored 59.46% F1. Later mutual-best-match and tie changes used evaluation labels; the resulting policy is reported separately." },
 ];
 
 export default function HowItWasRun() {
@@ -15,11 +15,11 @@ export default function HowItWasRun() {
       <Reveal>
         <Eyebrow>How this was run</Eyebrow>
         <h2 className="mt-4 max-w-[20ch] font-display text-[clamp(2.1rem,5vw,3.75rem)] leading-[1.02] tracking-[-0.02em]">
-          The answers stayed locked until the end.
+          The policy has two evaluation histories.
         </h2>
         <p className="mt-6 max-w-[58ch] text-lg leading-relaxed text-dim">
-          Every claim on this page was written down before anyone could check it. That is what
-          makes the ledger below mean anything.
+          The original decision rule was fixed before its final evaluation. The later policy uses
+          what that evaluation taught, and its result is identified separately throughout this page.
         </p>
       </Reveal>
 

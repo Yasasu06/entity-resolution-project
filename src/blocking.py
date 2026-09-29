@@ -535,9 +535,8 @@ def report(index: BlockingIndex) -> dict[str, set[str]]:
           f"({reached_b / n_b * 100:.2f}%)   unreachable: {n_b - reached_b}")
     print(f"  candidates per Walmart record      : median {sizes[len(sizes) // 2]:,}  "
           f"p99 {sizes[int(0.99 * len(sizes))]:,}  max {sizes[-1]:,}")
-    print("\n  NOTE: these are reachability counts, not accuracy. Whether the correct")
-    print("  partner is among the candidates cannot be known without the labelled")
-    print("  data, which stays sealed until the final evaluation (D14).")
+    print("\n  NOTE: these are reachability counts, not accuracy. The later labelled")
+    print("  evaluation measured true-pair blocking recall separately (D14).")
     return combined
 
 

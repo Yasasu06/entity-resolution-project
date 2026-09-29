@@ -12,7 +12,7 @@ const REASON = {
 };
 
 export default function ReviewTool() {
-  const [cards, setCards] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
   const [err, setErr] = useState(false);
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState(null);
@@ -22,10 +22,11 @@ export default function ReviewTool() {
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data.json`)
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((d) => setCards(d.cards))
+      .then(setSnapshot)
       .catch(() => setErr(true));
   }, []);
 
+  const cards = snapshot?.cards;
   const c = cards?.[i];
   const shown = useMemo(
     () => (c ? c.blocks.flatMap((b) => b.members.map((m) => m.amazon_id)) : []),
@@ -68,10 +69,10 @@ export default function ReviewTool() {
           Try deciding one yourself
         </h2>
         <p className="mt-5 max-w-[62ch] text-dim">
-          Real records from the live pipeline, shown through the same interface rules the project
-          argued its way to. Decide, then see what the answer key, the AI reviewer and the system
-          each said. Tied candidates appear unordered and unnumbered, because among them the model
-          genuinely cannot tell, and ranking them would invent a preference from row order.
+          This interactive demo reads a committed snapshot of benchmark records and the current
+          decision policy; it does not run the matcher in your browser. Decide, then see the answer
+          key and the system&rsquo;s outcome. Earlier AI-reviewer decisions appear where the candidate
+          display is still the one that reviewer saw. Tied candidates are shown without rank numbers.
         </p>
       </Reveal>
 
@@ -182,7 +183,7 @@ export default function ReviewTool() {
                             : "no partner exists for this record"],
                           ["AI reviewer", c.ai
                             ? (c.ai.decision === "match" ? `chose ${c.ai.amazon_id}` : c.ai.decision === "none_of_these" ? "none of these" : "couldn’t tell")
-                            : "not reviewed, the system accepted this one"],
+                            : "no AI-reviewer decision for this card"],
                           ["The system", c.outcome === "accept"
                             ? `accepted ${c.systemPick} with no human review`
                             : `withheld it, ${REASON[c.outcome][0]}`],
@@ -201,8 +202,10 @@ export default function ReviewTool() {
           )}
         </div>
         <p className="mt-4 max-w-[70ch] text-sm text-faint">
-          120 records sampled with a fixed seed across every outcome. 50 the system auto-accepted,
-          70 it sent to review, so the mix reflects the real pipeline rather than a flattering selection.
+          {snapshot?.stats.sample.n ?? 120} fixed cards drawn across outcome groups with seed{" "}
+          {snapshot?.stats.sample.seed ?? 20260920}. Under the current policy, {snapshot?.stats.sample.actual.accept ?? "…"}{" "}
+          are auto-accepted and {snapshot ? snapshot.stats.sample.n - snapshot.stats.sample.actual.accept : "…"}{" "}
+          enter the review queue. The stratified sample does not represent the queue&rsquo;s natural mix.
         </p>
       </Reveal>
     </>
